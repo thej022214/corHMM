@@ -91,7 +91,7 @@ corHMM<-function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "mar
 			out<-NULL
 			est.pars<-log(p)
 			out$objective <- dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
-			est.pars <- exp(p)
+			est.pars <- exp(est.pars)
 		}
 		else{
 			cat("Initializing...", "\n")

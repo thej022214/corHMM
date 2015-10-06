@@ -91,10 +91,10 @@ corDISC<-function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD")
 	if(!is.null(p)){
 		cat("Calculating likelihood from a set of fixed parameters", "\n")
 		out<-NULL
-		out$solution<-p
+		out$solution <- p
 		out$objective<-dev.cordisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 		loglik <- -out$objective
-		est.pars<-out$solution
+		est.pars <- out$solution
 	}
 	else{
 		if(is.null(ip)){
@@ -223,7 +223,7 @@ print.cordisc<-function(x,...){
 	}
 }
 
-dev.cordisc<-function(p,phy,liks,Q,rate,root.p){
+dev.cordisc<-function(p, phy, liks, Q, rate,root.p){
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
