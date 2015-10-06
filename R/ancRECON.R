@@ -261,17 +261,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				#If a tip calculate C_y(i) for the tips and stores in liks matrix:
 				if(any(desNodes[desIndex]==phy$edge[,1])==FALSE){
 					if(hrm==TRUE){
-						v<-c(rep(1, k*rate.cat))
+						v <- c(rep(1, k*rate.cat))
 					}
 					if(hrm==FALSE){
-						v<-c(rep(1, nl^k))
+						v <- c(rep(1, nl^k))
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
 					v = v * liks[desNodes[desIndex],]
 					for(i in 1:dim(Pij)[1]){
 						L <- Pij[i,] * v
 						liks[desNodes[desIndex],i] <- max(L)
-						comp[desNodes[desIndex],i]<-which(L==max(L))[1]
+						comp[desNodes[desIndex],i] <- which(L==max(L))[1]
 					}					
 				}
 			}
@@ -284,28 +284,41 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					#This is the basic marginal calculation:
 					root.state <- root.state * liks[desNodes[desIndex],]
 				}
-				equil.root <- NULL
-				for(i in 1:ncol(Q)){
-					posrows <- which(Q[,i] >= 0)
-					rowsum <- sum(Q[posrows,i])
-					poscols <- which(Q[i,] >= 0)
-					colsum <- sum(Q[i,poscols])
-					equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-				}
-				if(is.null(root.p)){
-					k.rates <- 1/length(which(!is.na(equil.root)))
-					equil.root[!is.na(equil.root)] = k.rates
-					equil.root[is.na(equil.root)] = 0
-					liks[focal, ] <- root.state * equil.root					
-				}
-				else{
-					if(is.character(root.p)){
-						liks[focal,] <- root.state * equil.root
-					}
-					else{
-						liks[focal,] <- root.state * root.p
-					}
-				}
+                equil.root <- NULL
+                for(i in 1:ncol(Q)){
+                    posrows <- which(Q[,i] >= 0)
+                    rowsum <- sum(Q[posrows,i])
+                    poscols <- which(Q[i,] >= 0)
+                    colsum <- sum(Q[i,poscols])
+                    equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+                }
+                if (is.null(root.p)){
+                    flat.root = equil.root
+                    k.rates <- 1/length(which(!is.na(equil.root)))
+                    flat.root[!is.na(flat.root)] = k.rates
+                    flat.root[is.na(flat.root)] = 0
+                    liks[focal, ] <- root.state * flat.root
+                }
+                else{
+                    if(is.character(root.p)){
+                        # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+                        if(root.p == "yang"){
+                            Q.tmp <- Q
+                            diag(Q.tmp) = 0
+                            root.p = colSums(Q.tmp) / sum(Q.tmp)
+                            liks[focal, ] <- root.state * root.p
+                        }else{
+                            # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                            root.p = root.state / sum(root.state)
+                            liks[focal,] <- root.state * root.p
+                        }
+                    }
+                    # root.p!==NULL will fix root probabilities based on user supplied vector:
+                    else{
+                        liks[focal, ] <- root.state * root.p
+                    }
+                }
+
 			}
 			#All other internal nodes, except the root:
 			else{
@@ -337,7 +350,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			}
 		}
 		root <- nb.tip + 1L
-		lik.states[root] <- which(liks[root,]==max(liks[root,]))
+        print(liks[root,])
+        lik.states[root] <- which(liks[root,]==max(liks[root,]))
 		N <- dim(phy$edge)[1]
 		for(i in N:1){
 			anc <- phy$edge[i,1]
@@ -354,29 +368,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	if(method=="marginal"){
 		#A temporary likelihood matrix so that the original does not get written over:
 		liks.down<-liks
-		#root equilibrium frequencies
-		equil.root <- NULL
-		for(i in 1:ncol(Q)){
-			posrows <- which(Q[,i] >= 0)
-			rowsum <- sum(Q[posrows,i])
-			poscols <- which(Q[i,] >= 0)
-			colsum <- sum(Q[i,poscols])
-			equil.root <- c(equil.root,rowsum/(rowsum+colsum))	
-		}		
-		if(is.null(root.p)){
-			k.rates <- 1/length(which(!is.na(equil.root)))
-			equil.root[!is.na(equil.root)] = k.rates
-			equil.root[is.na(equil.root)] = 0
-		}
-		else{
-			if(is.character(root.p)){
-				equil.root <- equil.root
-				equil.root[is.na(equil.root)] = 0
-			}
-			else{
-				equil.root=root.p
-			}
-		}
 		#A transpose of Q for assessing probability of j to i, rather than i to j:
 		tranQ<-t(Q)
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
@@ -396,12 +387,45 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		}
 		root <- nb.tip + 1L
 		#Enter the root defined root probabilities if they are supplied by the user:
-		if(is.numeric(root.p)){
-			root <- nb.tip + 1L	
-			liks.down[root, ] <- root.p * liks.down[root, ]
-			liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
-		}
-		#The up-pass 
+        equil.root <- NULL
+        for(i in 1:ncol(Q)){
+            posrows <- which(Q[,i] >= 0)
+            rowsum <- sum(Q[posrows,i])
+            poscols <- which(Q[i,] >= 0)
+            colsum <- sum(Q[i,poscols])
+            equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+        }
+        if (is.null(root.p)){
+            flat.root = equil.root
+            k.rates <- 1/length(which(!is.na(equil.root)))
+            flat.root[!is.na(flat.root)] = k.rates
+            flat.root[is.na(flat.root)] = 0
+            liks.down[root, ] <- flat.root * liks.down[root, ]
+            liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
+        }
+        else{
+            if(is.character(root.p)){
+                # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+                if(root.p == "yang"){
+                    Q.tmp <- Q
+                    diag(Q.tmp) = 0
+                    root.p = colSums(Q.tmp) / sum(Q.tmp)
+                    liks.down[root, ] <- root.p * liks.down[root, ]
+                    liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
+                }else{
+                    # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                    root.p = liks.down[root,] / sum(liks.down[root,])
+                    liks.down[root, ] <- root.p * liks.down[root, ]
+                    liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
+                }
+            }
+            # root.p!==NULL will fix root probabilities based on user supplied vector:
+            else{
+                liks.down[root, ] <- root.p * liks.down[root, ]
+                liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
+            }
+        }
+		#The up-pass
 		liks.up<-liks
 		states<-apply(liks,1,which.max)
 		N <- dim(phy$edge)[1]
@@ -477,25 +501,44 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			comp[focal] <- sum(v)
 			liks[focal, ] <- v/comp[focal]
 		}
-		if(!is.null(root.p)){
-			root <- nb.tip + 1L	
-			if(is.character(root.p)){
-				equil.root <- NULL
-				for(i in 1:ncol(Q)){
-					posrows <- which(Q[,i] >= 0)
-					rowsum <- sum(Q[posrows,i])
-					poscols <- which(Q[i,] >= 0)
-					colsum <- sum(Q[i,poscols])
-					equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-				}
-				liks[root, ] <- liks[root,] * equil.root
-				liks[root, ] <- liks[root,] / sum(liks[root,])
-			}
-			else{
-				liks[root, ] <- liks[root,] * root.p
-				liks[root, ] <- liks[root,] / sum(liks[root,])
-			}
-		}
+        equil.root <- NULL
+        for(i in 1:ncol(Q)){
+            posrows <- which(Q[,i] >= 0)
+            rowsum <- sum(Q[posrows,i])
+            poscols <- which(Q[i,] >= 0)
+            colsum <- sum(Q[i,poscols])
+            equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+        }
+        if (is.null(root.p)){
+            flat.root = equil.root
+            k.rates <- 1/length(which(!is.na(equil.root)))
+            flat.root[!is.na(flat.root)] = k.rates
+            flat.root[is.na(flat.root)] = 0
+            liks[root, ] <- flat.root * liks[root, ]
+            liks[root, ] <- liks[root,] / sum(liks[root, ])
+        }
+        else{
+            if(is.character(root.p)){
+                # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+                if(root.p == "yang"){
+                    Q.tmp <- Q
+                    diag(Q.tmp) = 0
+                    root.p = colSums(Q.tmp) / sum(Q.tmp)
+                    liks[root, ] <- root.p * liks[root, ]
+                    liks[root, ] <- liks[root,] / sum(liks[root, ])
+                }else{
+                    # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                    root.p = liks[root,] / sum(liks[root,])
+                    liks[root, ] <- root.p * liks[root, ]
+                    liks[root, ] <- liks[root,] / sum(liks[root, ])
+                }
+            }
+            # root.p!==NULL will fix root probabilities based on user supplied vector:
+            else{
+                liks[root, ] <- root.p * liks[root, ]
+                liks[root, ] <- liks[root,] / sum(liks[root, ])
+            }
+        }
 		#Reports the probabilities for all internal nodes as well as tips:
 		obj$lik.tip.states <- NULL
 		#Outputs likeliest node states

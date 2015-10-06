@@ -120,17 +120,17 @@ corHMM<-function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "mar
 			cat("Finished. Beginning simulated annealing Round 1...", "\n")
 			out.sann <- GenSA(rep(log(ip), model.set.final$np), fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			cat("Finished. Refining using subplex routine...", "\n")
-#			out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
+            #out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
 			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			cat("Finished. Beginning simulated annealing Round 2...", "\n")
 			out.sann <- GenSA(out$solution, fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			cat("Finished. Refining using subplex routine...", "\n")
-#			out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
+            #out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
 			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			cat("Finished. Beginning simulated annealing Round 3...", "\n")
 			out.sann <- GenSA(out$solution, fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			cat("Finished. Refining using subplex routine...", "\n")
-#			out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
+            #out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
 			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 
 			loglik <- -out$objective
@@ -145,7 +145,7 @@ corHMM<-function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "mar
 			est.pars<-log(p)
 			out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			loglik <- -out$objective
-			est.pars <- exp(out$solution)
+			est.pars <- exp(est.pars)
 		}
 		#If a user-specified starting value(s) is not supplied this begins loop through a set of randomly chosen starting values:
 		else{
@@ -598,23 +598,34 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 			equil.root <- c(equil.root,rowsum/(rowsum+colsum))
 		}		
 		if (is.null(root.p)){
-			flat.root = equil.root
+            flat.root = equil.root
 			k.rates <- 1/length(which(!is.na(equil.root)))
 			flat.root[!is.na(flat.root)] = k.rates
 			flat.root[is.na(flat.root)] = 0
 			loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
 		}
 		else{
-			#root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
 			if(is.character(root.p)){
-				equil.root[is.na(equil.root)] = 0
-				loglik <- -(sum(log(comp[-TIPS])) + log(sum(equil.root * liks[root,])))
-				if(is.infinite(loglik)){return(1000000)}
+                # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
+                if(root.p == "yang"){
+                    diag(Q) = 0
+                    equil.root = colSums(Q) / sum(Q)
+                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(equil.root)+log(liks[root,])))))
+                    if(is.infinite(loglik)){
+                        return(1000000)
+                    }
+                }else{
+                    # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                    root.p = liks[root,] / sum(liks[root,])
+                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+                }
 			}
-			#root.p!==NULL will fix root probabilities based on user supplied vector:
+			# root.p!==NULL will fix root probabilities based on user supplied vector:
 			else{
-				loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
-				if(is.infinite(loglik)){return(1000000)}
+                loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+				if(is.infinite(loglik)){
+                    return(1000000)
+                }
 			}
 		}
 	}
