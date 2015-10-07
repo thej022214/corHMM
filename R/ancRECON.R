@@ -271,7 +271,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					for(i in 1:dim(Pij)[1]){
 						L <- Pij[i,] * v
 						liks[desNodes[desIndex],i] <- max(L)
-						comp[desNodes[desIndex],i] <- which(L==max(L))[1]
+						comp[desNodes[desIndex],i] <- which.max(L==max(L))[1]
 					}					
 				}
 			}
@@ -297,7 +297,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     k.rates <- 1/length(which(!is.na(equil.root)))
                     flat.root[!is.na(flat.root)] = k.rates
                     flat.root[is.na(flat.root)] = 0
-                    liks[focal, ] <- root.state * flat.root
+                    liks[focal, ] <- root.state
                 }
                 else{
                     if(is.character(root.p)){
@@ -337,7 +337,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				for(i in 1:dim(Pij)[1]){
 					L <- Pij[i,] * v
 					liks[focal,i] <- max(L)
-					comp[focal,i]<-which(L==max(L))[1]
+					comp[focal,i]<-which.max(L==max(L))[1]
 				}
 				sum.tot <- sum(liks[focal,])
 				liks[focal,]=liks[focal,]/sum.tot
@@ -350,7 +350,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			}
 		}
 		root <- nb.tip + 1L
-        print(liks[root,])
         lik.states[root] <- which(liks[root,]==max(liks[root,]))
 		N <- dim(phy$edge)[1]
 		for(i in N:1){
@@ -540,7 +539,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             }
         }
 		#Reports the probabilities for all internal nodes as well as tips:
-		obj$lik.tip.states <- NULL
+		obj$lik.tip.states <- liks[TIPS,]
 		#Outputs likeliest node states
 		obj$lik.anc.states <- liks[-TIPS,]
 	}	
