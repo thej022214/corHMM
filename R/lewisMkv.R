@@ -7,11 +7,6 @@
 
 #written by Jeremy M. Beaulieu
 
-require(corHMM)
-require(phangorn)
-require(expm)
-require(parallel)
-
 lewisMkv <- function(phy, data, include.gamma=FALSE, ngammacats=4, include.beta=FALSE, exclude.sites=NULL, max.tol=.Machine$double.eps^0.25, ncores=NULL) {
     
     if(include.beta == TRUE){
@@ -231,21 +226,6 @@ DiscreteGamma <- function (shape, ngammacats){
 }
 
 
-# Based on a post by Liam Revell and Emmanual Paradis on R-sig-phylo
-AddTaxonEverywhere <- function(tree,tip.name) {
-    tree <- unroot(tree)
-    tree$edge.length <- rep(1, nrow(tree$edge))
-    new.tip <- compute.brlen(stree(1, tip.label = tip.name), 1)
-    trees <- list()
-    class(trees) <- "multiPhylo"
-    for(i in 1:nrow(tree$edge)){
-       trees[[i]] <- bind.tree(tree,new.tip, where=tree$edge[i,2], position=0.5)
-       trees[[i]]$edge.length <- NULL
-    }
-    return(trees)
-}
-
-
 # A function to find positions of ampersands for separating different states.
 # Will allow character state to be greater than one character long.
 FindAmpsLewis <- function(string, charnum){
@@ -337,7 +317,7 @@ FactorDataLewis <- function(data,charnum){
 }
 
 
-#This is a function for generating starting branch lengths -- based on Rogers andSwofford (1998), except here parsimony branch lengths are based on ACCTRAN as opposed to the MPR. Note that any sort of ambiguity is treated as complete ambiguity across all states:
+#This is a function for generating starting branch lengths -- based on Rogers and Swofford (1998), except here parsimony branch lengths are based on ACCTRAN as opposed to the MPR. Note that any sort of ambiguity is treated as complete ambiguity across all states:
 RogersSwoffordish <- function(phy, data){
     pre.phyDat <- c()
     for(site.index in sequence(dim(data)[2])){
@@ -354,6 +334,19 @@ RogersSwoffordish <- function(phy, data){
 }
 
 
+# Based on a post by Liam Revell and Emmanual Paradis on R-sig-phylo
+AddTaxonEverywhere <- function(tree,tip.name) {
+    tree <- unroot(tree)
+    tree$edge.length <- rep(1, nrow(tree$edge))
+    new.tip <- compute.brlen(stree(1, tip.label = tip.name), 1)
+    trees <- list()
+    class(trees) <- "multiPhylo"
+    for(i in 1:nrow(tree$edge)){
+		trees[[i]] <- bind.tree(tree,new.tip, where=tree$edge[i,2], position=0.5)
+		trees[[i]]$edge.length <- NULL
+    }
+    return(trees)
+}
 
 
 ######################################################################################################################################
@@ -375,5 +368,5 @@ RogersSwoffordish <- function(phy, data){
 ######################################################################################################################################
 ######################################################################################################################################
 
-#1. Starting values for the tree.
+#1. Starting values for the tree -- DONE. Uses a modified Rogers-Swofford approach.
 #2. Tree search capabilities -- I forsee a TBR algorithm and a multistage optimization for the tree and model parameters
