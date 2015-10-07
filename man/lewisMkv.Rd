@@ -1,7 +1,7 @@
 \name{lewisMkv}
 \alias{lewisMkv}
 \title{Phylogenetic inference of morphology using mkv model}
-\description{An implementation of Lewis' (2001) mkv model to infer topology and branch lengths based on morphological characters.}
+\description{An implementation of Lewis' (2001) mkv model for inferring topology and branch lengths based on morphological characters.}
 \usage{
 lewisMkv(phy, data, include.gamma=FALSE, ngammacats=4, include.beta=FALSE, 
 exclude.sites=NULL, max.tol=.Machine$double.eps^0.25, ncores=NULL)
