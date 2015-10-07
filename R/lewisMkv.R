@@ -24,7 +24,7 @@ lewisMkv <- function(phy, data, include.gamma=FALSE, ngammacats=4, include.beta=
     new.phy$edge.length[new.phy$edge.length==0] = 1e-8
     
     cat("Finished. Optimizing model parameters...", "\n")
-    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "1", "ftol_rel" = max.tol)
+    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "100000", "ftol_rel" = max.tol)
     obj <- NULL
     if(include.gamma == TRUE){
         ip <- c(1, new.phy$edge.length)
