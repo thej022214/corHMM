@@ -62,7 +62,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	#Some initial values for use later - will clean up
 	k <- 1 # Only one trait allowed
 	factored <- factorData(workingData,charnum=charnum) # just factoring to figure out how many levels (i.e. number of states) in data.
-	nl <- ncol(factored)
+    nl <- ncol(factored)
 	state.names <- colnames(factored) # for subsequent reporting
 	bound.hit <- FALSE # to keep track of whether min.rate is one of the rate estimates (and thus, potentially a non-optimal rate)
 	# Check to make sure values are reasonable (i.e. non-negative)
@@ -181,13 +181,12 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	if((any(solution == lb,na.rm = TRUE) || any(solution == ub,na.rm = TRUE)) && (lb != 0 || ub != 100)){
 		bound.hit <- TRUE
 	}
-
 	rownames(solution) <- rownames(solution.se) <- state.names
 	colnames(solution) <- colnames(solution.se) <- state.names
 
 	if(is.character(node.states)){
 		if (node.states == "marginal" || node.states == "scaled"){
-			colnames(lik.anc$lik.anc.states) <- state.names
+            colnames(lik.anc$lik.anc.states) <- state.names
 		}
 	}
 	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit) 
@@ -457,7 +456,7 @@ factorData <- function(data,whichchar=1,charnum){
 		ampLocs <- findAmps(levelstring, charnum)
 		if(length(ampLocs) == 0){ #No ampersands, character is monomorphic
 			currlvl <- levelstring
-			if(currlvl == "?" || currlvl == "-"){ # Check for missing data
+			if(currlvl == "?" || currlvl == "-" || currlvl == "NA"){ # Check for missing data
 				missing <- c(missing,row) # add to list of taxa with missing values, will fill in entire row later
 			}
 			else { # Not missing data
