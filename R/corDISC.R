@@ -2,13 +2,13 @@
 
 #written by Jeremy M. Beaulieu
 
-corDISC<-function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE){
+corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE){
 	
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
 		obj <- NULL
 		obj$loglik <- NULL
-		obj$diagnostic <- paste("No model for ancestral states selected.  Please pass one of the following to corDISC command for parameter \'node.states\': joint, marginal, or scaled.")
+		obj$diagnostic <- paste("No model for ancestral states selected. Please pass one of the following to corDISC command for parameter \'node.states\': joint, marginal, or scaled.")
 		return(obj)
 	}
 	else { # even if node.states is not NULL, need to make sure its one of the three valid options
