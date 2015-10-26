@@ -337,7 +337,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				for(i in 1:dim(Pij)[1]){
 					L <- Pij[i,] * v
 					liks[focal,i] <- max(L)
-					comp[focal,i]<-which.max(L==max(L))[1]
+					comp[focal,i] <- which.max(L==max(L))[1]
 				}
 				sum.tot <- sum(liks[focal,])
 				liks[focal,]=liks[focal,]/sum.tot

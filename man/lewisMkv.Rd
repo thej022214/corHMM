@@ -25,7 +25,7 @@ A couple of things to note. First, the starting branch lengths are based on the 
 \code{lewisMkv} returns an object of class \code{lewis.mkv}. This is a list with elements:
 \item{$loglik}{The maximum negative log-likelihood.}
 \item{$AIC}{Akaike information criterion.}
-\item{gamma.shape}{The MLE of the discrete gamma shape parameter.}
+\item{$gamma.shape}{The MLE of the discrete gamma shape parameter.}
 \item{$phy}{The resulting phylogeny with inferred branch lengths.}
 \item{$data}{User-supplied character set.}
 \item{$opts}{Internal settings of the likelihood search}

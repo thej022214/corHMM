@@ -85,7 +85,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	root.p=root.p	
 	ip=ip
 
-	model.set.final<-rate.cat.set.oneT(phy=phy,data=workingData,model=model,charnum=charnum)
+	model.set.final<-rate.cat.set.rayDISC(phy=phy,data=workingData,model=model,charnum=charnum)
 	if(!is.null(rate.mat)){
 		rate <- rate.mat
 		model.set.final$np <- max(rate, na.rm=TRUE)
@@ -110,7 +110,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			cat("Initializing...", "\n")
 			#Sets parameter settings for random restarts by taking the parsimony score and dividing
 			#by the total length of the tree
-			model.set.init<-rate.cat.set.oneT(phy=phy,data=workingData,model="ER",charnum=charnum)
+			model.set.init<-rate.cat.set.rayDISC(phy=phy,data=workingData,model="ER",charnum=charnum)
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
 			dat<-as.matrix(workingData)
 			dat<-phyDat(dat,type="USER", levels=levels(as.factor(workingData[,1])))
@@ -317,8 +317,7 @@ dev.raydisc<-function(p,phy,liks,Q,rate,root.p){
 	loglik
 }
 
-rate.cat.set.oneT<-function(phy,data,model,charnum){
-	
+rate.cat.set.rayDISC<-function(phy,data,model,charnum){
 	k <- 1
 	factored <- factorData(data, charnum=charnum)
 	nl <- ncol(factored)
@@ -350,7 +349,6 @@ rate.cat.set.oneT<-function(phy,data,model,charnum){
 	obj$Q<-Q
 
 	return(obj)
-
 }
 
 #########################

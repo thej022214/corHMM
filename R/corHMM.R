@@ -73,7 +73,7 @@ corHMM<-function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "mar
 	nstarts=nstarts
 	ip=ip
 	
-	model.set.final<-rate.cat.set(phy=phy,data.sort=data.sort,rate.cat=rate.cat)
+	model.set.final<-rate.cat.set.corHMM(phy=phy,data.sort=data.sort,rate.cat=rate.cat)
 	if(!is.null(rate.mat)){
 		rate <- rate.mat
 		model.set.final$np <- max(rate, na.rm=TRUE)
@@ -95,7 +95,7 @@ corHMM<-function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "mar
 		}
 		else{
 			cat("Initializing...", "\n")
-			model.set.init<-rate.cat.set(phy=phy,data.sort=data.sort,rate.cat=1)
+			model.set.init<-rate.cat.set.corHMM(phy=phy,data.sort=data.sort,rate.cat=1)
 			rate<-rate.mat.maker(hrm=TRUE,rate.cat=1)
 			rate<-rate.par.eq(rate,eq.par=c(1,2))
 			model.set.init$index.matrix<-rate
@@ -632,7 +632,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	loglik
 }
 
-rate.cat.set<-function(phy,data.sort,rate.cat){
+rate.cat.set.corHMM<-function(phy,data.sort,rate.cat){
 	
 	k=2
 	obj <- NULL
