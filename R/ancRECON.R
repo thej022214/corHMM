@@ -240,6 +240,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		Q <- matrix(0, nl^k, nl^k)
 		tranQ <- matrix(0, nl^k, nl^k)
 	}
+    p[p==0] = exp(-21)
 	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)
 	phy <- reorder(phy, "pruningwise")
@@ -401,6 +402,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             flat.root[is.na(flat.root)] = 0
             liks.down[root, ] <- flat.root * liks.down[root, ]
             liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
+            root.p = flat.root
         }
         else{
             if(is.character(root.p)){
@@ -447,7 +449,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				#If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency. 
 				#But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
 				else{
-					v <- equil.root
+					v <- root.p
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy. 
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
@@ -473,8 +475,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			liks.final[focal, ] <- v/comp[focal]
 		}
 		#Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
-		liks.final[root,] <- liks.down[root,] * equil.root
-		root.final <- liks.down[root,] * equil.root
+		liks.final[root,] <- liks.down[root,] * root.p
+		root.final <- liks.down[root,] * root.p
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
 		#Reports the probabilities for all internal nodes as well as tips:
