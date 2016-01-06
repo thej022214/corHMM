@@ -240,6 +240,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		Q <- matrix(0, nl^k, nl^k)
 		tranQ <- matrix(0, nl^k, nl^k)
 	}
+	
     p[p==0] = exp(-21)
 	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)
