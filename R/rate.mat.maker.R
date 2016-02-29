@@ -69,7 +69,8 @@ rate.mat.maker<-function(rate.cat, hrm=TRUE, ntraits=NULL, nstates=NULL, model=c
 					#Use transpose of the rate category matrix to finish enumerating:
 					rate.mat.index <- t(rate.mat.index)
 					rate.mat.index[sel] <- 1:np
-				}
+                    rate.mat.index[upper.tri(rate.mat.index)] = t(rate.mat.index)[upper.tri(rate.mat.index)]
+                }
 				if (model == "ARD") {
 					np <- nl*(nl - 1)
 					rate.mat.index[index] <- 1:np
