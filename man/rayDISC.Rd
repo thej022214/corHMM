@@ -6,7 +6,7 @@
 \usage{
 rayDISC(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"),
 node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, 
-lb=0, ub=100, diagn=FALSE)
+lb=0, ub=100, verbose=TRUE, diagn=FALSE)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -21,6 +21,7 @@ lb=0, ub=100, diagn=FALSE)
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
 \item{lb}{lower bound for the likelihood search. The default is \code{lb=0}.}
 \item{ub}{upper bound for the likelihood search. The default is \code{ub=100}.}
+\item{verbose}{a logical indicating whether progress should be printed to the screen.}
 \item{diagn}{logical indicating whether diagnostic tests should be performed. The default is \code{FALSE}.}
 }
 \details{

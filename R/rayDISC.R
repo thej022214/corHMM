@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
-rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, lb=0,ub=100, diagn=FALSE){
+rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, lb=0,ub=100, verbose=TRUE, diagn=FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -56,9 +56,11 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	counts <- table(workingData[,1])
 	levels <- levels(as.factor(workingData[,1]))
 	cols <- as.factor(workingData[,1])
-	cat("State distribution in data:\n")
-	cat("States:",levels,"\n",sep="\t")
-	cat("Counts:",counts,"\n",sep="\t")
+    if(verbose == TRUE){
+        cat("State distribution in data:\n")
+        cat("States:",levels,"\n",sep="\t")
+        cat("Counts:",counts,"\n",sep="\t")
+    }
 	#Some initial values for use later - will clean up
 	k <- 1 # Only one trait allowed
 	factored <- factorData(workingData,charnum=charnum) # just factoring to figure out how many levels (i.e. number of states) in data.
@@ -99,7 +101,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 
 	opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
 	if(!is.null(p)){
-		cat("Calculating likelihood from a set of fixed parameters", "\n")
+        if(verbose == TRUE){
+            cat("Calculating likelihood from a set of fixed parameters", "\n")
+        }
 		out<-NULL
 		out$solution<-p
 		out$objective<-dev.raydisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
@@ -107,7 +111,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		est.pars<-out$solution
 	} else {
 		if(is.null(ip)){
-			cat("Initializing...", "\n")
+            if(verbose==TRUE){
+                cat("Initializing...", "\n")
+            }
 			#Sets parameter settings for random restarts by taking the parsimony score and dividing
 			#by the total length of the tree
 			model.set.init<-rate.cat.set.rayDISC(phy=phy,data=workingData,model="ER",charnum=charnum)
@@ -128,7 +134,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			lower.init = rep(lb, model.set.init$np)
 			upper.init = rep(ub, model.set.init$np)
 			init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
-			cat("Finished. Beginning thorough search...", "\n")
+            if(verbose == TRUE){
+                cat("Finished. Beginning thorough search...", "\n")
+            }
 			lower = rep(lb, model.set.final$np)
 			upper = rep(ub, model.set.final$np)
 			out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
@@ -137,7 +145,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		}
 		#If a user-specified starting value(s) is supplied:
 		else{
-			cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
+            if(verbose == TRUE){
+                cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
+            }
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
 			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts)
 			loglik <- -out$objective
@@ -145,8 +155,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		}
 	}
 	#Starts the summarization process:
-	cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
-	
+    if(verbose==TRUE){
+        cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
+    }
 	TIPS <- 1:nb.tip
 	lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
 	if(node.states == "marginal" || node.states == "scaled"){
@@ -159,11 +170,12 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		phy$node.label <- lik.anc$lik.anc.states
 		tip.states <- lik.anc$lik.tip.states
 	}
-
-	cat("Finished. Performing diagnostic tests.", "\n")
-	
+    
 	if(diagn==TRUE){
-		#Approximates the Hessian using the numDeriv function
+        if(verbose == TRUE){
+            cat("Finished. Performing diagnostic tests.", "\n")
+        }
+        #Approximates the Hessian using the numDeriv function
 		h <- hessian(func=dev.raydisc, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		solution.se <- matrix(sqrt(diag(pseudoinverse(h)))[model.set.final$index.matrix], dim(model.set.final$index.matrix))

@@ -489,6 +489,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	
 	if(method=="scaled"){
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
+        root <- nb.tip + 1L
 		#The same algorithm as in the main function. See comments in either corHMM.R, corDISC.R, or rayDISC.R for details:
 		for (i  in seq(from = 1, length.out = nb.node)) {
 			#the ancestral node at row i is called focal
@@ -516,29 +517,28 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
             flat.root[is.na(flat.root)] = 0
-            liks[root, ] <- flat.root * liks[root, ]
-            liks[root, ] <- liks[root,] / sum(liks[root, ])
-        }
-        else{
+            liks[root,] <- flat.root * liks[root,]
+            liks[root,] <- liks[root,] / sum(liks[root,])
+        }else{
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                 if(root.p == "yang"){
                     Q.tmp <- Q
                     diag(Q.tmp) = 0
                     root.p = colSums(Q.tmp) / sum(Q.tmp)
-                    liks[root, ] <- root.p * liks[root, ]
-                    liks[root, ] <- liks[root,] / sum(liks[root, ])
+                    liks[root,] <- root.p * liks[root, ]
+                    liks[root,] <- liks[root,] / sum(liks[root,])
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks[root,] / sum(liks[root,])
-                    liks[root, ] <- root.p * liks[root, ]
-                    liks[root, ] <- liks[root,] / sum(liks[root, ])
+                    liks[root,] <- root.p * liks[root,]
+                    liks[root,] <- liks[root,] / sum(liks[root,])
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
             else{
-                liks[root, ] <- root.p * liks[root, ]
-                liks[root, ] <- liks[root,] / sum(liks[root, ])
+                liks[root,] <- root.p * liks[root,]
+                liks[root,] <- liks[root,] / sum(liks[root,])
             }
         }
 		#Reports the probabilities for all internal nodes as well as tips:
