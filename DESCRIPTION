@@ -1,6 +1,6 @@
 Package: corHMM
-Version: 1.18
-Date: 2016-1-6
+Version: 1.19
+Date: 2016-3-17
 Title: Analysis of Binary Character Evolution
 Author: Jeremy M. Beaulieu <jbeaulieu@nimbios.org>, Jeffrey C. Oliver <jeffreycoliver@gmail.com>, Brian O'Meara <bomeara@utk.edu>
 Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
