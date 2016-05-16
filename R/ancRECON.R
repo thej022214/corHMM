@@ -475,6 +475,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
+		#Now get the states for the tips (will do, not available for general use):
+		for (i in seq(from = 1, length.out = length(TIPS))) { 
+			#the ancestral node at row i is called focal
+			focal <- TIPS[i]
+			focalRows<-which(phy$edge[,2]==focal)
+			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of 
+			#everything at and above focal by the probability of the mother and all the sisters given time t:
+			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]
+			comp[focal] <- sum(v)
+			liks.final[focal, ] <- v/comp[focal]
+		}		
 		#Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
 		liks.final[root,] <- liks.down[root,] * root.p
 		root.final <- liks.down[root,] * root.p
