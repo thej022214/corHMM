@@ -55,6 +55,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				if(x[i]==1){liks[i,2]=1}
 				if(x[i]==2){liks[i,1:2]=1}
 			}
+			p[p==0] = exp(-21)
+			Q[] <- c(p, 0)[rate]
 		}
 		if (rate.cat == 2){
 			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
@@ -241,9 +243,15 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		tranQ <- matrix(0, nl^k, nl^k)
 	}
 	
-    p[p==0] = exp(-21)
+	p[p==0] = exp(-21)
 	Q[] <- c(p, 0)[rate]
-	diag(Q) <- -rowSums(Q)
+	col.sums <- which(colSums(Q) == 0)
+	row.sums <- which(rowSums(Q) == 0)
+	drop.states <- col.sums[which(col.sums == row.sums)]
+	if(length(drop.states > 0)){
+		liks[,drop.states] <- 0
+	}
+	
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
@@ -427,6 +435,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             }
         }
+		print(liks.down)
 		#The up-pass
 		liks.up<-liks
 		states<-apply(liks,1,which.max)
@@ -479,7 +488,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		for (i in seq(from = 1, length.out = length(TIPS))) { 
 			#the ancestral node at row i is called focal
 			focal <- TIPS[i]
-			focalRows<-which(phy$edge[,2]==focal)
+			focalRows <- which(phy$edge[,2]==focal)
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of 
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
 			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]

@@ -513,11 +513,20 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
 	k.rates <- dim(Q)[2] / 2
-	
 	if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
 	
 	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)
+	
+	## for precursor type models ##
+	col.sums <- which(colSums(Q) == 0)
+	row.sums <- which(rowSums(Q) == 0)
+	drop.states <- col.sums[which(col.sums == row.sums)]
+	if(length(drop.states > 0)){
+		liks[,drop.states] <- 0
+	}
+	###############################
+
 	for (i  in seq(from = 1, length.out = nb.node)) {
 		#the ancestral node at row i is called focal
 		focal <- anc[i]
