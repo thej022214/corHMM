@@ -435,7 +435,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             }
         }
-		print(liks.down)
 		#The up-pass
 		liks.up<-liks
 		states<-apply(liks,1,which.max)
