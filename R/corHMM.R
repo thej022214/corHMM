@@ -526,7 +526,6 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)
 	
-
 	for (i  in seq(from = 1, length.out = nb.node)) {
 		#the ancestral node at row i is called focal
 		focal <- anc[i]

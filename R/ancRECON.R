@@ -22,7 +22,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
 	}
 	data.sort<-data.sort[phy$tip.label,]
-	
 	#Some initial values for use later
 	k=2
 	obj <- NULL
@@ -34,6 +33,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		if(is.null(rate.mat)){
 			rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
+			drop.states = NULL
 		}
 		else{
 			rate <- rate.mat
