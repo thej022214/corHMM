@@ -36,7 +36,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 		}
 		else{
-			rate<-rate.mat
+			rate <- rate.mat
+            col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
+            row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
+            drop.states <- col.sums[which(col.sums == row.sums)]
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 		}
 		#Makes a matrix of tip states and empty cells corresponding 
@@ -243,15 +246,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		tranQ <- matrix(0, nl^k, nl^k)
 	}
 	
+    if(length(drop.states > 0)){
+        liks[,drop.states] <- 0
+    }
+
 	p[p==0] = exp(-21)
 	Q[] <- c(p, 0)[rate]
-	col.sums <- which(colSums(Q) == 0)
-	row.sums <- which(rowSums(Q) == 0)
-	drop.states <- col.sums[which(col.sums == row.sums)]
-	if(length(drop.states > 0)){
-		liks[,drop.states] <- 0
-	}
-	
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
