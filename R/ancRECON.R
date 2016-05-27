@@ -113,6 +113,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		tranQ <- matrix(0, k*rate.cat, k*rate.cat)
 	}
 	if(hrm==FALSE){
+		drop.states = NULL
 		#Imported from Jeffs rayDISC -- will clean up later, but for now, it works fine:
 		if(ntraits==1){
 			k <- 1
