@@ -58,8 +58,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				if(x[i]==1){liks[i,2]=1}
 				if(x[i]==2){liks[i,1:2]=1}
 			}
-			p[p==0] = exp(-21)
-			Q[] <- c(p, 0)[rate]
 		}
 		if (rate.cat == 2){
 			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
