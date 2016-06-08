@@ -42,7 +42,7 @@ The user can fix the root state probabilities by supplying a vector to \code{roo
 \item{$data}{User-supplied dataset.}
 \item{$phy}{User-supplied tree.}
 \item{$states}{The likeliest states at each internal node. The state and rates reconstructed at internal nodes are in the order of the column headings of the rates matrix.}
-\item{$tip.states}{NULL}
+\item{$tip.states}{The likeliest state at each tip. The state and rates reconstructed at the tips are in the order of the column headings of the rates matrix.}
 \item{$iterations}{The number of iterations used by the optimization routine.}
 \item{$eigval}{The eigenvalues from the decomposition of the Hessian of the likelihood function. If any \code{eigval<0} then one or more parameters were not optimized during the likelihood search}
 \item{$eigvect}{The eigenvectors from the decomposition of the Hessian of the likelihood function is returned}
