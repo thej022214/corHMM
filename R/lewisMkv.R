@@ -370,3 +370,4 @@ AddTaxonEverywhere <- function(tree,tip.name) {
 
 #1. Starting values for the tree -- DONE. Uses a modified Rogers-Swofford approach.
 #2. Tree search capabilities -- I forsee a TBR algorithm and a multistage optimization for the tree and model parameters
+#3. Break up the optimization into stages. Edge lengths, then rate parameters. Also, try Yang suggestion of optimization each branch by rerooting the tree on each branch. Significantly speeds things up because you are just reevaluating the last two branches each time.
