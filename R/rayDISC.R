@@ -61,6 +61,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         cat("States:",levels,"\n",sep="\t")
         cat("Counts:",counts,"\n",sep="\t")
     }
+
 	#Some initial values for use later - will clean up
 	k <- 1 # Only one trait allowed
 	factored <- factorData(workingData,charnum=charnum) # just factoring to figure out how many levels (i.e. number of states) in data.
@@ -86,16 +87,14 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	model=model
 	root.p=root.p	
 	ip=ip
-
 	model.set.final<-rate.cat.set.rayDISC(phy=phy,data=workingData,model=model,charnum=charnum)
-	if(!is.null(rate.mat)){
+    if(!is.null(rate.mat)){
 		rate <- rate.mat
 		model.set.final$np <- max(rate, na.rm=TRUE)
 		rate[is.na(rate)]=max(rate, na.rm=TRUE)+1
 		model.set.final$rate <- rate
 		model.set.final$index.matrix <- rate.mat
 	}
-
 	lower = rep(lb, model.set.final$np)
 	upper = rep(ub, model.set.final$np)
 
@@ -149,7 +148,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
                 cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
             }
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
-			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts)
+			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			loglik <- -out$objective
 			est.pars<-out$solution
 		}
@@ -170,8 +169,8 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		phy$node.label <- lik.anc$lik.anc.states
 		tip.states <- lik.anc$lik.tip.states
 	}
-    
-	if(diagn==TRUE){
+
+    if(diagn==TRUE){
         if(verbose == TRUE){
             cat("Finished. Performing diagnostic tests.", "\n")
         }
@@ -336,10 +335,9 @@ rate.cat.set.rayDISC<-function(phy,data,model,charnum){
 	obj <- NULL
 	nb.tip<-length(phy$tip.label)
 	nb.node <- phy$Nnode
-
 	#rate is a matrix of rate categories (not actual rates)
 	rate<-rate.mat.maker(hrm=FALSE,ntraits=1,nstates=nl,model=model)
-	index.matrix<-rate
+    index.matrix<-rate
 	rate[is.na(rate)]<-max(rate,na.rm=T)+1
 
 	stateTable <- NULL # will hold 0s and 1s for likelihoods of each state at tip

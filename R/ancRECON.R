@@ -254,7 +254,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
-	
 	if(method=="joint"){
 		lik.states<-numeric(nb.tip + nb.node)
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
