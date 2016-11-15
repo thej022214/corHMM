@@ -380,7 +380,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		tranQ<-t(Q)
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
 		#The first down-pass: The same algorithm as in the main function to calculate the conditional likelihood at each node:
-		for (i  in seq(from = 1, length.out = nb.node)) {
+		for (i in seq(from = 1, length.out = nb.node)) {
 			#the ancestral node at row i is called focal
 			focal <- anc[i]
 			#Get descendant information of focal
