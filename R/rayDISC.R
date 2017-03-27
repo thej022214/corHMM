@@ -1,4 +1,6 @@
 #EVOLUTION OF DISCRETE TRAITS, ALLOWING POLYMORPHIC AND MISSING STATES
+library(expm)
+library(phangorn)
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
@@ -148,7 +150,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
                 cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
             }
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
-			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
+			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 			loglik <- -out$objective
 			est.pars<-out$solution
 		}
@@ -249,14 +251,13 @@ print.raydisc<-function(x,...){
 
 dev.raydisc<-function(p,phy,liks,Q,rate,root.p){
 
-	nb.tip <- length(phy$tip.label)
+    nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
 	phy <- reorder(phy, "pruningwise")
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
-
 	#This bit is to allow packages like "selac" the ability to deal with this function directly:
 	if(is.null(rate)){
 		Q=Q
@@ -265,7 +266,6 @@ dev.raydisc<-function(p,phy,liks,Q,rate,root.p){
 		Q[] <- c(p, 0)[rate]
 		diag(Q) <- -rowSums(Q)
 	}
-
 	for (i  in seq(from = 1, length.out = nb.node)) {
 		#the ancestral node at row i is called focal
 		focal <- anc[i]
