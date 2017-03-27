@@ -481,25 +481,18 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
-		#Now get the states for the tips (will do, not available for general use):
-		for (i in seq(from = 1, length.out = length(TIPS))) { 
-			#the ancestral node at row i is called focal
-			focal <- TIPS[i]
-			focalRows <- which(phy$edge[,2]==focal)
-			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of 
-			#everything at and above focal by the probability of the mother and all the sisters given time t:
-			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]
-			comp[focal] <- sum(v)
-			liks.final[focal, ] <- v/comp[focal]
-		}		
-		#Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
+		
+        #Now get the states for the tips (will do, not available for general use):
+        liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, charnum=charnum, ntraits=ntraits, model=model, root.p=root.p)
+
+        #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
 		liks.final[root,] <- liks.down[root,] * root.p
 		root.final <- liks.down[root,] * root.p
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
 		#Reports the probabilities for all internal nodes as well as tips:
 		#Outputs likeliest tip states
-		obj$lik.tip.states <- liks.final[TIPS,]
+        obj$lik.tip.states <- liks.final[TIPS,]
 		#Outputs likeliest node states
 		obj$lik.anc.states <- liks.final[-TIPS,]
 	}	
@@ -565,4 +558,65 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	}	
 	obj
 }
+
+
+
+#New brute force algorithm for estimating tip states.
+GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntraits, model, root.p){
+
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    
+    if(is.null(rate.cat)){
+        if(ntraits<2){
+            data.for.likelihood.function <- rate.cat.set.rayDISC(phy=phy, data=data, model=model, charnum=charnum)
+        }else{
+            data.for.likelihood.function <- rate.mat.set(phy=phy, data=data, ntraits=ntraits, model=model)
+        }
+    }else{
+        data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data=data, rate.cat=rate.cat)
+    }
+    
+    if(!is.null(rate.mat)){
+        rate <- rate.mat
+        data.for.likelihood.function$np <- max(rate, na.rm=TRUE)
+        rate[is.na(rate)]=max(rate, na.rm=TRUE)+1
+        data.for.likelihood.function$rate <- rate
+        data.for.likelihood.function$index.matrix <- rate.mat
+        ## for precursor type models ##
+        col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
+        row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
+        drop.states <- col.sums[which(col.sums == row.sums)]
+        
+        if(length(drop.states > 0)){
+            data.for.likelihood.function$liks[,drop.states] <- 0
+        }
+        ###############################
+    }
+
+    nodes <- unique(phy$edge[,1])
+    marginal.probs <- matrix(0, nb.tip, dim(data.for.likelihood.function$Q)[2])
+    for(taxon.index in 1:Ntip(phy)){
+        marginal.probs.tmp <- numeric(dim(data.for.likelihood.function$Q)[2])
+        nstates = which(!data.for.likelihood.function$liks[taxon.index,] == 0)
+        states.keep = data.for.likelihood.function$liks[taxon.index,]
+        for(state.index in 1:dim(data.for.likelihood.function$Q)[2]){
+            data.for.likelihood.function$liks[taxon.index,] = 0
+            data.for.likelihood.function$liks[taxon.index,state.index] = 1
+            marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p)
+        }
+        data.for.likelihood.function$liks[taxon.index,] = states.keep
+        best.probs = max(marginal.probs.tmp[nstates])
+        marginal.probs.rescaled = marginal.probs.tmp[nstates] - best.probs
+        marginal.probs[taxon.index,nstates] = exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
+    }
+    
+    tip.states <- marginal.probs[1:nb.tip,]
+    rownames(tip.states) <- phy$tip.label
+    return(tip.states)
+}
+
+
+
+
 
