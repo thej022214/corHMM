@@ -290,8 +290,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
         print(known.state.vector)
 		lik.states<-numeric(nb.tip + nb.node)
-		pupko.L<-matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
-		pupko.C<-matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
+		pupko.L <- liks
+		pupko.C <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
 		for (i  in seq(from = 1, length.out = nb.node)) {
 			#The ancestral node at row i is called focal:
 			focal <- anc[i]
@@ -411,8 +411,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		}
         if(get.likelihood == TRUE){
             print(pupko.L)
-            pupko.L[root,]
-            loglik <- -sum(log(liks[root,]))
+            loglik <- -sum(log(pupko.L[root,]))
             print(loglik)
             return(loglik)
         }else{
