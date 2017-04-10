@@ -5,8 +5,9 @@
 \description{Fits a model of evolution for categorical traits, allowing for multi-state characters, polymorphisms, missing data, and incompletely resolved trees}
 \usage{
 rayDISC(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"),
-node.states=c("joint", "marginal", "scaled"), state.recon=c("subsequently"), p=NULL, root.p=NULL, ip=NULL,
-lb=0, ub=100, verbose=TRUE, diagn=FALSE)
+node.states=c("joint", "marginal", "scaled"), state.recon=c("subsequently"), 
+lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, verbose=TRUE, 
+diagn=FALSE)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -17,6 +18,7 @@ lb=0, ub=100, verbose=TRUE, diagn=FALSE)
 \item{model}{specifies the underlying model.}
 \item{node.states}{method used to calculate ancestral states at internal nodes.}
 \item{state.recon}{whether to reconstruct states jointly with the rates or subsequent to the rates being optimized.}
+\item{lewis.asc.bias}{a logical indicating whether likelihood should account for inherent bias of only choosing variant characters. The default is \code{FALSE}.}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood.}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}

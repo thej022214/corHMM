@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, , get.likelihood=FALSE){
 	
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
 	phy$edge.length[phy$edge.length<=1e-5]=1e-5
@@ -255,7 +255,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
-	if(method=="joint"){
+    
+    if(is.null(phy$node.label)){
+        tip.state.vector <- rep(NA, Ntip(phy))
+        known.state.vector <- phy$node.label
+        known.state.vector <- c(tip.state.vector, known.state.vector)
+    }
+
+    if(method=="joint"){
 		lik.states<-numeric(nb.tip + nb.node)
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
 		for (i  in seq(from = 1, length.out = nb.node)) {
@@ -279,56 +286,66 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					v = v * liks[desNodes[desIndex],]
 					for(i in 1:dim(Pij)[1]){
 						L <- Pij[i,] * v
-						liks[desNodes[desIndex],i] <- max(L)
-						comp[desNodes[desIndex],i] <- which.max(L==max(L))[1]
-					}					
+                        if(is.na(known.state.vector[focal])){
+                            liks[desNodes[desIndex],i] <- max(L)
+                            comp[desNodes[desIndex],i] <- which.max(L==max(L))[1]
+                        }else{
+                            liks[desNodes[desIndex],i] <- L[known.state.vector[focal]]
+                            comp[desNodes[desIndex],i] <- known.state.vector[focal]
+                        }
+					}
 				}
 			}
 			#Collects t_z, or the branch subtending focal:
-			tz<-phy$edge.length[which(phy$edge[,2] == focal)]	
+			tz <- phy$edge.length[which(phy$edge[,2] == focal)]
 			if(length(tz)==0){
-				#The focal node is the root, calculate P_k:
-				root.state=1
-				for (desIndex in sequence(length(desRows))){
-					#This is the basic marginal calculation:
-					root.state <- root.state * liks[desNodes[desIndex],]
-				}
-                equil.root <- NULL
-                for(i in 1:ncol(Q)){
-                    posrows <- which(Q[,i] >= 0)
-                    rowsum <- sum(Q[posrows,i])
-                    poscols <- which(Q[i,] >= 0)
-                    colsum <- sum(Q[i,poscols])
-                    equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+                #The focal node is the root, calculate P_k:
+                root.state=1
+                for (desIndex in sequence(length(desRows))){
+                    #This is the basic marginal calculation:
+                    root.state <- root.state * liks[desNodes[desIndex],]
                 }
-                if (is.null(root.p)){
-                    flat.root = equil.root
-                    k.rates <- 1/length(which(!is.na(equil.root)))
-                    flat.root[!is.na(flat.root)] = k.rates
-                    flat.root[is.na(flat.root)] = 0
-                    liks[focal, ] <- root.state
-                }
-                else{
-                    if(is.character(root.p)){
-                        # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
-                        if(root.p == "yang"){
-                            Q.tmp <- Q
-                            diag(Q.tmp) = 0
-                            root.p = colSums(Q.tmp) / sum(Q.tmp)
+                if(is.na(known.states.focal)){
+                    equil.root <- NULL
+                    for(i in 1:ncol(Q)){
+                        posrows <- which(Q[,i] >= 0)
+                        rowsum <- sum(Q[posrows,i])
+                        poscols <- which(Q[i,] >= 0)
+                        colsum <- sum(Q[i,poscols])
+                        equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+                    }
+                    if (is.null(root.p)){
+                        flat.root = equil.root
+                        k.rates <- 1/length(which(!is.na(equil.root)))
+                        flat.root[!is.na(flat.root)] = k.rates
+                        flat.root[is.na(flat.root)] = 0
+                        liks[focal, ] <- root.state
+                    }
+                    else{
+                        if(is.character(root.p)){
+                            # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+                            if(root.p == "yang"){
+                                Q.tmp <- Q
+                                diag(Q.tmp) = 0
+                                root.p = colSums(Q.tmp) / sum(Q.tmp)
+                                liks[focal, ] <- root.state * root.p
+                            }else{
+                                # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                                root.p = root.state / sum(root.state)
+                                liks[focal,] <- root.state * root.p
+                            }
+                        }
+                        # root.p!==NULL will fix root probabilities based on user supplied vector:
+                        else{
                             liks[focal, ] <- root.state * root.p
-                        }else{
-                            # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-                            root.p = root.state / sum(root.state)
-                            liks[focal,] <- root.state * root.p
                         }
                     }
-                    # root.p!==NULL will fix root probabilities based on user supplied vector:
-                    else{
-                        liks[focal, ] <- root.state * root.p
-                    }
+                }else{
+                    root.p = rep(0, dim(Q)[1])
+                    root.p[known.state.vector[focal]] <- 1
+                    liks[focal, ] <- root.state * root.p
                 }
-
-			}
+            }
 			#All other internal nodes, except the root:
 			else{
 				#Calculates P_ij(t_z):
@@ -345,33 +362,47 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				}
 				for(i in 1:dim(Pij)[1]){
 					L <- Pij[i,] * v
-					liks[focal,i] <- max(L)
-					comp[focal,i] <- which.max(L==max(L))[1]
+                    if(is.na(known.state.vector[focal])){
+                        liks[focal,i] <- max(L)
+                        comp[focal,i] <- which.max(L==max(L))[1]
+                    }else{
+                        liks[focal,i] <- L[known.state.vector[focal]]
+                        comp[focal,i] <- known.state.vector[focal]
+                    }
 				}
-				sum.tot <- sum(liks[focal,])
-				liks[focal,]=liks[focal,]/sum.tot
 				
-#				if(sum(liks[focal,])<1e-200){
+                #sum.tot <- sum(liks[focal,])
+                #liks[focal,]=liks[focal,]
+				
+				if(sum(liks[focal,])<1e-200){
 					#Kicks in arbitrary precision calculations: 
-#					library(Rmpfr)
-#					liks <- mpfr(liks, 15)	
-#				}
+					library(Rmpfr)
+					liks <- mpfr(liks, 15)
+				}
 			}
 		}
-		root <- nb.tip + 1L
-        lik.states[root] <- which(liks[root,]==max(liks[root,]))
-		N <- dim(phy$edge)[1]
-		for(i in N:1){
-			anc <- phy$edge[i,1]
-			des <- phy$edge[i,2]
-			lik.states[des] <- comp[des,lik.states[anc]]
-		}
-		#For later use:
-		#logl <- as.numeric(log(liks[root,lik.states[root]]))
-		#Outputs likeliest tip states
-		obj$lik.tip.states <- lik.states[TIPS]
-		#Outputs likeliest node states
-		obj$lik.anc.states <- lik.states[-TIPS]
+        if(get.likelihood == TRUE){
+            loglik <- -sum(log(liks[root,]))
+            return(loglik)
+        }else{
+            root <- nb.tip + 1L
+            if(is.na(known.state.vector[root])){
+                lik.states[root] <- which(liks[root,] == max(liks[root,]))
+            }else{
+                lik.states[root] <- known.state.vector[root]
+            }
+            N <- dim(phy$edge)[1]
+            for(i in N:1){
+                anc <- phy$edge[i,1]
+                des <- phy$edge[i,2]
+                lik.states[des] <- comp[des,lik.states[anc]]
+            }
+            #Outputs likeliest tip states
+            obj$lik.tip.states <- lik.states[TIPS]
+            #Outputs likeliest node states
+            obj$lik.anc.states <- lik.states[-TIPS]
+            return(obj)
+        }
 	}
 	if(method=="marginal"){
 		#A temporary likelihood matrix so that the original does not get written over:
@@ -491,12 +522,19 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		root.final <- liks.down[root,] * root.p
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
-		#Reports the probabilities for all internal nodes as well as tips:
-		#Outputs likeliest tip states
-        obj$lik.tip.states <- liks.final[TIPS,]
-		#Outputs likeliest node states
-		obj$lik.anc.states <- liks.final[-TIPS,]
-	}	
+		
+        if(get.likelihood == TRUE){
+############NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
+            loglik <- as.numeric(log(liks[root,lik.states[root]]))
+            return(loglik)
+        }else{
+            #Outputs likeliest tip states
+            obj$lik.tip.states <- lik.states[TIPS,]
+            #Outputs likeliest node states
+            obj$lik.anc.states <- lik.states[-TIPS,]
+            return(obj)
+        }
+	}
 	
 	if(method=="scaled"){
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
@@ -556,8 +594,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		obj$lik.tip.states <- liks[TIPS,]
 		#Outputs likeliest node states
 		obj$lik.anc.states <- liks[-TIPS,]
+        return(obj)
 	}	
-	obj
 }
 
 
