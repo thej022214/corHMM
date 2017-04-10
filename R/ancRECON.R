@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, , get.likelihood=FALSE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE){
 	
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
 	phy$edge.length[phy$edge.length<=1e-5]=1e-5
