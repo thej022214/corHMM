@@ -1,3 +1,4 @@
+
 #EVOLUTION OF DISCRETE TRAITS, ALLOWING POLYMORPHIC AND MISSING STATES
 library(expm)
 library(phangorn)
@@ -108,9 +109,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		out<-NULL
 		out$solution<-p
         if(state.recon=="subsequently") {
-            out$objective<-dev.raydisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+            out$objective <- dev.raydisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
         } else {
-            out$objective<-ancRECON(phy=phy, data=data, est.pars=p, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
+            out$objective <- ancRECON(phy=phy, data=data, p=p, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, get.likelihood=TRUE)
         }
 		loglik <- -out$objective
 		est.pars<-out$solution
@@ -138,7 +139,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			}
 			lower.init = rep(lb, model.set.init$np)
 			upper.init = rep(ub, model.set.init$np)
-			init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
+			init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             if(verbose == TRUE){
                 cat("Finished. Beginning thorough search...", "\n")
             }
@@ -347,7 +348,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             if(lewis.asc.bias == TRUE){
                 loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(flat.root)+log(liks[root,])))))
                 loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(flat.root)+log(liks.dummy[root,])))))
-                loglik <- loglik.num  - log(1 - exp(loglik.denom))
+                loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
             }else{
                 loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
             }
@@ -362,7 +363,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                     if(lewis.asc.bias == TRUE){
                         loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(equil.root)+log(liks[root,])))))
                         loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(equil.root)+log(liks.dummy[root,])))))
-                        loglik <- loglik.num  - log(1 - exp(loglik.denom))
+                        loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
                     }else{
                         loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(equil.root)+log(liks[root,])))))
                     }
@@ -376,7 +377,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                     if(lewis.asc.bias == TRUE){
                         loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                         loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
-                        loglik <- loglik.num  - log(1 - exp(loglik.denom))
+                        loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
                     }else{
                         loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                     }
@@ -388,7 +389,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                 if(lewis.asc.bias == TRUE){
                     loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                     loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
-                    loglik <- loglik.num  - log(1 - exp(loglik.denom))
+                    loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
                 }else{
                     loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                 }

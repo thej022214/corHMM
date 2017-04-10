@@ -256,13 +256,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
     
-    if(is.null(phy$node.label)){
-        tip.state.vector <- rep(NA, Ntip(phy))
-        known.state.vector <- phy$node.label
-        known.state.vector <- c(tip.state.vector, known.state.vector)
-    }
-
     if(method=="joint"){
+        if(!is.null(phy$node.label)){
+            tip.state.vector <- rep(NA, Ntip(phy))
+            known.state.vector <- phy$node.label
+            known.state.vector <- c(tip.state.vector, known.state.vector)
+        }
+        print(known.state.vector)
 		lik.states<-numeric(nb.tip + nb.node)
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
 		for (i  in seq(from = 1, length.out = nb.node)) {
@@ -286,11 +286,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					v = v * liks[desNodes[desIndex],]
 					for(i in 1:dim(Pij)[1]){
 						L <- Pij[i,] * v
+                        print(L)
                         if(is.na(known.state.vector[focal])){
                             liks[desNodes[desIndex],i] <- max(L)
                             comp[desNodes[desIndex],i] <- which.max(L==max(L))[1]
                         }else{
                             liks[desNodes[desIndex],i] <- L[known.state.vector[focal]]
+                            print(liks[desNodes[desIndex],i])
                             comp[desNodes[desIndex],i] <- known.state.vector[focal]
                         }
 					}
@@ -305,7 +307,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     #This is the basic marginal calculation:
                     root.state <- root.state * liks[desNodes[desIndex],]
                 }
-                if(is.na(known.states.focal)){
+                if(is.na(known.state.vector[focal])){
                     equil.root <- NULL
                     for(i in 1:ncol(Q)){
                         posrows <- which(Q[,i] >= 0)
@@ -373,16 +375,18 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				
                 #sum.tot <- sum(liks[focal,])
                 #liks[focal,]=liks[focal,]
-				
-				if(sum(liks[focal,])<1e-200){
+				print("here")
+                print(liks[focal,])
+                #if(sum(liks[focal,])<1e-200){
 					#Kicks in arbitrary precision calculations: 
-					library(Rmpfr)
-					liks <- mpfr(liks, 15)
-				}
+                    #	liks <- mpfr(liks, 15)
+                    #}
 			}
 		}
         if(get.likelihood == TRUE){
+            liks[root,]
             loglik <- -sum(log(liks[root,]))
+            print(loglik)
             return(loglik)
         }else{
             root <- nb.tip + 1L
@@ -529,9 +533,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             return(loglik)
         }else{
             #Outputs likeliest tip states
-            obj$lik.tip.states <- lik.states[TIPS,]
+            obj$lik.tip.states <- liks.final[TIPS,]
             #Outputs likeliest node states
-            obj$lik.anc.states <- lik.states[-TIPS,]
+            obj$lik.anc.states <- liks.final[-TIPS,]
             return(obj)
         }
 	}
