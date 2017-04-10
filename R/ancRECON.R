@@ -394,14 +394,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				for (desIndex in sequence(length(desRows))){
 					v = v * liks[desNodes[desIndex],]
 				}
-				for(i in 1:dim(Pij)[1]){
-					L <- Pij[i,] * v
+				for(starting.state in 1:dim(Pij)[1]){
+					L <- Pij[starting.state,] * v
                     if(is.na(known.state.vector[focal])){
-                        liks[focal,i] <- max(L)
-                        pupko.C[focal,i] <- which.max(L==max(L))[1]
+                        pupko.L[focal,starting.state] <- max(L)
+                        pupko.C[focal,starting.state] <- which.max(L==max(L))[1]
                     }else{
-                        liks[focal,i] <- L[known.state.vector[focal]]
-                        pupko.C[focal,i] <- known.state.vector[focal]
+                        pupko.L[focal,starting.state] <- L[known.state.vector[focal]]
+                        pupko.C[focal,starting.state] <- known.state.vector[focal]
                     }
 				}
 
