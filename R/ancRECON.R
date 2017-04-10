@@ -3,10 +3,10 @@
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE){
-	
+
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
 	phy$edge.length[phy$edge.length<=1e-5]=1e-5
-	
+
 	if(hrm==FALSE){
 		if(ntraits==1){
 			data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
@@ -42,11 +42,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             drop.states <- col.sums[which(col.sums == row.sums)]
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 		}
-		#Makes a matrix of tip states and empty cells corresponding 
-		#to ancestral nodes during the optimization process.	
+		#Makes a matrix of tip states and empty cells corresponding
+		#to ancestral nodes during the optimization process.
 		x <- data.sort[,1]
 		TIPS <- 1:nb.tip
-		
+
 		for(i in 1:nb.tip){
 			if(is.na(x[i])){x[i]=2}
 		}
@@ -120,7 +120,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			obj <- NULL
 			nb.tip<-length(phy$tip.label)
 			nb.node <- phy$Nnode
-			
+
 			if(is.null(rate.mat)){
 				rate<-rate.mat.maker(hrm=FALSE,ntraits=ntraits,nstates=nl,model=model)
 				rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
@@ -129,13 +129,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				rate<-rate.mat
 				rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 			}
-			
+
 			stateTable <- NULL # will hold 0s and 1s for likelihoods of each state at tip
 			for(column in 1:nl){
 				stateTable <- cbind(stateTable,factored[,column])
 			}
 			colnames(stateTable) <- colnames(factored)
-			
+
 			ancestral <- matrix(0,nb.node,nl) # all likelihoods at ancestral nodes will be 0
 			liks <- rbind(stateTable,ancestral) # combine tip likelihoods & ancestral likelihoods
 			rownames(liks) <- NULL
@@ -153,7 +153,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			}
 			x<-data.sort[,1]
 			y<-data.sort[,2]
-			
+
 			liks <- matrix(0, nb.tip + nb.node, nl^k)
 			TIPS <- 1:nb.tip
 			for(i in 1:nb.tip){
@@ -186,11 +186,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			else{
 				rate<-rate.mat
 				rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-			}			
+			}
 			x<-data.sort[,1]
 			y<-data.sort[,2]
 			z<-data.sort[,3]
-			
+
 			liks <- matrix(0, nb.tip + nb.node, nl^k)
 			TIPS <- 1:nb.tip
 			for(i in 1:nb.tip){
@@ -237,14 +237,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				#If y and z is ambiguous but x is not:
 				if(x[i]==0 & y[i]==2 & z[i]==2){liks[i,c(1,3,4,7)]=1}
 				if(x[i]==1 & y[i]==2 & z[i]==2){liks[i,c(2,5,6,8)]=1}
-				#All states are ambiguous:			
+				#All states are ambiguous:
 				if(x[i]==2 & y[i]==2 & z[i]==2){liks[i,1:8]=1}
 			}
 		}
 		Q <- matrix(0, nl^k, nl^k)
 		tranQ <- matrix(0, nl^k, nl^k)
 	}
-	
+
     if(length(drop.states > 0)){
         liks[,drop.states] <- 0
     }
@@ -255,7 +255,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
-    
+
     if(method=="joint"){
         if(!is.null(phy$node.label)){
             tip.state.vector <- rep(NA, Ntip(phy))
@@ -285,8 +285,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
 					v = v * liks[desNodes[desIndex],]
 					for(i in 1:dim(Pij)[1]){
+						print(Pij)
+						print("v is ")
+						print(v)
 						L <- Pij[i,] * v
-                        print(L)
+                        print(log(L))
                         if(is.na(known.state.vector[focal])){
                             liks[desNodes[desIndex],i] <- max(L)
                             comp[desNodes[desIndex],i] <- which.max(L==max(L))[1]
@@ -297,6 +300,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                         }
 					}
 				}
+				stop("lookie")
 			}
 			#Collects t_z, or the branch subtending focal:
 			tz <- phy$edge.length[which(phy$edge[,2] == focal)]
@@ -372,13 +376,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                         comp[focal,i] <- known.state.vector[focal]
                     }
 				}
-				
+
                 #sum.tot <- sum(liks[focal,])
                 #liks[focal,]=liks[focal,]
 				print("here")
                 print(liks[focal,])
                 #if(sum(liks[focal,])<1e-200){
-					#Kicks in arbitrary precision calculations: 
+					#Kicks in arbitrary precision calculations:
                     #	liks <- mpfr(liks, 15)
                     #}
 			}
@@ -489,12 +493,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				if(motherNode!=root){
 					v <- expm(tranQ * phy$edge.length[which(phy$edge[,2]==motherNode)], method=c("Ward77")) %*% liks.up[motherNode,]
 				}
-				#If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency. 
+				#If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
 				#But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
 				else{
 					v <- root.p
 				}
-				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy. 
+				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
 				for (sisterIndex in sequence(length(sisterRows))){
 					v <- v*expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
@@ -507,17 +511,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		liks.final<-liks
 		comp <- numeric(nb.tip + nb.node)
 		#In this final pass, root is never encountered. But its OK, because root likelihoods are set after the loop:
-		for (i in seq(from = 1, length.out = nb.node-1)) { 
+		for (i in seq(from = 1, length.out = nb.node-1)) {
 			#the ancestral node at row i is called focal
 			focal <- anc[i]
 			focalRows<-which(phy$edge[,2]==focal)
-			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of 
+			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
 			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
-		
+
         #Now get the states for the tips (will do, not available for general use):
         liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, charnum=charnum, ntraits=ntraits, model=model, root.p=root.p)
 
@@ -526,7 +530,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		root.final <- liks.down[root,] * root.p
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
-		
+
         if(get.likelihood == TRUE){
 ############NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
             loglik <- as.numeric(log(liks[root,lik.states[root]]))
@@ -539,7 +543,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             return(obj)
         }
 	}
-	
+
 	if(method=="scaled"){
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
         root <- nb.tip + 1L
@@ -599,7 +603,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		#Outputs likeliest node states
 		obj$lik.anc.states <- liks[-TIPS,]
         return(obj)
-	}	
+	}
 }
 
 
@@ -609,7 +613,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
 
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
-    
+
     if(is.null(rate.cat)){
         if(ntraits<2){
             data.for.likelihood.function <- rate.cat.set.rayDISC(phy=phy, data=data, model=model, charnum=charnum)
@@ -619,7 +623,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
     }else{
         data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data=data, rate.cat=rate.cat)
     }
-    
+
     if(!is.null(rate.mat)){
         rate <- rate.mat
         data.for.likelihood.function$np <- max(rate, na.rm=TRUE)
@@ -630,7 +634,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
         drop.states <- col.sums[which(col.sums == row.sums)]
-        
+
         if(length(drop.states > 0)){
             data.for.likelihood.function$liks[,drop.states] <- 0
         }
@@ -653,13 +657,8 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         marginal.probs.rescaled = marginal.probs.tmp[nstates] - best.probs
         marginal.probs[taxon.index,nstates] = exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
     }
-    
+
     tip.states <- marginal.probs[1:nb.tip,]
     rownames(tip.states) <- phy$tip.label
     return(tip.states)
 }
-
-
-
-
-
