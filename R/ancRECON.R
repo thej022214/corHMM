@@ -284,6 +284,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
 					v = v * liks[desNodes[desIndex],]
+					likelihoods.each.starting.state <- rep(NA, nrow(Pij))
 					for(i in 1:dim(Pij)[1]){
 						print(Pij)
 						print("v is ")
@@ -292,16 +293,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						global.v <<- v
 						global.Pij <<- Pij
 						L <- Pij[i,] * v
-                        print(log(L))
-                        if(is.na(known.state.vector[focal])){
-                            liks[desNodes[desIndex],i] <- max(L)
-                            comp[desNodes[desIndex],i] <- which.max(L==max(L))[1]
-                        }else{
-                            liks[desNodes[desIndex],i] <- L[known.state.vector[focal]]
-                            print(liks[desNodes[desIndex],i])
-                            comp[desNodes[desIndex],i] <- known.state.vector[focal]
-                        }
+						likelihoods.each.starting.state[i] <- L
+
 					}
+					if(is.na(known.state.vector[focal])){
+							liks[desNodes[desIndex],i] <- max(likelihoods.each.starting.state)
+							comp[desNodes[desIndex],i] <- which.max(likelihoods.each.starting.state==max(likelihoods.each.starting.state))[1]
+					}else{
+							liks[desNodes[desIndex],i] <- likelihoods.each.starting.state[known.state.vector[focal]]
+							comp[desNodes[desIndex],i] <- known.state.vector[focal]
+					}
+					print(liks[desNodes[desIndex],i])
 				}
 				stop("lookie")
 			}
