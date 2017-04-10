@@ -312,12 +312,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
 					v = v * liks[desNodes[desIndex],]
 					for(starting.state in 1:dim(Pij)[1]){
-						print(Pij)
-						print("v is ")
-						print(v)
-						print(str(v))
-						global.v <<- v
-						global.Pij <<- Pij
 						L <- Pij[starting.state,] * v
 						#liks: rows are taxa + internal nodes, cols are # states
 						if(is.na(known.state.vector[focal])){
@@ -416,6 +410,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			}
 		}
         if(get.likelihood == TRUE){
+            print(pupko.L)
             pupko.L[root,]
             loglik <- -sum(log(liks[root,]))
             print(loglik)
