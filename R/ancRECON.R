@@ -2,31 +2,31 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-
-#assumes data already expanded properly: 00 -> state 1, 11-> state 3, etc, for multivariate. Assumes states start at 1
-ancRECON2 <- function(p, phy, data, method=c("joint", "marginal", "scaled"), rate.cat=1, charnum=1, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, num.states=NULL){
-	data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
-	data.sort<-data.sort[phy$tip.label,]
-	nb.tip <- ape::Ntip(phy)
-	nb.node <- ape::Nnode(phy)
-	if(is.null(num.states)) {
-		num.states <- length(unique(data.sort))
-#		state.mapping <- sort(unique(data.sort))
-#		Could renumber here. But watch the matrix
-	}
-	full.state.names <- apply(expand.grid("(",sequence(num.states), ",R", sequence(rate.cat), ")"), 1, paste0, collapse="")
-	observed.state.names <- rep(sequence(num.states), rate.cat)
-	hidden.state.categories <- rep(sequence(rate.cat), num.states)
-	if(is.null(rate.mat)){
-		rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
-		rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-		drop.states = NULL
-	}
-	tipward.Prob <- matrix(0, nrow=nb.tip + nb.node, ncol=length(full.state.names)) #is arranged by node number, starting at 1
-	for (tip.index in sequence(nb.tip)) {
-		for (
-	}
-}
+# 
+# #assumes data already expanded properly: 00 -> state 1, 11-> state 3, etc, for multivariate. Assumes states start at 1
+# ancRECON2 <- function(p, phy, data, method=c("joint", "marginal", "scaled"), rate.cat=1, charnum=1, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, num.states=NULL){
+# 	data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
+# 	data.sort<-data.sort[phy$tip.label,]
+# 	nb.tip <- ape::Ntip(phy)
+# 	nb.node <- ape::Nnode(phy)
+# 	if(is.null(num.states)) {
+# 		num.states <- length(unique(data.sort))
+# #		state.mapping <- sort(unique(data.sort))
+# #		Could renumber here. But watch the matrix
+# 	}
+# 	full.state.names <- apply(expand.grid("(",sequence(num.states), ",R", sequence(rate.cat), ")"), 1, paste0, collapse="")
+# 	observed.state.names <- rep(sequence(num.states), rate.cat)
+# 	hidden.state.categories <- rep(sequence(rate.cat), num.states)
+# 	if(is.null(rate.mat)){
+# 		rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
+# 		rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
+# 		drop.states = NULL
+# 	}
+# 	tipward.Prob <- matrix(0, nrow=nb.tip + nb.node, ncol=length(full.state.names)) #is arranged by node number, starting at 1
+# 	for (tip.index in sequence(nb.tip)) {
+# 		for (
+# 	}
+# }
 
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE){
 
@@ -292,9 +292,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		lik.states<-numeric(nb.tip + nb.node)
 		pupko.L<-matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
 		pupko.C<-matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
-		for (tip.index in sequence(nb.tip)) {
-
-		}
 		for (i  in seq(from = 1, length.out = nb.node)) {
 			#The ancestral node at row i is called focal:
 			focal <- anc[i]
@@ -326,15 +323,16 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						likelihoods.each.starting.state[starting.state] <- L
 
 					}
+
 					#liks: rows are taxa + internal nodes, cols are # states
 					if(is.na(known.state.vector[focal])){
-							liks[desNodes[desIndex],i] <- max(likelihoods.each.starting.state)
-							pupko.c[desNodes[desIndex],i] <- which.max(likelihoods.each.starting.state==max(likelihoods.each.starting.state))[1]
+							pupko.L[desNodes[desIndex],starting.state] <- max(likelihoods.each.starting.state)
+							pupko.C[desNodes[desIndex],starting.state] <- which.max(likelihoods.each.starting.state==max(likelihoods.each.starting.state))[1]
 					}else{
-							liks[desNodes[desIndex],i] <- likelihoods.each.starting.state[known.state.vector[focal]]
-							pupko.c[desNodes[desIndex],i] <- known.state.vector[focal]
+							pupko.L[desNodes[desIndex],starting.state] <- likelihoods.each.starting.state[known.state.vector[focal]]
+							pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
 					}
-					print(liks[desNodes[desIndex],i])
+					print(liks[desNodes[desIndex],starting.state])
 				}
 				stop("lookie")
 			}
@@ -406,10 +404,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					L <- Pij[i,] * v
                     if(is.na(known.state.vector[focal])){
                         liks[focal,i] <- max(L)
-                        pupko.c[focal,i] <- which.max(L==max(L))[1]
+                        pupko.C[focal,i] <- which.max(L==max(L))[1]
                     }else{
                         liks[focal,i] <- L[known.state.vector[focal]]
-                        pupko.c[focal,i] <- known.state.vector[focal]
+                        pupko.C[focal,i] <- known.state.vector[focal]
                     }
 				}
 
@@ -439,7 +437,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             for(i in N:1){
                 anc <- phy$edge[i,1]
                 des <- phy$edge[i,2]
-                lik.states[des] <- pupko.c[des,lik.states[anc]]
+                lik.states[des] <- pupko.C[des,lik.states[anc]]
             }
             #Outputs likeliest tip states
             obj$lik.tip.states <- lik.states[TIPS]
