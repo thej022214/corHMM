@@ -288,6 +288,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						print(Pij)
 						print("v is ")
 						print(v)
+						print(str(v))
+						global.v <<- v
+						global.Pij <<- Pij
 						L <- Pij[i,] * v
                         print(log(L))
                         if(is.na(known.state.vector[focal])){
