@@ -314,11 +314,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     L <- t(Pij) %*% v
                     #liks: rows are taxa + internal nodes, cols are # states
                     if(is.na(known.state.vector[focal])){
-                        pupko.L[desNodes[desIndex],starting.state] <- sum(L)
-                        pupko.C[desNodes[desIndex],starting.state] <- which.max(L==max(L))[1]
+                        pupko.L[desNodes[desIndex],] <- sum(L)
+                        pupko.C[desNodes[desIndex],] <- which.max(L==max(L))[1]
                     }else{
-                        pupko.L[desNodes[desIndex],starting.state] <- L[known.state.vector[focal],]
-                        pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
+                        pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
+                        pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
                     }
 					
 					if(sum(pupko.L[desNodes[desIndex]])==0) {
