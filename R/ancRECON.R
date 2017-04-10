@@ -324,15 +324,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 								pupko.L[desNodes[desIndex],starting.state] <- sum(L)
 								pupko.C[desNodes[desIndex],starting.state] <- which.max(L==max(L))[1]
 						}else{
-								pupko.L[desNodes[desIndex],starting.state] <- likelihoods.each.starting.state[known.state.vector[focal]]
+								pupko.L[desNodes[desIndex],starting.state] <- L[known.state.vector[focal]]
 								pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
 						}
 					}
-
-
-					print(liks[desNodes[desIndex],starting.state])
 				}
-				stop("lookie")
 			}
 			#Collects t_z, or the branch subtending focal:
 			tz <- phy$edge.length[which(phy$edge[,2] == focal)]
