@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-# 
+#
 # #assumes data already expanded properly: 00 -> state 1, 11-> state 3, etc, for multivariate. Assumes states start at 1
 # ancRECON2 <- function(p, phy, data, method=c("joint", "marginal", "scaled"), rate.cat=1, charnum=1, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, num.states=NULL){
 # 	data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
@@ -311,7 +311,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
 					v = v * liks[desNodes[desIndex],]
-					likelihoods.each.starting.state <- rep(NA, nrow(Pij))
 					for(starting.state in 1:dim(Pij)[1]){
 						print(Pij)
 						print("v is ")
@@ -320,18 +319,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						global.v <<- v
 						global.Pij <<- Pij
 						L <- Pij[starting.state,] * v
-						likelihoods.each.starting.state[starting.state] <- L
-
+						#liks: rows are taxa + internal nodes, cols are # states
+						if(is.na(known.state.vector[focal])){
+								pupko.L[desNodes[desIndex],starting.state] <- sum(L)
+								pupko.C[desNodes[desIndex],starting.state] <- which.max(L==max(L))[1]
+						}else{
+								pupko.L[desNodes[desIndex],starting.state] <- likelihoods.each.starting.state[known.state.vector[focal]]
+								pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
+						}
 					}
 
-					#liks: rows are taxa + internal nodes, cols are # states
-					if(is.na(known.state.vector[focal])){
-							pupko.L[desNodes[desIndex],starting.state] <- max(likelihoods.each.starting.state)
-							pupko.C[desNodes[desIndex],starting.state] <- which.max(likelihoods.each.starting.state==max(likelihoods.each.starting.state))[1]
-					}else{
-							pupko.L[desNodes[desIndex],starting.state] <- likelihoods.each.starting.state[known.state.vector[focal]]
-							pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
-					}
+
 					print(liks[desNodes[desIndex],starting.state])
 				}
 				stop("lookie")
