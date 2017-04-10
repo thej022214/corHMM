@@ -311,17 +311,16 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
 					v = v * liks[desNodes[desIndex],]
-					for(starting.state in 1:dim(Pij)[1]){
-						L <- Pij[starting.state,] * v
-						#liks: rows are taxa + internal nodes, cols are # states
-						if(is.na(known.state.vector[focal])){
-								pupko.L[desNodes[desIndex],starting.state] <- sum(L)
-								pupko.C[desNodes[desIndex],starting.state] <- which.max(L==max(L))[1]
-						}else{
-								pupko.L[desNodes[desIndex],starting.state] <- L[known.state.vector[focal]]
-								pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
-						}
-					}
+                    L <- t(Pij) %*% v
+                    #liks: rows are taxa + internal nodes, cols are # states
+                    if(is.na(known.state.vector[focal])){
+                        pupko.L[desNodes[desIndex],starting.state] <- sum(L)
+                        pupko.C[desNodes[desIndex],starting.state] <- which.max(L==max(L))[1]
+                    }else{
+                        pupko.L[desNodes[desIndex],starting.state] <- L[known.state.vector[focal],]
+                        pupko.C[desNodes[desIndex],starting.state] <- known.state.vector[focal]
+                    }
+					
 					if(sum(pupko.L[desNodes[desIndex]])==0) {
 						print("L")
 						print(L)
