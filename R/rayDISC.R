@@ -4,7 +4,7 @@ library(phangorn)
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
-rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, lb=0,ub=100, verbose=TRUE, diagn=FALSE){
+rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), state.recon=c("subsequently"), p=NULL, root.p=NULL, ip=NULL, lb=0,ub=100, verbose=TRUE, diagn=FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -31,7 +31,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	phy$edge.length[phy$edge.length==0]=1e-5
 
 	# Checks to make sure phy & data have same taxa.  Fixes conflicts (see match.tree.data function).
-	matching <- match.tree.data(phy,data) 
+	matching <- match.tree.data(phy,data)
 	data <- matching$data
 	phy <- matching$phy
 
@@ -53,7 +53,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	}
 
 	workingData <- data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1]) # added character twice, because at least two columns are necessary
-	workingData <- workingData[phy$tip.label,] # this might have already been done by match.tree.data	
+	workingData <- workingData[phy$tip.label,] # this might have already been done by match.tree.data
 
 	counts <- table(workingData[,1])
 	levels <- levels(as.factor(workingData[,1]))
@@ -85,9 +85,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	obj <- NULL
 	nb.tip<-length(phy$tip.label)
 	nb.node <- phy$Nnode
-	
+
 	model=model
-	root.p=root.p	
+	root.p=root.p
 	ip=ip
 	model.set.final<-rate.cat.set.rayDISC(phy=phy,data=workingData,model=model,charnum=charnum)
     if(!is.null(rate.mat)){
@@ -107,7 +107,11 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         }
 		out<-NULL
 		out$solution<-p
+		if(state.recon=="subsequently") {
 		out$objective<-dev.raydisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
+		} else {
+			out$objective<-ancRecon(_____STUFF_____)
+		}
 		loglik <- -out$objective
 		est.pars<-out$solution
 	} else {
@@ -188,7 +192,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		solution.se <- matrix(0,dim(solution)[1],dim(solution)[1])
 		eigval<-NULL
-		eigvect<-NULL	
+		eigvect<-NULL
 	}
 
 	if((any(solution == lb,na.rm = TRUE) || any(solution == ub,na.rm = TRUE)) && (lb != 0 || ub != 100)){
@@ -202,7 +206,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             colnames(lik.anc$lik.anc.states) <- state.names
 		}
 	}
-	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit) 
+	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit)
 	if(!is.null(matching$message.data)){ # Some taxa were included in data matrix but not not used because they were not in the tree
 		obj$message.data <- matching$message.data
 		obj$data <- matching$data # Data used for analyses were different than submitted data; return this matrix
@@ -218,19 +222,19 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 
 #Print function
 print.raydisc<-function(x,...){
-	
+
 	ntips=Ntip(x$phy)
 	output<-data.frame(x$loglik,x$AIC,x$AICc,ntips, row.names="")
 	names(output)<-c("-lnL","AIC","AICc","ntax")
 	cat("\nFit\n")
 	print(output)
 	cat("\n")
-	
+
 	param.est<- x$solution
 	cat("Rates\n")
 	print(param.est)
 	cat("\n")
-	
+
 	if(any(x$eigval<0)){
 		index.matrix <- x$index.mat
 		#If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
@@ -434,7 +438,7 @@ match.tree.data <- function(phy, data){
 ##############
 #  findAmps  #
 ##############
-# A function to find positions of ampersands for separating different states.  
+# A function to find positions of ampersands for separating different states.
 # Will allow character state to be greater than one character long.
 findAmps <- function(string, charnum){
 	if(!is.character(string)) return(NULL)
@@ -525,5 +529,3 @@ factorData <- function(data,whichchar=1,charnum){
 	factored <- factored[,order(colnames(factored))]
 	return(factored)
 }
-
-
