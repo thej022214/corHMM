@@ -288,7 +288,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             known.state.vector <- phy$node.label
             known.state.vector <- c(tip.state.vector, NA, known.state.vector)
         }
-        print(known.state.vector)
 		lik.states<-numeric(nb.tip + nb.node)
 		pupko.L <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
 		pupko.C <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
@@ -310,15 +309,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						v <- c(rep(1, nl^k))
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
-					v = v * liks[desNodes[desIndex],]
+					v <- v * liks[desNodes[desIndex],]
                     L <- Pij %*% v
                     #liks: rows are taxa + internal nodes, cols are # states
                     if(is.na(known.state.vector[focal])){
                         pupko.L[desNodes[desIndex],] <- sum(L)
                         pupko.C[desNodes[desIndex],] <- which.max(L==max(L))[1]
                     }else{
-                        print(paste("L", L))
-                        print(L)
                         pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
                         pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
                     }
@@ -334,7 +331,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     root.state <- root.state * pupko.L[desNodes[desIndex],]
                 }
                 if(is.na(known.state.vector[focal])){
-                    print("we made it to the right part")
                     equil.root <- NULL
                     for(i in 1:ncol(Q)){
                         posrows <- which(Q[,i] >= 0)
@@ -389,14 +385,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 					v<-c(rep(1, nl^k))
 				}
 				for (desIndex in sequence(length(desRows))){
-					print(paste("des.node", desNodes[desIndex]))
-                    print(liks[desNodes[desIndex],])
                     v = v * pupko.L[desNodes[desIndex],]
 				}
                 
                 L <- Pij %*% v
-                print(paste("focal", focal))
-                print(L)
                 if(is.na(known.state.vector[focal])){
                     pupko.L[focal,] <- max(L)
                     pupko.C[focal,] <- which.max(L==max(L))[1]
@@ -405,10 +397,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     pupko.C[focal,] <- known.state.vector[focal]
                 }
 
-                #sum.tot <- sum(liks[focal,])
-                #liks[focal,]=liks[focal,]
-				print("here")
-                print(pupko.L[focal,])
                 #if(sum(liks[focal,])<1e-200){
 					#Kicks in arbitrary precision calculations:
                     #	liks <- mpfr(liks, 15)
@@ -418,16 +406,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         root <- nb.tip + 1L
 
         if(get.likelihood == TRUE){
-            print(pupko.L)
-            pupko.L[root,]
-            print(root.p)
             loglik <- -log(sum(exp(log(root.p)+log(pupko.L[root,]))))
-            print(loglik)
             return(loglik)
         }else{
             root <- nb.tip + 1L
             if(is.na(known.state.vector[root])){
-                ###Issue -- right now the probabilities are all the same no matter what.
+                pupko.L[root,] <- log(root.p)+log(pupko.L[root,])
                 lik.states[root] <- which(pupko.L[root,] == max(pupko.L[root,]))[1]
             }else{
                 lik.states[root] <- known.state.vector[root]
