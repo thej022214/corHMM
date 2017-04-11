@@ -334,6 +334,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     root.state <- root.state * pupko.L[desNodes[desIndex],]
                 }
                 if(is.na(known.state.vector[focal])){
+                    print("we made it to the right part")
                     equil.root <- NULL
                     for(i in 1:ncol(Q)){
                         posrows <- which(Q[,i] >= 0)
@@ -347,6 +348,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                         k.rates <- 1/length(which(!is.na(equil.root)))
                         flat.root[!is.na(flat.root)] = k.rates
                         flat.root[is.na(flat.root)] = 0
+                        root.p = flat.root
                         pupko.L[focal, ] <- root.state
                     }
                     else{
@@ -356,22 +358,23 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                                 Q.tmp <- Q
                                 diag(Q.tmp) = 0
                                 root.p = colSums(Q.tmp) / sum(Q.tmp)
-                                pupko.L[focal, ] <- root.state * root.p
+                                pupko.L[focal, ] <- root.state
                             }else{
                                 # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                                 root.p = root.state / sum(root.state)
-                                pupko.L[focal,] <- root.state * root.p
+                                pupko.L[focal,] <- root.state
                             }
                         }
                         # root.p!==NULL will fix root probabilities based on user supplied vector:
                         else{
-                            pupko.L[focal, ] <- root.state * root.p
+                            root.p = root.p
+                            pupko.L[focal, ] <- root.state
                         }
                     }
                 }else{
                     root.p = rep(0, dim(Q)[1])
                     root.p[known.state.vector[focal]] <- 1
-                    pupko.L[focal, ] <- root.state * root.p
+                    pupko.L[focal, ] <- root.state
                 }
             }
 			#All other internal nodes, except the root:
@@ -418,7 +421,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             print(pupko.L)
             pupko.L[root,]
             print(root.p)
-            loglik <- -sum(log(pupko.L[root,]))
+            loglik <- -log(sum(exp(log(root.p)+log(pupko.L[root,]))))
             print(loglik)
             return(loglik)
         }else{

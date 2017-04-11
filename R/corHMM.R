@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM<-function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "marginal", "scaled"), optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=10, n.cores=NULL, sann.its=5000, diagn=FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "marginal", "scaled"), optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=10, n.cores=NULL, sann.its=5000, diagn=FALSE){
 	
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -513,6 +513,7 @@ print.corhmm<-function(x,...){
 #Generalized ace() function that allows analysis to be carried out when there are polytomies:
 dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	p = exp(p)
+    print(p)
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
@@ -525,7 +526,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
     
 	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)
-	
+	print(Q)
 	for (i  in seq(from = 1, length.out = nb.node)) {
 		#the ancestral node at row i is called focal
 		focal <- anc[i]
