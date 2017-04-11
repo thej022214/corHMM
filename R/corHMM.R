@@ -513,7 +513,6 @@ print.corhmm<-function(x,...){
 #Generalized ace() function that allows analysis to be carried out when there are polytomies:
 dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	p = exp(p)
-    print(p)
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip

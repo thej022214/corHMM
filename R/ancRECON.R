@@ -287,6 +287,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             tip.state.vector <- rep(NA, Ntip(phy))
             known.state.vector <- phy$node.label
             known.state.vector <- c(tip.state.vector, NA, known.state.vector)
+        }else{
+            tip.state.vector <- rep(NA, Ntip(phy))
+            known.state.vector <- rep(NA, Nnode(phy))
+            known.state.vector <- c(tip.state.vector, NA, known.state.vector)
         }
 		lik.states<-numeric(nb.tip + nb.node)
 		pupko.L <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
@@ -309,11 +313,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						v <- c(rep(1, nl^k))
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+                    Pij <- matrix(c(.7,.45,.3,.55), 2, 2)
 					v <- v * liks[desNodes[desIndex],]
                     L <- Pij %*% v
                     #liks: rows are taxa + internal nodes, cols are # states
                     if(is.na(known.state.vector[focal])){
-                        pupko.L[desNodes[desIndex],] <- sum(L)
+                        pupko.L[desNodes[desIndex],] <- max(L)
                         pupko.C[desNodes[desIndex],] <- which.max(L==max(L))[1]
                     }else{
                         pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
@@ -376,8 +381,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			#All other internal nodes, except the root:
 			else{
 				#Calculates P_ij(t_z):
-				Pij <- expm(Q * tz, method=c("Ward77"))
-				#Calculates L_z(i):
+                Pij <- expm(Q * tz, method=c("Ward77"))
+				Pij <- matrix(c(.7,.45,.3,.55), 2, 2)
+                #Calculates L_z(i):
 				if(hrm==TRUE){
 					v<-c(rep(1, k*rate.cat))
 				}
@@ -411,7 +417,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }else{
             root <- nb.tip + 1L
             if(is.na(known.state.vector[root])){
-                pupko.L[root,] <- log(root.p)+log(pupko.L[root,])
+                pupko.L[root,] <- log(c(.6,.4))+log(pupko.L[root,])
                 lik.states[root] <- which(pupko.L[root,] == max(pupko.L[root,]))[1]
             }else{
                 lik.states[root] <- known.state.vector[root]
@@ -422,6 +428,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 des <- phy$edge[i,2]
                 lik.states[des] <- pupko.C[des,lik.states[anc]]
             }
+            print(pupko.L)
             #Outputs likeliest tip states
             obj$lik.tip.states <- lik.states[TIPS]
             #Outputs likeliest node states
