@@ -403,10 +403,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     pupko.C[focal,] <- known.state.vector[focal]
                 }
 
-                #if(sum(liks[focal,])<1e-200){
-					#Kicks in arbitrary precision calculations:
-                    #	liks <- mpfr(liks, 15)
-                    #}
+                if(sum(pupko.L[focal,])<1e-200){
+                    cat("Kicking in arbitrary precision package Rmpfr due to very low probabilities.\n")
+                    #Kicks in arbitrary precision calculations:
+                    pupko.L <- mpfr(pupko.L, 15)
+                }
 			}
 		}
         root <- nb.tip + 1L
