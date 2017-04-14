@@ -5,7 +5,7 @@
 \usage{
 ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, 
 rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL,
-model=c("ER", "SYM", "ARD"), root.p=NULL)
+model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}

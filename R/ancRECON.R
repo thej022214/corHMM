@@ -2,32 +2,6 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-#
-# #assumes data already expanded properly: 00 -> state 1, 11-> state 3, etc, for multivariate. Assumes states start at 1
-# ancRECON2 <- function(p, phy, data, method=c("joint", "marginal", "scaled"), rate.cat=1, charnum=1, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, num.states=NULL){
-# 	data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
-# 	data.sort<-data.sort[phy$tip.label,]
-# 	nb.tip <- ape::Ntip(phy)
-# 	nb.node <- ape::Nnode(phy)
-# 	if(is.null(num.states)) {
-# 		num.states <- length(unique(data.sort))
-# #		state.mapping <- sort(unique(data.sort))
-# #		Could renumber here. But watch the matrix
-# 	}
-# 	full.state.names <- apply(expand.grid("(",sequence(num.states), ",R", sequence(rate.cat), ")"), 1, paste0, collapse="")
-# 	observed.state.names <- rep(sequence(num.states), rate.cat)
-# 	hidden.state.categories <- rep(sequence(rate.cat), num.states)
-# 	if(is.null(rate.mat)){
-# 		rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
-# 		rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-# 		drop.states = NULL
-# 	}
-# 	tipward.Prob <- matrix(0, nrow=nb.tip + nb.node, ncol=length(full.state.names)) #is arranged by node number, starting at 1
-# 	for (tip.index in sequence(nb.tip)) {
-# 		for (
-# 	}
-# }
-
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE){
 
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
@@ -642,10 +616,10 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         if(ntraits<2){
             data.for.likelihood.function <- rate.cat.set.rayDISC(phy=phy, data=data, model=model, charnum=charnum)
         }else{
-            data.for.likelihood.function <- rate.mat.set(phy=phy, data=data, ntraits=ntraits, model=model)
+            data.for.likelihood.function <- rate.mat.set(phy=phy, data.sort=data, ntraits=ntraits, model=model)
         }
     }else{
-        data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data=data, rate.cat=rate.cat)
+        data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data.sort=data, rate.cat=rate.cat)
     }
 
     if(!is.null(rate.mat)){
