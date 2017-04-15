@@ -344,7 +344,6 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
             flat.root[is.na(flat.root)] = 0
-            
             if(lewis.asc.bias == TRUE){
                 loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(flat.root)+log(liks[root,])))))
                 loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(flat.root)+log(liks.dummy[root,])))))
@@ -359,7 +358,6 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                 if(root.p == "yang"){
                     diag(Q) = 0
                     equil.root = colSums(Q) / sum(Q)
-                    
                     if(lewis.asc.bias == TRUE){
                         loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(equil.root)+log(liks[root,])))))
                         loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(equil.root)+log(liks.dummy[root,])))))
