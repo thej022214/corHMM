@@ -2,32 +2,6 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-#
-# #assumes data already expanded properly: 00 -> state 1, 11-> state 3, etc, for multivariate. Assumes states start at 1
-# ancRECON2 <- function(p, phy, data, method=c("joint", "marginal", "scaled"), rate.cat=1, charnum=1, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, num.states=NULL){
-# 	data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
-# 	data.sort<-data.sort[phy$tip.label,]
-# 	nb.tip <- ape::Ntip(phy)
-# 	nb.node <- ape::Nnode(phy)
-# 	if(is.null(num.states)) {
-# 		num.states <- length(unique(data.sort))
-# #		state.mapping <- sort(unique(data.sort))
-# #		Could renumber here. But watch the matrix
-# 	}
-# 	full.state.names <- apply(expand.grid("(",sequence(num.states), ",R", sequence(rate.cat), ")"), 1, paste0, collapse="")
-# 	observed.state.names <- rep(sequence(num.states), rate.cat)
-# 	hidden.state.categories <- rep(sequence(rate.cat), num.states)
-# 	if(is.null(rate.mat)){
-# 		rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
-# 		rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-# 		drop.states = NULL
-# 	}
-# 	tipward.Prob <- matrix(0, nrow=nb.tip + nb.node, ncol=length(full.state.names)) #is arranged by node number, starting at 1
-# 	for (tip.index in sequence(nb.tip)) {
-# 		for (
-# 	}
-# }
-
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE){
 
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
@@ -313,13 +287,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 						v <- c(rep(1, nl^k))
 					}
 					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
-                    Pij <- matrix(c(.7,.45,.3,.55), 2, 2)
+                    #Pij <- matrix(c(.7,.45,.3,.55), 2, 2)
 					v <- v * liks[desNodes[desIndex],]
                     L <- Pij %*% v
                     #liks: rows are taxa + internal nodes, cols are # states
                     if(is.na(known.state.vector[focal])){
-                        pupko.L[desNodes[desIndex],] <- max(L)
-                        pupko.C[desNodes[desIndex],] <- which.max(L==max(L))[1]
+                        pupko.L[desNodes[desIndex],] <- L
+                        pupko.C[desNodes[desIndex],] <- which.is.max(L==max(L))
                     }else{
                         pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
                         pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
@@ -382,7 +356,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			else{
 				#Calculates P_ij(t_z):
                 Pij <- expm(Q * tz, method=c("Ward77"))
-				Pij <- matrix(c(.7,.45,.3,.55), 2, 2)
+                #Pij <- matrix(c(.7,.45,.3,.55), 2, 2)
                 #Calculates L_z(i):
 				if(hrm==TRUE){
 					v<-c(rep(1, k*rate.cat))
@@ -393,20 +367,21 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				for (desIndex in sequence(length(desRows))){
                     v = v * pupko.L[desNodes[desIndex],]
 				}
-                
-                L <- Pij %*% v
+                L <- t(Pij) * v
                 if(is.na(known.state.vector[focal])){
-                    pupko.L[focal,] <- max(L)
-                    pupko.C[focal,] <- which.max(L==max(L))[1]
+                    max.L <- apply(L, 2, max)
+                    pupko.L[focal,] <- max.L
+                    pupko.C[focal,] <- apply(L, 2, which.is.max)
                 }else{
                     pupko.L[focal,] <- L[known.state.vector[focal],]
                     pupko.C[focal,] <- known.state.vector[focal]
                 }
 
-                #if(sum(liks[focal,])<1e-200){
-					#Kicks in arbitrary precision calculations:
-                    #	liks <- mpfr(liks, 15)
-                    #}
+                if(sum(pupko.L[focal,])<1e-200){
+                    cat("Kicking in arbitrary precision package Rmpfr due to very low probabilities.\n")
+                    #Kicks in arbitrary precision calculations:
+                    pupko.L <- mpfr(pupko.L, 15)
+                }
 			}
 		}
         root <- nb.tip + 1L
@@ -417,7 +392,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }else{
             root <- nb.tip + 1L
             if(is.na(known.state.vector[root])){
-                pupko.L[root,] <- log(c(.6,.4))+log(pupko.L[root,])
+                pupko.L[root,] <- log(root.p)+log(pupko.L[root,])
                 lik.states[root] <- which(pupko.L[root,] == max(pupko.L[root,]))[1]
             }else{
                 lik.states[root] <- known.state.vector[root]
@@ -428,7 +403,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 des <- phy$edge[i,2]
                 lik.states[des] <- pupko.C[des,lik.states[anc]]
             }
-            print(pupko.L)
             #Outputs likeliest tip states
             obj$lik.tip.states <- lik.states[TIPS]
             #Outputs likeliest node states
@@ -642,10 +616,10 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         if(ntraits<2){
             data.for.likelihood.function <- rate.cat.set.rayDISC(phy=phy, data=data, model=model, charnum=charnum)
         }else{
-            data.for.likelihood.function <- rate.mat.set(phy=phy, data=data, ntraits=ntraits, model=model)
+            data.for.likelihood.function <- rate.mat.set(phy=phy, data.sort=data, ntraits=ntraits, model=model)
         }
     }else{
-        data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data=data, rate.cat=rate.cat)
+        data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data.sort=data, rate.cat=rate.cat)
     }
 
     if(!is.null(rate.mat)){
