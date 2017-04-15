@@ -384,7 +384,6 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks[root,] / sum(liks[root,])
-                    
                     if(lewis.asc.bias == TRUE){
                         loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                         loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
@@ -392,7 +391,6 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                     }else{
                         loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                     }
-
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
