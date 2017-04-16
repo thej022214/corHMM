@@ -2,9 +2,24 @@ Package: corHMM
 Version: 1.21
 Date: 2017-4-10
 Title: Analysis of Binary Character Evolution
-Author: Jeremy M. Beaulieu <jbeaulieu@nimbios.org>, Jeffrey C. Oliver <jeffreycoliver@gmail.com>, Brian O'Meara <bomeara@utk.edu>
+Author: Jeremy M. Beaulieu <jbeaulieu@nimbios.org>, Jeffrey C. Oliver
+    <jeffreycoliver@gmail.com>, Brian O'Meara <bomeara@utk.edu>
 Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
-Depends: ape, nloptr, GenSA
-Imports: expm, numDeriv, corpcor, nnet, phangorn, parallel, Rmpfr
-Description: Fits a hidden rates model that allows different transition rate classes on different portions of a phylogeny by treating rate classes as hidden states in a Markov process and various other functions for evaluating models of binary character evolution.
+Depends:
+    ape,
+    nloptr,
+    GenSA
+Imports:
+    expm,
+    numDeriv,
+    corpcor,
+    nnet,
+    phangorn,
+    parallel,
+    Rmpfr
+Description: Fits a hidden rates model that allows different transition rate
+    classes on different portions of a phylogeny by treating rate classes as hidden
+    states in a Markov process and various other functions for evaluating models of
+    binary character evolution.
 License: GPL (>= 2)
+RoxygenNote: 5.0.1

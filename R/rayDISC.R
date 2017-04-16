@@ -1,7 +1,7 @@
 
 #EVOLUTION OF DISCRETE TRAITS, ALLOWING POLYMORPHIC AND MISSING STATES
-library(expm)
-library(phangorn)
+#library(expm)
+#library(phangorn)
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
@@ -28,7 +28,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		}
 	}
 
-    if(!state.recon == "sequential" & node.states == "marginal" | node.states == "scaled"){
+    if(!state.recon == "subsequently" & node.states == "marginal" | node.states == "scaled"){
         stop("Simultaneous estimation of rates and states using either marginal or scaled probabilities not yet implemented.", call.=FALSE)
     }
 
@@ -114,15 +114,21 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		out$solution<-p
         if(state.recon=="subsequently") {
             out$objective <- dev.raydisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+            loglik <- -out$objective
         } else {
-            out$objective <- ancRECON(phy=phy, data=data, p=p, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, get.likelihood=TRUE)
-            #Put lewis Ascertainment bit here:
-            #if(lewis.asc.bias == TRUE){
-                #PUT STUFF HERE
-            #}
-            ##################################
+            if(lewis.asc.bias == TRUE){
+                loglik.num <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+                phy.dummy <- phy
+                data.dummy <- cbind(phy$tip.label, 0)
+                phy.dummy$node.label <- rep(1, length(phy.dummy$node.label))
+                loglik.dummy <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+                loglik <- (loglik.num  - log(1 - exp(loglik.dummy)))
+                loglik <- out$objective
+            }else{
+                out$objective <- ancRECON(phy=phy, data=data, p=p, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, get.likelihood=TRUE)
+                loglik <- out$objective
+            }
         }
-		loglik <- -out$objective
 		est.pars<-out$solution
 	} else {
 		if(is.null(ip)){
@@ -174,7 +180,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
                 out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
             }
 			loglik <- -out$objective
-			est.pars<-out$solution
+			est.pars <- out$solution
 		}
 	}
 	#Starts the summarization process:
@@ -182,18 +188,26 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
     }
 	TIPS <- 1:nb.tip
-	lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
 	if(node.states == "marginal" || node.states == "scaled"){
+        lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
 		pr <- apply(lik.anc$lik.anc.states,1,which.max)
 		phy$node.label <- pr
 		tip.states <- lik.anc$lik.tip.states
 		#row.names(tip.states) <- phy$tip.label
 	}
-	if(node.states == "joint"){
-		phy$node.label <- lik.anc$lik.anc.states
-		tip.states <- lik.anc$lik.tip.states
-	}
-
+    if(!state.recon == "given"){
+        if(node.states == "joint"){
+            lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
+            phy$node.label <- lik.anc$lik.anc.states
+            tip.states <- lik.anc$lik.tip.states
+        }
+    }else{
+        lik.anc <- NULL
+        lik.anc$lik.anc.states <- phy$node.label
+        lik.anc$lik.tip.states <- data.sort
+        tip.states <- lik.anc$lik.tip.states
+    }
+    
     if(diagn==TRUE){
         if(verbose == TRUE){
             cat("Finished. Performing diagnostic tests.", "\n")
@@ -218,7 +232,6 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	}
 	rownames(solution) <- rownames(solution.se) <- state.names
 	colnames(solution) <- colnames(solution.se) <- state.names
-
 	if(is.character(node.states)){
 		if (node.states == "marginal" || node.states == "scaled"){
             colnames(lik.anc$lik.anc.states) <- state.names
@@ -273,12 +286,17 @@ print.raydisc<-function(x,...){
 
 
 dev.raydisc.rates.and.states <- function(p, phy, data, hrm, rate.cat, rate.mat, ntraits, method, model, charnum, root.p, lewis.asc.bias, get.likelihood) {
-    loglik <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
-    #put stuff here
-    #if(lewis.asc.bias == TRUE){
-    #
-    #}
-    return(loglik)
+    if(lewis.asc.bias == TRUE){
+        loglik.num <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+        phy.dummy <- phy
+        data.dummy <- cbind(phy$tip.label, 0)
+        phy.dummy$node.label <- rep(1, Nnode(phy.dummy))
+        loglik.dummy <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+        loglik <- (loglik.num  - log(1 - exp(loglik.dummy)))
+    }else{
+        loglik <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+    }
+    return(-loglik)
 }
 
 

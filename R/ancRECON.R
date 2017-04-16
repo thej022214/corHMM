@@ -387,7 +387,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         root <- nb.tip + 1L
 
         if(get.likelihood == TRUE){
-            loglik <- -log(sum(exp(log(root.p)+log(pupko.L[root,]))))
+            loglik <- log(sum(exp(log(root.p)+log(pupko.L[root,]))))
             return(loglik)
         }else{
             root <- nb.tip + 1L
