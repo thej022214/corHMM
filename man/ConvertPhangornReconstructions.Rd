@@ -12,7 +12,7 @@ ConvertPhangornReconstructions(x, site = 1, best = TRUE)
 \item{best}{A logical indicating whether the state that maximizes some function (likelihood, parsimony, etc.) is to be returned.}
 }
 \description{
-Converts a character reconstruction from phangorn into a vector
+Converts a character reconstruction from phangorn into a vector of tip and node states. Nodes where there are equal weights among states, ties are broken at random.
 }
 \details{
 Creates a vector that contains the best tips and node state from a phangorn reconstruction.
