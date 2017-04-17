@@ -32,6 +32,15 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         stop("Simultaneous estimation of rates and states using either marginal or scaled probabilities not yet implemented.", call.=FALSE)
     }
 
+    if(!state.recon == "subsequently"){
+        if(!is.null(phy$node.label)){
+            if(!is.na(phy$node.label[Ntip(phy)+1])){
+                #Checking that the root prior is not set twice.
+                root.p <- NULL
+            }
+        }
+    }
+
 	#Creates the data structure and orders the rows to match the tree
 	phy$edge.length[phy$edge.length==0]=1e-5
 
