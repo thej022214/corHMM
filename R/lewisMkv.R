@@ -174,7 +174,7 @@ LikelihoodCalculation <- function(phy, liks, Q, gamma.rate){
     root <- nb.tip + 1L
     # If any of the logs have NAs restart search:
     if(is.nan(sum(log(comp[-TIPS]))) || is.na(sum(log(comp[-TIPS])))){
-        return(10000000000)
+        return(1000000)
     }
     else{
         flat.root <- 1/dim(Q.scaled)[1]
@@ -182,7 +182,7 @@ LikelihoodCalculation <- function(phy, liks, Q, gamma.rate){
         loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(flat.root)+log(liks.dummy[root,])))))
         loglik <- loglik.num  - log(1 - exp(loglik.denom))
         if(is.infinite(loglik)){
-            return(10000000000)
+            return(1000000)
         }
     }
     return(-loglik)

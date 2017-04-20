@@ -4,8 +4,8 @@
 \description{Fits a model of correlated evolution between two or three binary traits}
 \usage{
 corDISC(phy,data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), 
-node.states=c("joint", "marginal", "scaled"), p=NULL, root.p=NULL, ip=NULL, 
-lb=0, ub=100, diagn=FALSE)
+node.states=c("joint", "marginal", "scaled"), lewis.asc.bias=FALSE, p=NULL, 
+root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -14,6 +14,7 @@ lb=0, ub=100, diagn=FALSE)
 \item{rate.mat}{a user-supplied rate matrix index of parameters to be optimized.}
 \item{model}{specifies the underlying model.} 
 \item{node.states}{method used to calculate ancestral states at internal nodes (see Details).}
+\item{lewis.asc.bias}{a logical indicating whether the ascertainment bias correction of Lewis et al. 2001 should be used. The default is \code{FALSE}.}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood.}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
@@ -37,6 +38,7 @@ We also note that scoring information that is missing for a species can be incor
 \item{$solution}{a matrix containing the maximum likelihood estimates of the transition rates.}
 \item{$solution.se}{a matrix containing the approximate standard errors of the transition rates. The standard error is calculated as the square root of the diagonal of the inverse of the Hessian matrix.}
 \item{$index.mat}{The indices of the parameters being estimated are returned. The numbers correspond to the row in the \code{eigvect} and can useful for identifying the parameters that are causing the objective function to be at a saddlepoint.}
+\item{$lewis.asc.bias}{The setting describing whether or not the Lewis ascertainment bias correction was used.}
 \item{$opts}{Internal settings of the likelihood search}
 \item{$data}{User-supplied dataset.}
 \item{$phy}{User-supplied tree.}
@@ -72,6 +74,8 @@ Felsenstein, J. 1981. A likelihood approach to character weighting and what it t
 Felsenstein J. 2004. Inferring phylogenies. Sunderland MA: Sinauer Associates.
 
 FitzJohn, R.G., W.P. Maddison, and S.P. Otto. 2009. Estimating trait-dependent speciation and extinction rates from incompletely resolved phylogenies. Systematic Biology 58:595-611.
+
+Lewis, P.O. 2001. A likelihood approach to estimating phylogeny from discrete morphological character data. Systematic Biology 50:913-925.
 
 Maddison, W.P., P.E. Midford, and S.P. Otto. 2007. Estimating a binary characters effect on speciation and extinction. Systematic Biology 56:701-710.
 

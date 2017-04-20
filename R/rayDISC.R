@@ -1,7 +1,8 @@
-
+#############################
 #EVOLUTION OF DISCRETE TRAITS, ALLOWING POLYMORPHIC AND MISSING STATES
 #library(expm)
 #library(phangorn)
+#############################
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
@@ -126,11 +127,11 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             loglik <- -out$objective
         } else {
             if(lewis.asc.bias == TRUE){
-                loglik.num <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+                loglik.num <- ancRECON(phy=phy, data=data, p=p,  hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, get.likelihood=TRUE)
                 phy.dummy <- phy
                 data.dummy <- cbind(phy$tip.label, 0)
                 phy.dummy$node.label <- rep(1, length(phy.dummy$node.label))
-                loglik.dummy <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+                loglik.dummy <- ancRECON(phy=phy, data=data, p=p, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, get.likelihood=TRUE)
                 loglik <- (loglik.num  - log(1 - exp(loglik.dummy)))
                 loglik <- out$objective
             }else{
@@ -213,7 +214,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
     }else{
         lik.anc <- NULL
         lik.anc$lik.anc.states <- phy$node.label
-        lik.anc$lik.tip.states <- data.sort
+        lik.anc$lik.tip.states <- workingData[,1]
         tip.states <- lik.anc$lik.tip.states
     }
     
@@ -246,7 +247,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             colnames(lik.anc$lik.anc.states) <- state.names
 		}
 	}
-	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit)
+	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, lewis.asc.bias=lewis.asc.bias, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit)
 	if(!is.null(matching$message.data)){ # Some taxa were included in data matrix but not not used because they were not in the tree
 		obj$message.data <- matching$message.data
 		obj$data <- matching$data # Data used for analyses were different than submitted data; return this matrix
