@@ -399,6 +399,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 	}
 	if (node.states == "none") {
 		lik.anc <- list(lik.tip.states=NA, lik.anc.states=NA)
+		phy$node.label <- NA
+		tip.states <- NA
 	}
 
 	cat("Finished. Performing diagnostic tests.", "\n")
