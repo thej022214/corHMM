@@ -310,8 +310,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 root.state=1
                 for (desIndex in sequence(length(desRows))){
                     #This is the basic marginal calculation:
+                    print(pupko.L[desNodes[desIndex],])
                     root.state <- root.state * pupko.L[desNodes[desIndex],]
                 }
+                print(root.state)
                 if(is.na(known.state.vector[focal])){
                     equil.root <- NULL
                     for(i in 1:ncol(Q)){

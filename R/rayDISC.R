@@ -445,6 +445,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 	loglik
 }
 
+
 rate.cat.set.rayDISC<-function(phy,data,model,charnum){
 	k <- 1
 	factored <- factorData(data, charnum=charnum)
@@ -477,6 +478,7 @@ rate.cat.set.rayDISC<-function(phy,data,model,charnum){
 
 	return(obj)
 }
+
 
 #########################
 #    match.tree.data    #
