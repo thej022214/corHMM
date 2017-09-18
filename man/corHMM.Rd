@@ -3,17 +3,17 @@
 \title{Hidden Rates Model}
 \description{Estimates hidden rates underlying the evolution of a binary character}
 \usage{
-corHMM(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "marginal","scaled"), 
-optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=10, n.cores=NULL, 
+corHMM(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "marginal","scaled", "none"),
+optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=10, n.cores=NULL,
 sann.its=5000, diagn=FALSE)
-}       
+}
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
 \item{data}{a data matrix containing species information (see Details).}
-\item{rate.cat}{specifies the number of rate categories in the HRM.} 
+\item{rate.cat}{specifies the number of rate categories in the HRM.}
 \item{rate.mat}{a user-supplied rate matrix index of parameters to be optimized.}
 \item{node.states}{method used to calculate ancestral states at internal nodes (see Details).}
-\item{optim.method}{method used to perform optimization. The default is \code{subplex}, but a user can also specify \code{twoStep} is a two step process which begins with a stochastic simulated annealing search, followed by a subplex round to finish the search.} 
+\item{optim.method}{method used to perform optimization. The default is \code{subplex}, but a user can also specify \code{twoStep} is a two step process which begins with a stochastic simulated annealing search, followed by a subplex round to finish the search.}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood.}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
@@ -25,9 +25,11 @@ sann.its=5000, diagn=FALSE)
 \details{
 The function takes a tree and a trait file and estimates transition rates and ancestral states for a single binary character using the hidden rates model (HRM). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states in reconstructing ancestral character states. For example, for a model with two rate classes, slow (S) and fast (F), underlie each observed state of 0 and 1. Since we only observe states, we treat each observation as having a probability of 1 for being either in the F and S categories. In other words, a character state 0 at a tip is assumed to have a probability of 1 for being 0_S and 0_F. The likelihood function is then maximized using the bounded subplex optimization routine (\code{optim.method=subplex}) implemented in the R package \code{nloptr}, which provides a common interface to NLopt, an open-source library for nonlinear optimization. Users can also set \code{optim.method=twoStep} to specify a multi-step process that first involves a simulated annealing step followed by maximizing the likelihood using the subplex routine. In the former case, however, it is recommended that \code{nstarts} is set to a large value (e.g. 100) to ensure that the maximum likelihood solution is found. Users can set \code{n.cores} to parse the random restarts onto multiple processors.
 
-The input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. The first column of the trait file must contain the species labels to match to the tree, with the second corresponding to the binary trait of interest. Any variant of a model that assume either 1, 2, 3, 4, or 5 rate categories underlying the observed data can be evaluated. Note that for a given full model, the different rate classes are ordered from slowest (rate class R1) to fastest (rate class Rn) with respect to state 0. 
+The input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. The first column of the trait file must contain the species labels to match to the tree, with the second corresponding to the binary trait of interest. Any variant of a model that assume either 1, 2, 3, 4, or 5 rate categories underlying the observed data can be evaluated. Note that for a given full model, the different rate classes are ordered from slowest (rate class R1) to fastest (rate class Rn) with respect to state 0.
 
-The user can fix the root state probabilities by supplying a vector to \code{root.p}. For example, if the hypothesis is that the root is 0_S in a model with two hidden rates, then the root vector would be \code{root.p=c(1,0,0,0)} for state combinations 0_S, 1_S, 0_F, and 1_F, respectively. If the user supplies the flag \code{root.p}=\dQuote{yang}, then the estimated transition rates are used to set the weights at the root (see pg. 124 Yang 2006), whereas specifying \code{root.p}=\dQuote{maddfitz} employs the same procedure described by Maddison et al. (2007) and FitzJohn et al. (2009). Note that the default \code{root.p=NULL} assumes equal weighting among all possible states. 
+The user can fix the root state probabilities by supplying a vector to \code{root.p}. For example, if the hypothesis is that the root is 0_S in a model with two hidden rates, then the root vector would be \code{root.p=c(1,0,0,0)} for state combinations 0_S, 1_S, 0_F, and 1_F, respectively. If the user supplies the flag \code{root.p}=\dQuote{yang}, then the estimated transition rates are used to set the weights at the root (see pg. 124 Yang 2006), whereas specifying \code{root.p}=\dQuote{maddfitz} employs the same procedure described by Maddison et al. (2007) and FitzJohn et al. (2009). Note that the default \code{root.p=NULL} assumes equal weighting among all possible states.
+
+Ancestral states can be estimated using marginal, joint, scaled, or none approaches. Marginal gives the likelihood of state at each node, integrating over the states at other nodes. Joint gives the optimal state at each node for the entire tree at once. Scaled is included for compatibility with ape's ace() function. None suppresses calculation of ancestral states, which can dramatically speed up calculations if you're comparing models but make plotting difficult.
 }
 \value{
 \code{corHMM} returns an object of class \code{corHMM}. This is a list with elements:
@@ -59,7 +61,7 @@ Beaulieu J.M., B.C. O'Meara, and M.J. Donoghue. 2013. Identifying hidden rate ch
 
 Felsenstein, J. 1981. A likelihood approach to character weighting and what it tells us about parsimony and compatibility. Biological Journal of the Linnean Society 16: 183-196.
 
-Felsenstein J. 2004. Inferring phylogenies. Sunderland MA: Sinauer Associates. 
+Felsenstein J. 2004. Inferring phylogenies. Sunderland MA: Sinauer Associates.
 
 FitzJohn, R.G., W.P. Maddison, and S.P. Otto. 2009. Estimating trait-dependent speciation and extinction rates from incompletely resolved phylogenies. Systematic Biology 58:595-611.
 
