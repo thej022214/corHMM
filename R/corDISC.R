@@ -308,7 +308,6 @@ dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             flat.root[is.na(flat.root)] = 0
             if(lewis.asc.bias == TRUE){
                 loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(flat.root)+log(liks[root,])))))
-                print(liks.dummy[root,])
                 loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(flat.root)+log(liks.dummy[root,])))))
                 #We raise the variant probability by a factor equal to the number of characters
                 loglik <- loglik.num  - log((1 - exp(loglik.denom))^a)
@@ -347,9 +346,7 @@ dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             else{
                 if(lewis.asc.bias == TRUE){
                     loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-                    print(liks.dummy[root,])
                     loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
-                    print(loglik.denom)
                     loglik <- loglik.num  - log((1 - exp(loglik.denom))^a)
                 }else{
                     loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))

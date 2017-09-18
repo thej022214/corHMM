@@ -30,6 +30,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	#Builds the rate matrix based on the specified rate.cat. Not exactly the best way
 	#to go about this, but it is the best I can do for now -- it works, so what me worry?
 	if(hrm==TRUE){
+        get.tip.states = TRUE
 		if(is.null(rate.mat)){
 			rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
@@ -112,6 +113,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	}
 	if(hrm==FALSE){
 		drop.states = NULL
+        get.tip.states = FALSE
 		#Imported from Jeffs rayDISC -- will clean up later, but for now, it works fine:
 		if(ntraits==1){
 			k <- 1
@@ -551,9 +553,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			liks.final[focal, ] <- v/comp[focal]
 		}
 
-        #Now get the states for the tips (will do, not available for general use):
-        liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, charnum=charnum, ntraits=ntraits, model=model, root.p=root.p)
-
+        if(get.tip.states == TRUE){
+            #Now get the states for the tips (will do, not available for general use):
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, charnum=charnum, ntraits=ntraits, model=model, root.p=root.p)
+        }else{
+            liks.final[TIPS,] <- liks.down[TIPS,]
+        }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
 		liks.final[root,] <- liks.down[root,] * root.p
 		root.final <- liks.down[root,] * root.p

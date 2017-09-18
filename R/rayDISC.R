@@ -212,10 +212,16 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             tip.states <- lik.anc$lik.tip.states
         }
     }else{
-        lik.anc <- NULL
-        lik.anc$lik.anc.states <- phy$node.label
-        lik.anc$lik.tip.states <- workingData[,1]
-        tip.states <- lik.anc$lik.tip.states
+        if(any(is.na(phy$node.label))){
+            lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
+            phy$node.label <- lik.anc$lik.anc.states
+            tip.states <- lik.anc$lik.tip.states
+        }else{
+            lik.anc <- NULL
+            lik.anc$lik.anc.states <- phy$node.label
+            lik.anc$lik.tip.states <- workingData[,1]
+            tip.states <- lik.anc$lik.tip.states
+        }
     }
     
     if(diagn==TRUE){
