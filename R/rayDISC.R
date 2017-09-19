@@ -69,6 +69,13 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         }
     }
 
+    #Ensures that weird root state probabilities that do not sum to 1 are input:
+    if(!is.null(root.p)){
+        if(!is.character(root.p)){
+            root.p <- root.p/sum(root.p)
+        }
+    }
+
 	#Creates the data structure and orders the rows to match the tree
 	phy$edge.length[phy$edge.length==0]=1e-5
 

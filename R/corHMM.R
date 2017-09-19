@@ -25,6 +25,13 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 		}
 	}
 
+    #Ensures that weird root state probabilities that do not sum to 1 are input:
+    if(!is.null(root.p)){
+        if(!is.character(root.p)){
+            root.p <- root.p/sum(root.p)
+        }
+    }
+
 	# Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
 	matching <- match.tree.data(phy,data)
 	data <- matching$data

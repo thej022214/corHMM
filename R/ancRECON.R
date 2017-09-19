@@ -6,6 +6,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
 	phy$edge.length[phy$edge.length<=1e-5]=1e-5
+    
+    #Ensures that weird root state probabilities that do not sum to 1 are input:
+    if(!is.null(root.p)){
+        if(!is.character(root.p)){
+            root.p <- root.p/sum(root.p)
+        }
+    }
 
 	if(hrm==FALSE){
 		if(ntraits==1){
