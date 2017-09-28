@@ -116,9 +116,19 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 			model.set.init$index.matrix<-rate
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 			model.set.init$rate<-rate
-			dat<-as.matrix(data.sort)
-			dat<-phyDat(dat,type="USER", levels=c("0","1"))
-			par.score<-parsimony(phy, dat, method="fitch")
+            taxa.missing.data.drop <- which(is.na(data.sort[,1]))
+            if(length(taxa.missing.data.drop) != 0){
+                tip.labs <- names(taxa.missing.data.drop)
+                dat <- as.matrix(data.sort)
+                dat.red <- dat[-taxa.missing.data.drop,]
+                phy.red <- drop.tip(phy, taxa.missing.data.drop)
+                dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
+                par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+            }else{
+                dat <- as.matrix(data.sort)
+                dat <- phyDat(dat,type="USER", levels=c("0","1"))
+                par.score <- parsimony(phy, dat, method="fitch")/2
+            }
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
 			if(mean.change==0){
@@ -172,10 +182,20 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 					if(is.null(n.cores)){
 						#Sets parameter settings for random restarts by taking the parsimony score and dividing
 						#by the total length of the tree
-						dat<-as.matrix(data.sort)
-						dat<-phyDat(dat,type="USER", levels=c("0","1"))
-						par.score<-parsimony(phy, dat, method="fitch")/2
-						tl <- sum(phy$edge.length)
+                        taxa.missing.data.drop <- which(is.na(data.sort[,1]))
+                        if(length(taxa.missing.data.drop) != 0){
+                            tip.labs <- names(taxa.missing.data.drop)
+                            dat <- as.matrix(data.sort)
+                            dat.red <- dat[-taxa.missing.data.drop,]
+                            phy.red <- drop.tip(phy, taxa.missing.data.drop)
+                            dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
+                            par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+                        }else{
+                            dat <- as.matrix(data.sort)
+                            dat <- phyDat(dat,type="USER", levels=c("0","1"))
+                            par.score <- parsimony(phy, dat, method="fitch")/2
+                        }
+                        tl <- sum(phy$edge.length)
 						mean.change = par.score/tl
 						if(mean.change==0){
 							ip=0.01+exp(lb)
@@ -282,9 +302,19 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 					#Sets parameter settings for random restarts by taking the parsimony score and dividing
 					#by the total length of the tree
 					cat("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
-					dat<-as.matrix(data.sort)
-					dat<-phyDat(dat,type="USER", levels=c("0","1"))
-					par.score<-parsimony(phy, dat, method="fitch")/2
+                    taxa.missing.data.drop <- which(is.na(data.sort[,1]))
+                    if(length(taxa.missing.data.drop) != 0){
+                        tip.labs <- names(taxa.missing.data.drop)
+                        dat <- as.matrix(data.sort)
+                        dat.red <- dat[-taxa.missing.data.drop,]
+                        phy.red <- drop.tip(phy, taxa.missing.data.drop)
+                        dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
+                        par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+                    }else{
+                        dat <- as.matrix(data.sort)
+                        dat <- phyDat(dat,type="USER", levels=c("0","1"))
+                        par.score <- parsimony(phy, dat, method="fitch")/2
+                    }
 					tl <- sum(phy$edge.length)
 					mean.change = par.score/tl
 					random.restart<-function(nstarts){

@@ -286,6 +286,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             desRows<-which(phy$edge[,1]==focal)
             #Get node information for each descendant:
             desNodes<-phy$edge[desRows,2]
+            
             #Initiates a loop to check if any nodes are tips:
             for (desIndex in sequence(length(desRows))){
                 #If a tip calculate C_y(i) for the tips and stores in liks matrix:
@@ -310,6 +311,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     }
                 }
             }
+            
             #Collects t_z, or the branch subtending focal:
             tz <- phy$edge.length[which(phy$edge[,2] == focal)]
             if(length(tz)==0){
@@ -648,6 +650,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 }
 
 
+
+GetTipStateBruteForceJoint <- function(p, phy, data, rate.mat, rate.cat, charnum, ntraits, model, root.p){
+    
+    
+    
+}
 
 #New brute force algorithm for estimating tip states.
 GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntraits, model, root.p){
