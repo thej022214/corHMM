@@ -84,6 +84,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	data <- matching$data
 	phy <- matching$phy
 
+	# For character of interest, go ahead and convert any "?" to NA
+	data[(data[, charnum + 1] == "?"), charnum + 1] <- NA
+
 	# Wont perform reconstructions on invariant characters -- why not? Seems like you should be able to.
 	if(nlevels(as.factor(data[,charnum+1])) <= 1){
 		obj <- NULL
@@ -93,7 +96,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	} else {
 		# Still need to make sure second level isnt just an ambiguity
 		lvls <- as.factor(data[,charnum+1])
-		if(nlevels(as.factor(data[,charnum+1])) == 2 && length(which(lvls == "?"))){
+		if(nlevels(as.factor(data[,charnum+1])) == 2 && any(lvls %in% c("?", "NA"))){
 			obj <- NULL
 			obj$loglik <- NULL
 			obj$diagnostic <- paste("Character ",charnum," is invariant. Analysis stopped.",sep="")
@@ -101,12 +104,12 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		}
 	}
 
-	workingData <- data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1]) # added character twice, because at least two columns are necessary
-	workingData <- workingData[phy$tip.label,] # this might have already been done by match.tree.data
+	data.sort <- data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1]) # added character twice, because at least two columns are necessary
+	data.sort <- data.sort[phy$tip.label,] # this might have already been done by match.tree.data
 
-	counts <- table(workingData[,1])
-	levels <- levels(as.factor(workingData[,1]))
-	cols <- as.factor(workingData[,1])
+	counts <- table(data.sort[,1])
+	levels <- levels(as.factor(data.sort[,1]))
+	cols <- as.factor(data.sort[,1])
     if(verbose == TRUE){
         cat("State distribution in data:\n")
         cat("States:",levels,"\n",sep="\t")
@@ -115,7 +118,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 
 	#Some initial values for use later - will clean up
 	k <- 1 # Only one trait allowed
-	factored <- factorData(workingData,charnum=charnum) # just factoring to figure out how many levels (i.e. number of states) in data.
+	factored <- factorData(data.sort,charnum=charnum) # just factoring to figure out how many levels (i.e. number of states) in data.
     nl <- ncol(factored)
 	state.names <- colnames(factored) # for subsequent reporting
 	bound.hit <- FALSE # to keep track of whether min.rate is one of the rate estimates (and thus, potentially a non-optimal rate)
@@ -138,7 +141,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	model=model
 	root.p=root.p
 	ip=ip
-	model.set.final<-rate.cat.set.rayDISC(phy=phy,data=workingData,model=model,charnum=charnum)
+	model.set.final<-rate.cat.set.rayDISC(phy=phy,data=data.sort,model=model,charnum=charnum)
     if(!is.null(rate.mat)){
 		rate <- rate.mat
 		model.set.final$np <- max(rate, na.rm=TRUE)
@@ -181,11 +184,23 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             }
 			#Sets parameter settings for random restarts by taking the parsimony score and dividing
 			#by the total length of the tree
-			model.set.init<-rate.cat.set.rayDISC(phy=phy,data=workingData,model="ER",charnum=charnum)
+			model.set.init<-rate.cat.set.rayDISC(phy=phy,data=data.sort,model="ER",charnum=charnum)
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
-			dat <- as.matrix(workingData)
-			dat <- phyDat(dat,type="USER", levels=levels(as.factor(workingData[,1])))
-			par.score <- parsimony(phy, dat, method="fitch")
+
+			taxa.missing.data.drop <- which(is.na(data.sort[,1]))
+			if(length(taxa.missing.data.drop) != 0){
+			  tip.labs <- names(taxa.missing.data.drop)
+			  dat <- as.matrix(data.sort)
+			  dat.red <- dat[-taxa.missing.data.drop,]
+			  phy.red <- drop.tip(phy, taxa.missing.data.drop)
+			  dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
+			  par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+			}else{
+			  dat <- as.matrix(data.sort)
+			  dat <- phyDat(dat,type="USER", levels=c("0","1"))
+			  par.score <- parsimony(phy, dat, method="fitch")/2
+			}
+			
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
 			if(mean.change==0){
@@ -253,7 +268,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         }else{
             lik.anc <- NULL
             lik.anc$lik.anc.states <- phy$node.label
-            lik.anc$lik.tip.states <- workingData[,1]
+            lik.anc$lik.tip.states <- data.sort[,1]
             tip.states <- lik.anc$lik.tip.states
         }
     }
@@ -590,7 +605,12 @@ match.tree.data <- function(phy, data){
 # A function to find positions of ampersands for separating different states.
 # Will allow character state to be greater than one character long.
 findAmps <- function(string, charnum){
-	if(!is.character(string)) return(NULL)
+  if (is.na(string)) {
+    return(NULL)
+  }
+	if (!is.character(string)) {
+	  return(NULL)
+	}
 	locs <- NULL # Will hold location values
 	for(charnum in 1:nchar(as.character(string))){
 		if(substr(string,charnum,charnum) == "&"){
@@ -605,76 +625,81 @@ findAmps <- function(string, charnum){
 ##############
 # Function to make factored matrix as levels are discovered.
 factorData <- function(data,whichchar=1,charnum){
-	charcol <- whichchar+1
-	factored <- NULL # will become the matrix.  Starts with no data.
-	lvls <- NULL
-	numrows <- length(data[,charcol])
-	missing <- NULL
-
-	for(row in 1:numrows){
-		currlvl <- NULL
-		levelstring <- as.character(data[row,charcol])
-		ampLocs <- findAmps(levelstring, charnum)
-		if(length(ampLocs) == 0){ #No ampersands, character is monomorphic
-			currlvl <- levelstring
-			if(currlvl == "?" || currlvl == "-" || currlvl == "NA"){ # Check for missing data
-				missing <- c(missing,row) # add to list of taxa with missing values, will fill in entire row later
-			}
-			else { # Not missing data
-				if(length(which(lvls == currlvl)) == 0){# encountered a level not seen yet
-					if(length(factored) == 0){ # Matrix is empty, need to create it
-						factored <- matrix(0,numrows,1)
-						colnames(factored) <- currlvl
-						rownames(factored) <- rownames(data)
-					} else { # matrix already exists, but need to add a column for the new level
-						zerocolumn <- rep(0,numrows)
-						factored <- cbind(factored, zerocolumn)
-						colnames(factored)[length(factored[1,])] <- currlvl
-					}
-					lvls <- c(lvls,currlvl) # add that level to the list
-				} # already found this level in another state.  Set the value to one
-					whichlvl <- which(lvls == currlvl) # this index number should correspond to the column number of the state
-					factored[row,whichlvl] <- 1
-			}
-		} else { #At least one ampersand found, polymorphic character
-			start <- 1
-			numlvls <- length(ampLocs)+1
-			for(part in 1:numlvls){
-				# Pull out level from levelstring
-				if(part <= length(ampLocs)){ # Havent reached the last state
-					currlvl <- substr(levelstring,start,(ampLocs[part]-1)) # pull out value between start and the location-1 of the next ampersand
-				} else { # Final state in list
-					currlvl <- substr(levelstring,start,nchar(levelstring)) # pull out value between start and the last character of the string
-				}
-				if(currlvl == "?" || currlvl == "-"){ # Missing data, but polymorphic?
-					missing <- c(missing,row) # add to list of taxa with missing values, will fill in entire row later
-				}
-				else { # Not missing data
-					if(length(which(lvls == currlvl)) == 0){# encountered a level not seen yet
-						if(length(factored) == 0){ # Matrix is empty, need to create it
-							factored <- matrix(0,numrows,1)
-							colnames(factored) <- currlvl
-							rownames(factored) <- rownames(data)
-						} else { # matrix already exists, but need to add a column for the new level
-							zerocolumn <- rep(0,numrows)
-							factored <- cbind(factored, zerocolumn)
-							colnames(factored)[length(factored[1,])] <- currlvl
-						}
-						lvls <- c(lvls,currlvl) # add that level to the list
-					} # already found this level in another state.  Set the value to one
-						whichlvl <- which(lvls == currlvl) # this index number should correspond to the column number of the state
-						factored[row,whichlvl] <- 1
-					start <- ampLocs[part] + 1
-				}
-			}
-		}
-	}
-	#Need to deal with any rows with missing data; fill in NA for all columns for that row
-	for(missingrows in 1:length(missing)){
-		for(column in 1:length(factored[1,])){
-			factored[missing[missingrows],column] <- 1 # All states equally likely
-		}
-	}
-	factored <- factored[,order(colnames(factored))]
-	return(factored)
+  charcol <- whichchar+1
+  factored <- NULL # will become the matrix.  Starts with no data.
+  lvls <- NULL
+  numrows <- length(data[,charcol])
+  missing <- NULL
+  
+  for(row in 1:numrows){
+    currlvl <- NULL
+    currdata <- data[row,charcol]
+    if (is.na(currdata)) {
+      missing <- c(missing, row)
+    } else {
+      levelstring <- as.character(currdata)
+      ampLocs <- findAmps(levelstring, charnum)
+      if(length(ampLocs) == 0) { #No ampersands, character is monomorphic
+        currlvl <- levelstring
+        if(currlvl == "?" || currlvl == "-" || currlvl == "NA"){ # Check for missing data
+          missing <- c(missing,row) # add to list of taxa with missing values, will fill in entire row later
+        } else { # Not missing data
+          if(length(which(lvls == currlvl)) == 0){# encountered a level not seen yet
+            if(length(factored) == 0){ # Matrix is empty, need to create it
+              factored <- matrix(0,numrows,1)
+              colnames(factored) <- currlvl
+              rownames(factored) <- rownames(data)
+            } else { # matrix already exists, but need to add a column for the new level
+              zerocolumn <- rep(0,numrows)
+              factored <- cbind(factored, zerocolumn)
+              colnames(factored)[length(factored[1,])] <- currlvl
+            }
+            lvls <- c(lvls,currlvl) # add that level to the list
+          } # already found this level in another state.  Set the value to one
+          whichlvl <- which(lvls == currlvl) # this index number should correspond to the column number of the state
+          factored[row,whichlvl] <- 1
+        }
+      } else { #At least one ampersand found, polymorphic character
+        start <- 1
+        numlvls <- length(ampLocs)+1
+        for(part in 1:numlvls){
+          # Pull out level from levelstring
+          if(part <= length(ampLocs)){ # Havent reached the last state
+            currlvl <- substr(levelstring,start,(ampLocs[part]-1)) # pull out value between start and the location-1 of the next ampersand
+          } else { # Final state in list
+            currlvl <- substr(levelstring,start,nchar(levelstring)) # pull out value between start and the last character of the string
+          }
+          if(currlvl == "?" || currlvl == "-"){ # Missing data, but polymorphic?
+            missing <- c(missing,row) # add to list of taxa with missing values, will fill in entire row later
+          }
+          else { # Not missing data
+            if(length(which(lvls == currlvl)) == 0){# encountered a level not seen yet
+              if(length(factored) == 0){ # Matrix is empty, need to create it
+                factored <- matrix(0,numrows,1)
+                colnames(factored) <- currlvl
+                rownames(factored) <- rownames(data)
+              } else { # matrix already exists, but need to add a column for the new level
+                zerocolumn <- rep(0,numrows)
+                factored <- cbind(factored, zerocolumn)
+                colnames(factored)[length(factored[1,])] <- currlvl
+              }
+              lvls <- c(lvls,currlvl) # add that level to the list
+            } # already found this level in another state.  Set the value to one
+            whichlvl <- which(lvls == currlvl) # this index number should correspond to the column number of the state
+            factored[row,whichlvl] <- 1
+            start <- ampLocs[part] + 1
+          }
+        }
+      }
+      
+    }
+  }
+  #Need to deal with any rows with missing data; fill in NA for all columns for that row
+  for(missingrows in 1:length(missing)){
+    for(column in 1:length(factored[1,])){
+      factored[missing[missingrows],column] <- 1 # All states equally likely
+    }
+  }
+  factored <- factored[,order(colnames(factored))]
+  return(factored)
 }
