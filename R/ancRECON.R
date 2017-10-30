@@ -124,7 +124,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		#Imported from Jeffs rayDISC -- will clean up later, but for now, it works fine:
 		if(ntraits==1){
 			k <- 1
-			factored <- factorData(data.sort) # was acting on data, not data.sort
+            factored <- corHMM::factorData(data.sort) # was acting on data, not data.sort
 			nl <- ncol(factored)
 			obj <- NULL
 			nb.tip<-length(phy$tip.label)
@@ -311,7 +311,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                     }
                 }
             }
-            
             #Collects t_z, or the branch subtending focal:
             tz <- phy$edge.length[which(phy$edge[,2] == focal)]
             if(length(tz)==0){
