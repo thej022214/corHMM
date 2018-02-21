@@ -8,13 +8,13 @@
 #written by Jeremy M. Beaulieu
 
 lewisMkv <- function(phy, data, include.gamma=FALSE, ngammacats=4, include.beta=FALSE, exclude.sites=NULL, max.tol=.Machine$double.eps^0.25, ncores=NULL) {
-    
+
     if(include.beta == TRUE){
         stop("Beta distribution for allowing unequal stationary frequencies is not yet implemented.")
     }
-    
+
     # Sort according to the order of the tip labels:
-    data.sorted <- data[phy$tip.label,]
+    data.sorted <- data[phy$tip.label,, drop=FALSE] #w/out drop=FALSE, it converts single col data.frame to a vector. 
     if(!is.null(exclude.sites)){
         data.sorted <- data.sorted[!sequence(dim(data.sorted)[2]) %in% exclude.sites]
     }
@@ -22,7 +22,7 @@ lewisMkv <- function(phy, data, include.gamma=FALSE, ngammacats=4, include.beta=
     # Starting values for branch lengths:
     new.phy <- RogersSwoffordish(phy, data.sorted)
     new.phy$edge.length[new.phy$edge.length==0] = 1e-8
-    
+
     cat("Finished. Optimizing model parameters...", "\n")
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "100000", "ftol_rel" = max.tol)
     obj <- NULL
@@ -134,14 +134,14 @@ GetSiteLikelihoods <- function(phy, data, gamma.rate=1, beta.freqs=NULL, ncores=
 ######################################################################################################################################
 
 LikelihoodCalculation <- function(phy, liks, Q, gamma.rate){
-    
+
     # Normalize the matrix because we are also estimating branch lengths:
     Q <- t(Q) * rep(1/dim(Q)[2], dim(Q)[2])
     scale.factor <- -sum(diag(Q) * rep(1/dim(Q)[2], dim(Q)[2]))
     Q.scaled <- Q * (1/scale.factor)
     Q.scaled <- Q.scaled * gamma.rate
     #####################################################################
-    
+
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     TIPS <- 1:nb.tip
@@ -247,7 +247,7 @@ FactorDataLewis <- function(data,charnum){
     lvls <- NULL
     numrows <- length(data[,charcol])
     missing <- NULL
-    
+
     for(row in 1:numrows){
         currlvl <- NULL
         levelstring <- as.character(data[row,charcol])
