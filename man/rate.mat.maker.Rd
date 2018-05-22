@@ -12,13 +12,13 @@ rate.par.eq(rate.mat.index=NULL, eq.par=NULL)
 
 }       
 \arguments{
-\item{rate.cat}{specifies the number of rate categories in the HRM.}
+\item{rate.cat}{specifies the number of rate categories in the rate model.}
 \item{hrm}{a logical indicating whether the underlying model is the hidden rates model (HRM). The default is \code{FALSE}.} 
 \item{ntraits}{specifies the number of traits in the data file if the underlying model is not the HRM.}
-\item{nstates}{specifies the number of characters in the data file used in rayDISC.}
+\item{nstates}{specifies the number of character states in the data.}
 \item{model}{if the model is not HRM, specifies the underlying model.}
 \item{rate.mat.index}{A user-supplied rate matrix index to be manipulated.}
-\item{drop.par}{a vector of transitions to be dropped from the model. Use \code{rate.mat.index} to see what correspond to which transition.}
+\item{drop.par}{a vector of transitions to be dropped from the model. Use the values in the returned \code{rate.mat.index} to see which indices correspond to which transitions.}
 \item{eq.par}{a vector of transitions pairs to be set equal. Use \code{rate.mat.index} to see what correspond to which transition.}
 }
 \details{
