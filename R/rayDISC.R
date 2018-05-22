@@ -193,11 +193,11 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			  dat <- as.matrix(data.sort)
 			  dat.red <- dat[-taxa.missing.data.drop,]
 			  phy.red <- drop.tip(phy, taxa.missing.data.drop)
-			  dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
+			  dat.red <- phyDat(dat.red,type="USER", levels=sort(unique(c(dat))))
 			  par.score <- parsimony(phy.red, dat.red, method="fitch")/2
 			}else{
 			  dat <- as.matrix(data.sort)
-			  dat <- phyDat(dat,type="USER", levels=c("0","1"))
+			  dat <- phyDat(dat,type="USER", levels=sort(unique(c(dat))))
 			  par.score <- parsimony(phy, dat, method="fitch")/2
 			}
 			
