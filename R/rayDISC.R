@@ -234,9 +234,13 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             }
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
             if(state.recon=="subsequently") {
-                out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
+                ## out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
+                if( !length( ip ) == model.set.final$np ) stop(" Length of starting state vector does not match model parameters. ")
+                out <- nloptr(x0=ip, eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
             }else{
-                out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
+                ## out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
+                if( !length( ip ) == model.set.final$np ) stop(" Length of starting state vector does not match model parameters. ")
+                out <- nloptr(x0=ip, eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)                
             }
 			loglik <- -out$objective
 			est.pars <- out$solution
