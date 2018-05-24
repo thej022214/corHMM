@@ -425,7 +425,8 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             liks[focal, ] <- v/comp[focal]
         }
     }
-    
+    print(liks)
+    print(comp)
 	#Specifies the root:
 	root <- nb.tip + 1L
 	#If any of the logs have NAs restart search:
