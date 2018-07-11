@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE){
+corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled", "none"), lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE){
 	
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -64,14 +64,14 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 
 	# Check to make sure values are reasonable (i.e. non-negative)
 	if(ub < 0){
-		ub <- 100
+		ub <- log(100)
 	}
 	if(lb <= 0){
-		lb <- 0
+		lb <- -21
 	}
 	if(ub < lb){ # This user really needs help
-		ub <- 100
-		lb <- 0
+		ub <- log(100)
+		lb <- -21
 	}
 
 	obj <- NULL
@@ -97,9 +97,10 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 	
 	if(!is.null(p)){
 		cat("Calculating likelihood from a set of fixed parameters", "\n")
-		out<-NULL
+        phy <- reorder(phy, "pruningwise")
+        out<-NULL
 		out$solution <- p
-		out$objective<-dev.cordisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+		out$objective<-dev.cordisc(log(out$solution),phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
 		loglik <- -out$objective
 		est.pars <- out$solution
 	}
@@ -126,19 +127,21 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			}
 			lower.init = rep(lb, model.set.init$np)
 			upper.init = rep(ub, model.set.init$np)
-			init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.cordisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+            phy <- reorder(phy, "pruningwise")
+            init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.cordisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
 			cat("Finished. Beginning thorough search...", "\n")
 			lower = rep(lb, model.set.final$np)
 			upper = rep(ub, model.set.final$np)	
-			out = nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+			out = nloptr(x0=rep(log(init$solution), length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
 			loglik <- -out$objective
 			est.pars<-out$solution
 		}
 		#If a user-specified starting value(s) is supplied:
 		else{
 			cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
-			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
-			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
+            phy <- reorder(phy, "pruningwise")
+            opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
+			out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
 			loglik <- -out$objective
 			est.pars<-out$solution
 		}
@@ -147,25 +150,31 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 	#Starts the summarization process:
 	cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
 	
-	TIPS <- 1:nb.tip
-	lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, root.p=root.p)
-	if(node.states == "marginal" || node.states == "scaled"){
-		pr<-apply(lik.anc$lik.anc.states,1,which.max)
-		phy$node.label <- pr
-		tip.states <- lik.anc$lik.tip.states
-		#row.names(tip.states) <- phy$tip.label
-	}
-	if(node.states == "joint"){
-		phy$node.label <- lik.anc$lik.anc.states
-		tip.states <- lik.anc$lik.tip.states
-	}
-	
-	cat("Finished. Performing diagnostic tests.", "\n")
+    if(node.states == "none"){
+        lik.anc <- NULL
+        lik.anc$lik.tip.states <- "You turned this feature off. Try plugging into ancRECON function directly."
+        lik.anc$lik.anc.states <- "You turned this feature off. Try plugging into ancRECON function directly."
+        tip.states <- lik.anc$lik.tip.states
+    }else{
+        TIPS <- 1:nb.tip
+        lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, root.p=root.p)
+        if(node.states == "marginal" || node.states == "scaled"){
+            pr<-apply(lik.anc$lik.anc.states,1,which.max)
+            phy$node.label <- pr
+            tip.states <- lik.anc$lik.tip.states
+            #row.names(tip.states) <- phy$tip.label
+        }
+        if(node.states == "joint"){
+            phy$node.label <- lik.anc$lik.anc.states
+            tip.states <- lik.anc$lik.tip.states
+        }
+    }
 	
 	#Approximates the Hessian using the numDeriv function
 
 	if(diagn==TRUE){
-		h <- hessian(func=dev.cordisc, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
+        cat("Finished. Performing diagnostic tests.", "\n")
+        h <- hessian(func=dev.cordisc, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
 		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		solution.se <- matrix(sqrt(diag(pseudoinverse(h)))[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		hess.eig <- eigen(h,symmetric=TRUE)
@@ -232,11 +241,13 @@ print.cordisc<-function(x,...){
 
 
 dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
-	nb.tip <- length(phy$tip.label)
+	
+    p.new <- exp(p)
+    nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
-	phy <- reorder(phy, "pruningwise")
+    #phy <- reorder(phy, "pruningwise")
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
 	
@@ -246,13 +257,13 @@ dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
         a <- 3
     }
     
-	if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
-	Q[] <- c(p, 0)[rate]
+	if (any(is.nan(p.new)) || any(is.infinite(p.new))) return(1000000)
+	Q[] <- c(p.new, 0)[rate]
 	diag(Q) <- -rowSums(Q)	
 	
     if(lewis.asc.bias == TRUE) {
         liks.dummy <- liks
-        #        if(any(root.p == 1)){
+        #   if(any(root.p == 1)){
         #   dim.liks <- dim(liks)
         #   liks.dummy <- matrix(0, dim.liks[1], dim.liks[2])
         #   liks.dummy[TIPS,which(root.p==1)] = 1
