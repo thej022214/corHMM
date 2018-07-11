@@ -122,12 +122,12 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
 			if(mean.change==0){
-				ip=lb+0.01
+				ip <- exp(lb) + 0.01
 			}else{
 				ip<-rexp(1, 1/mean.change)
 			}
-			if(ip < lb || ip > ub){ # initial parameter value is outside bounds
-				ip <- lb
+			if(log(ip) < lb || log(ip) > ub){ # initial parameter value is outside bounds
+				ip <- exp(lb)
 			}
 			lower.init = rep(lb, model.set.init$np)
 			upper.init = rep(ub, model.set.init$np)
