@@ -6,7 +6,7 @@
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
-rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled"), state.recon=c("subsequently"), lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, verbose=TRUE, diagn=FALSE){
+rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"), node.states=c("joint", "marginal", "scaled", "none"), state.recon=c("subsequently"), lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, verbose=TRUE, diagn=FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -121,26 +121,31 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	factored <- factorData(data.sort,charnum=charnum) # just factoring to figure out how many levels (i.e. number of states) in data.
     nl <- ncol(factored)
 	state.names <- colnames(factored) # for subsequent reporting
-	bound.hit <- FALSE # to keep track of whether min.rate is one of the rate estimates (and thus, potentially a non-optimal rate)
-	# Check to make sure values are reasonable (i.e. non-negative)
-	if(ub < 0){
-		ub <- 100
-	}
-	if(lb < 0){
-		lb <- 0
-	}
-	if(ub < lb){ # This user really needs help
-		ub <- 100
-		lb <- 0
-	}
-
-	obj <- NULL
-	nb.tip<-length(phy$tip.label)
-	nb.node <- phy$Nnode
-
-	model=model
-	root.p=root.p
-	ip=ip
+    bound.hit <- FALSE # to keep track of whether min.rate is one of the rate estimates (and thus, potentially a non-optimal rate)
+    
+    # Check to make sure values are reasonable (i.e. non-negative)
+    if(ub < 0){
+        ub <- log(100)
+    }else{
+        ub <- log(ub)
+    }
+    if(lb <= 0){
+        lb <- -21
+    }else{
+        lb <- log(lb)
+    }
+    if(ub < lb){ # This user really needs help
+        ub <- log(100)
+        lb <- -21
+    }
+    
+    obj <- NULL
+    nb.tip<-length(phy$tip.label)
+    nb.node <- phy$Nnode
+    
+    model=model
+    root.p=root.p
+    ip=ip
 	model.set.final<-rate.cat.set.rayDISC(phy=phy,data=data.sort,model=model,charnum=charnum)
     if(!is.null(rate.mat)){
 		rate <- rate.mat
@@ -160,7 +165,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		out<-NULL
 		out$solution<-p
         if(state.recon=="subsequently") {
-            out$objective <- dev.raydisc(out$solution,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+            out$objective <- dev.raydisc(log(out$solution),phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             loglik <- -out$objective
         } else {
             if(lewis.asc.bias == TRUE){
@@ -206,19 +211,20 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			if(mean.change==0){
 				ip=0.01 + lb
 			}else{
-				ip<-rexp(1, 1/mean.change)
+				ip <-rexp(1, 1/mean.change)
 			}
-			if(ip < lb || ip > ub){ # initial parameter value is outside bounds
-				ip <- lb
+			if(log(ip) < lb || log(ip) > ub){ # initial parameter value is outside bounds
+				ip <- exp(lb)
 			}
 			lower.init = rep(lb, model.set.init$np)
 			upper.init = rep(ub, model.set.init$np)
-			init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+			init = nloptr(x0=rep(log(ip), length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             if(verbose == TRUE){
                 cat("Finished. Beginning thorough search...", "\n")
             }
 			lower = rep(lb, model.set.final$np)
 			upper = rep(ub, model.set.final$np)
+            phy <- reorder(phy, "pruningwise")
             if(state.recon=="subsequently") {
                 out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q, rate=model.set.final$rate, root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             } else {
@@ -229,6 +235,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		}
 		#If a user-specified starting value(s) is supplied:
 		else{
+            phy <- reorder(phy, "pruningwise")
             if(verbose == TRUE){
                 cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
             }
@@ -236,11 +243,11 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             if(state.recon=="subsequently") {
                 ## out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
                 if( !length( ip ) == model.set.final$np ) stop(" Length of starting state vector does not match model parameters. ")
-                out <- nloptr(x0=ip, eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
+                out <- nloptr(x0=log(ip), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
             }else{
                 ## out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
                 if( !length( ip ) == model.set.final$np ) stop(" Length of starting state vector does not match model parameters. ")
-                out <- nloptr(x0=ip, eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)                
+                out <- nloptr(x0=log(ip), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
             }
 			loglik <- -out$objective
 			est.pars <- out$solution
@@ -250,33 +257,42 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
     if(verbose==TRUE){
         cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
     }
-	TIPS <- 1:nb.tip
-	if(node.states == "marginal" || node.states == "scaled"){
-        lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
-		pr <- apply(lik.anc$lik.anc.states,1,which.max)
-		phy$node.label <- pr
-		tip.states <- lik.anc$lik.tip.states
-		#row.names(tip.states) <- phy$tip.label
-	}
-    if(!state.recon == "given"){
-        if(node.states == "joint"){
-            lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
-            phy$node.label <- lik.anc$lik.anc.states
-            tip.states <- lik.anc$lik.tip.states
-        }
+    TIPS <- 1:nb.tip
+    if(node.states == "none"){
+        lik.anc <- NULL
+        lik.anc$lik.tip.states <- "You turned this feature off. Try plugging into ancRECON function directly."
+        lik.anc$lik.anc.states <- "You turned this feature off. Try plugging into ancRECON function directly."
+        tip.states <- lik.anc$lik.tip.states
     }else{
-        if(any(is.na(phy$node.label))){
+        
+        if(node.states == "marginal" || node.states == "scaled"){
             lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
-            phy$node.label <- lik.anc$lik.anc.states
+            pr <- apply(lik.anc$lik.anc.states,1,which.max)
+            phy$node.label <- pr
             tip.states <- lik.anc$lik.tip.states
+            #row.names(tip.states) <- phy$tip.label
+        }
+        if(!state.recon == "given"){
+            if(node.states == "joint"){
+                lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
+                phy$node.label <- lik.anc$lik.anc.states
+                tip.states <- lik.anc$lik.tip.states
+            }
         }else{
-            lik.anc <- NULL
-            lik.anc$lik.anc.states <- phy$node.label
-            lik.anc$lik.tip.states <- data.sort[,1]
-            tip.states <- lik.anc$lik.tip.states
+            if(any(is.na(phy$node.label))){
+                lik.anc <- ancRECON(phy, data, est.pars, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p)
+                phy$node.label <- lik.anc$lik.anc.states
+                tip.states <- lik.anc$lik.tip.states
+            }else{
+                lik.anc <- NULL
+                lik.anc$lik.anc.states <- phy$node.label
+                lik.anc$lik.tip.states <- data.sort[,1]
+                tip.states <- lik.anc$lik.tip.states
+            }
         }
     }
     
+
     if(diagn==TRUE){
         if(verbose == TRUE){
             cat("Finished. Performing diagnostic tests.", "\n")
@@ -371,20 +387,20 @@ dev.raydisc.rates.and.states <- function(p, phy, data, hrm, rate.cat, rate.mat, 
 
 dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 
+    p.new <- exp(p)
     nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
 
-	phy <- reorder(phy, "pruningwise")
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
 	#This bit is to allow packages like "selac" the ability to deal with this function directly:
 	if(is.null(rate)){
 		Q=Q
 	}else{
-		if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
-		Q[] <- c(p, 0)[rate]
+		if (any(is.nan(p.new)) || any(is.infinite(p.new))) return(1000000)
+		Q[] <- c(p.new, 0)[rate]
 		diag(Q) <- -rowSums(Q)
 	}
     
