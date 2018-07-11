@@ -65,10 +65,14 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 	# Check to make sure values are reasonable (i.e. non-negative)
 	if(ub < 0){
 		ub <- log(100)
-	}
+    }else{
+        ub <- log(ub)
+    }
 	if(lb <= 0){
 		lb <- -21
-	}
+    }else{
+        lb <- log(lb)
+    }
 	if(ub < lb){ # This user really needs help
 		ub <- log(100)
 		lb <- -21
