@@ -210,8 +210,8 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
 			if(mean.change==0){
-				ip=0.01 + lb
-			}else{
+				ip=0.01
+            }else{
 				ip <-rexp(1, 1/mean.change)
 			}
 			if(log(ip) < lb || log(ip) > ub){ # initial parameter value is outside bounds
