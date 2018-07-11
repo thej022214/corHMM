@@ -132,7 +132,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
     if(lb <= 0){
         lb <- -21
     }else{
-        lb <- log(lb)
+        lb <- -21
     }
     if(ub < lb){ # This user really needs help
         ub <- log(100)
@@ -164,6 +164,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         }
 		out<-NULL
 		out$solution<-p
+        phy <- reorder(phy, "pruningwise")
         if(state.recon=="subsequently") {
             out$objective <- dev.raydisc(log(out$solution),phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             loglik <- -out$objective
