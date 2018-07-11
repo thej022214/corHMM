@@ -190,7 +190,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             }
 			#Sets parameter settings for random restarts by taking the parsimony score and dividing
 			#by the total length of the tree
-			model.set.init<-rate.cat.set.rayDISC(phy=phy,data=data.sort,model="ER",charnum=charnum)
+			model.set.init <- rate.cat.set.rayDISC(phy=phy,data=data.sort,model="ER",charnum=charnum)
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
 
 			taxa.missing.data.drop <- which(is.na(data.sort[,1]))
@@ -222,13 +222,13 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             print(ip)
             print(lower.init)
             print(upper.init)
-			init = nloptr(x0=rep(log(ip), length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+            phy <- reorder(phy, "pruningwise")
+            init = nloptr(x0=rep(log(ip), length.out = model.set.init$np), eval_f=dev.raydisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             if(verbose == TRUE){
                 cat("Finished. Beginning thorough search...", "\n")
             }
 			lower = rep(lb, model.set.final$np)
 			upper = rep(ub, model.set.final$np)
-            phy <- reorder(phy, "pruningwise")
             if(state.recon=="subsequently") {
                 out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q, rate=model.set.final$rate, root.p=root.p, lewis.asc.bias=lewis.asc.bias)
             } else {
