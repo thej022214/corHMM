@@ -64,14 +64,14 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 
 	# Check to make sure values are reasonable (i.e. non-negative)
 	if(ub < 0){
-		ub <- log(100)
+		ub <- 100
 	}
 	if(lb <= 0){
-		lb <- -21
+		lb <- 0
 	}
 	if(ub < lb){ # This user really needs help
-		ub <- log(100)
-		lb <- -21
+		ub <- 100
+		lb <- 0
 	}
 
 	obj <- NULL
@@ -128,7 +128,7 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			lower.init = rep(lb, model.set.init$np)
 			upper.init = rep(ub, model.set.init$np)
             phy <- reorder(phy, "pruningwise")
-            init = nloptr(x0=rep(log(ip), length.out = model.set.init$np), eval_f=dev.cordisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
+            init = nloptr(x0=rep(ip, length.out = model.set.init$np), eval_f=dev.cordisc, lb=lower.init, ub=upper.init, opts=opts, phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
 			cat("Finished. Beginning thorough search...", "\n")
 			lower = rep(lb, model.set.final$np)
 			upper = rep(ub, model.set.final$np)	
@@ -141,7 +141,7 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
             phy <- reorder(phy, "pruningwise")
             opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
-			out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
+			out = nloptr(x0=rep(ip, length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p,lewis.asc.bias=lewis.asc.bias)
 			loglik <- -out$objective
 			est.pars<-out$solution
 		}
@@ -242,7 +242,6 @@ print.cordisc<-function(x,...){
 
 dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 	
-    p.new <- exp(p)
     nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
@@ -257,8 +256,8 @@ dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
         a <- 3
     }
     
-	if (any(is.nan(p.new)) || any(is.infinite(p.new))) return(1000000)
-	Q[] <- c(p.new, 0)[rate]
+	if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
+	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)	
 	
     if(lewis.asc.bias == TRUE) {
