@@ -231,7 +231,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
                 out <- nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
             }
 			loglik <- -out$objective
-			est.pars<-out$solution
+			est.pars <- exp(out$solution)
 		}
 		#If a user-specified starting value(s) is supplied:
 		else{
@@ -250,7 +250,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
                 out <- nloptr(x0=log(ip), eval_f=dev.raydisc.rates.and.states, lb=lower, ub=upper, opts=opts, phy=phy, data=data, hrm=FALSE, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, charnum=charnum, root.p=root.p, lewis.asc.bias=lewis.asc.bias, get.likelihood=TRUE)
             }
 			loglik <- -out$objective
-			est.pars <- out$solution
+            est.pars <- exp(out$solution)
 		}
 	}
 	#Starts the summarization process:
