@@ -12,7 +12,7 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 		return(obj)
 	}
 	else { # even if node.states is not NULL, need to make sure its one of the three valid options
-		valid.models <- c("joint", "marginal", "scaled")
+		valid.models <- c("joint", "marginal", "scaled", "none")
 		if(!any(valid.models == node.states)){
 			obj <- NULL
 			obj$loglik <- NULL
@@ -20,8 +20,8 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			return(obj)
 		}
 		if(length(node.states) > 1){ # User did not enter a value, so just pick marginal.
-			node.states <- "marginal"
-			cat("No model selected for \'node.states\'. Will perform marginal ancestral state estimation.\n")
+			node.states <- "none"
+			cat("No model selected for \'node.states\'. Will not perform an ancestral state estimation.\n")
 		}
 	}
 
