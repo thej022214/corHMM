@@ -16,7 +16,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 		return(obj)
 	}
 	else { # even if node.states is not NULL, need to make sure its one of the three valid options
-		valid.models <- c("joint", "marginal", "scaled")
+		valid.models <- c("joint", "marginal", "scaled", "none")
 		if(!any(valid.models == node.states)){
 			obj <- NULL
 			obj$loglik <- NULL

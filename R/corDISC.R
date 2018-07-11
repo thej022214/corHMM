@@ -136,9 +136,6 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			cat("Finished. Beginning thorough search...", "\n")
 			lower = rep(lb, model.set.final$np)
 			upper = rep(ub, model.set.final$np)	
-			print(lower)
-            print(upper)
-            print(init$solution)
             out = nloptr(x0=rep(init$solution, length.out = model.set.final$np), eval_f=dev.cordisc, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
 			loglik <- -out$objective
 			est.pars<-exp(out$solution)
