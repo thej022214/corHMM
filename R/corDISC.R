@@ -250,7 +250,6 @@ print.cordisc<-function(x,...){
 dev.cordisc<-function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 	
     p.new <- exp(p)
-    print(p.new)
     nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
