@@ -531,10 +531,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				#But note we are assessing the reverse transition, j to i, rather than i to j, so we transpose Q to carry out this calculation:
 				if(motherNode!=root){
 					v <- expm(tranQ * phy$edge.length[which(phy$edge[,2]==motherNode)], method=c("Ward77")) %*% liks.up[motherNode,]
-				}
-				#If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
-				#But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
-				else{
+				}else{
+                    #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
+                    #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
 					v <- 1
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
