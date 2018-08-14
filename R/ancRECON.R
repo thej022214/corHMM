@@ -453,7 +453,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	}
 	if(method=="marginal"){
         if(root.p == "maddfitz"){
-            root.p = "equal"
+            root.p = NULL
         }
         #A temporary likelihood matrix so that the original does not get written over:
 		liks.down <- liks
