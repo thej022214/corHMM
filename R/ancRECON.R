@@ -452,7 +452,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
 	}
 	if(method=="marginal"){
-        if(root.p == "maddfitz"){
+        if(is.character(root.p)){
+            #Fairly certain this is right. See Maddison (1995) and what to do at the root.
             root.p = NULL
         }
         #A temporary likelihood matrix so that the original does not get written over:
