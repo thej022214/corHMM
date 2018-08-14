@@ -13,9 +13,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             root.p <- root.p/sum(root.p)
         }
     }
-
-	if(hrm==FALSE){
-		if(ntraits==1){
+    
+    if(hrm==FALSE){
+        if(ntraits==1){
 			data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
 		}
 		if(ntraits==2){
@@ -452,11 +452,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
 	}
 	if(method=="marginal"){
-		#A temporary likelihood matrix so that the original does not get written over:
-		liks.down<-liks
+        if(root.p == "maddfitz"){
+            root.p = "equal"
+        }
+        #A temporary likelihood matrix so that the original does not get written over:
+		liks.down <- liks
 		#A transpose of Q for assessing probability of j to i, rather than i to j:
-		tranQ<-t(Q)
-		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
+		tranQ <- t(Q)
+		comp <- matrix(0,nb.tip + nb.node,ncol(liks))
 		#The first down-pass: The same algorithm as in the main function to calculate the conditional likelihood at each node:
 		for (i in seq(from = 1, length.out = nb.node)) {
 			#the ancestral node at row i is called focal
@@ -567,8 +570,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
-		liks.final[root,] <- liks.down[root,]
-		root.final <- liks.down[root,]
+		liks.final[root,] <- liks.down[root,] * root.p
+		root.final <- liks.down[root,] * root.p
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
 
