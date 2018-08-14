@@ -535,7 +535,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				#If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
 				#But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
 				else{
-					v <- root.p
+					v <- liks.down[root,]
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
@@ -553,7 +553,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		for (i in seq(from = 1, length.out = nb.node-1)) {
 			#the ancestral node at row i is called focal
 			focal <- anc[i]
-			focalRows<-which(phy$edge[,2]==focal)
+			focalRows <- which(phy$edge[,2]==focal)
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
 			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]
