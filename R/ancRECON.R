@@ -567,8 +567,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
-		liks.final[root,] <- liks.down[root,] * root.p
-		root.final <- liks.down[root,] * root.p
+		liks.final[root,] <- liks.down[root,]
+		root.final <- liks.down[root,]
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
 
