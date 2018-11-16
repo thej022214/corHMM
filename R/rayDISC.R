@@ -373,12 +373,15 @@ print.raydisc<-function(x,...){
 
 dev.raydisc.rates.and.states <- function(p, phy, data, hrm, rate.cat, rate.mat, ntraits, method, model, charnum, root.p, lewis.asc.bias, get.likelihood) {
     if(lewis.asc.bias == TRUE){
-        loglik.num <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+        loglik <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
         phy.dummy <- phy
-        data.dummy <- cbind(phy$tip.label, 0)
-        phy.dummy$node.label <- rep(1, Nnode(phy.dummy))
-        loglik.dummy <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
-        loglik <- (loglik.num  - log(1 - exp(loglik.dummy)))
+        dummy.liks.vec <- numeric(dim(Q)[1])
+        for(state.index in 1:dim(Q)[1]){
+            data.dummy <- cbind(phy$tip.label, 0)
+            phy.dummy$node.label <- rep(state.index, Nnode(phy.dummy))
+            dummy.liks.vec[state.index] <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
+        }
+        loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
     }else{
         loglik <- ancRECON(phy=phy, data=data, p=p, hrm=hrm, rate.cat=rate.cat, rate.mat=rate.mat, ntraits=ntraits, method=method, model=model, charnum=charnum, root.p=root.p, get.likelihood=get.likelihood)
     }
@@ -386,6 +389,7 @@ dev.raydisc.rates.and.states <- function(p, phy, data, hrm, rate.cat, rate.mat, 
 }
 
 
+##Keeping this because other functions in other packages use this (i.e., selac):
 dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 
     p.new <- exp(p)
@@ -405,43 +409,20 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 		diag(Q) <- -rowSums(Q)
 	}
     
-    if(lewis.asc.bias == TRUE) {
-        liks.dummy <- liks
-        liks.dummy[TIPS,1] = 1
-        liks.dummy[TIPS,2:dim(Q)[1]] = 0
-        comp.dummy <- comp
-        for (i  in seq(from = 1, length.out = nb.node)) {
-            #the ancestral node at row i is called focal
-            focal <- anc[i]
-            #Get descendant information of focal
-            desRows<-which(phy$edge[,1]==focal)
-            desNodes<-phy$edge[desRows,2]
-            v <- 1
-            v.dummy <- 1
-            for (desIndex in sequence(length(desRows))){
-                v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
-                v.dummy <- v.dummy * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks.dummy[desNodes[desIndex],]
-            }
-            comp[focal] <- sum(v)
-            comp.dummy[focal] <- sum(v.dummy)
-            liks[focal, ] <- v/comp[focal]
-            liks.dummy[focal, ] <- v.dummy/comp.dummy[focal]
+    for (i  in seq(from = 1, length.out = nb.node)) {
+        #the ancestral node at row i is called focal
+        focal <- anc[i]
+        #Get descendant information of focal
+        desRows<-which(phy$edge[,1]==focal)
+        desNodes<-phy$edge[desRows,2]
+        v <- 1
+        for (desIndex in sequence(length(desRows))){
+            v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
         }
-    }else{
-        for (i  in seq(from = 1, length.out = nb.node)) {
-            #the ancestral node at row i is called focal
-            focal <- anc[i]
-            #Get descendant information of focal
-            desRows<-which(phy$edge[,1]==focal)
-            desNodes<-phy$edge[desRows,2]
-            v <- 1
-            for (desIndex in sequence(length(desRows))){
-                v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
-            }
-            comp[focal] <- sum(v)
-            liks[focal, ] <- v/comp[focal]
-        }
+        comp[focal] <- sum(v)
+        liks[focal, ] <- v/comp[focal]
     }
+    
 	#Specifies the root:
 	root <- nb.tip + 1L
 	#If any of the logs have NAs restart search:
@@ -460,62 +441,130 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
             flat.root[is.na(flat.root)] = 0
-            if(lewis.asc.bias == TRUE){
-                loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(flat.root)+log(liks[root,])))))
-                loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(flat.root)+log(liks.dummy[root,])))))
-                loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
-            }else{
-                loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
-            }
-        }
-        else{
+            root.p <- flat.root
+            loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+        }else{
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
                 if(root.p == "yang"){
-                    diag(Q) = 0
-                    equil.root = colSums(Q) / sum(Q)
-                    if(lewis.asc.bias == TRUE){
-                        loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(equil.root)+log(liks[root,])))))
-                        loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(equil.root)+log(liks.dummy[root,])))))
-                        loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
-                    }else{
-                        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(equil.root)+log(liks[root,])))))
-                    }
+                    diag(Q) <- 0
+                    equil.root <- colSums(Q) / sum(Q)
+                    root.p <- equil.root
+                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                     if(is.infinite(loglik)){
                         return(1000000)
                     }
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks[root,] / sum(liks[root,])
-                    if(lewis.asc.bias == TRUE){
-                        loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-                        loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
-                        loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
-                    }else{
-                        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-                    }
+                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
             else{
-                if(lewis.asc.bias == TRUE){
-                    loglik.num <- (sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-                    loglik.denom <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
-                    loglik <- -(loglik.num  - log(1 - exp(loglik.denom)))
-                }else{
-                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-                }
+                loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                 if(is.infinite(loglik)){
                     return(1000000)
                 }
             }
         }
-	}
+    }
+    if(lewis.asc.bias == TRUE){
+        dummy.liks.vec <- numeric(dim(Q)[1])
+        for(state.index in 1:dim(Q)[1]){
+            dummy.liks.vec[state.index] <- CalculateLewisLikelihood(p=p, phy=phy, liks=liks, Q=Q, rate=rate, root.p=root.p, state.num=state.index)
+        }
+        loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
+    }
 	loglik
 }
 
 
-rate.cat.set.rayDISC<-function(phy,data,model,charnum){
+
+CalculateLewisLikelihood <- function(p, phy, liks, Q, rate, root.p, state.num=1){
+    
+    p.new <- p
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    TIPS <- 1:nb.tip
+    comp <- numeric(nb.tip + nb.node)
+    
+    #Obtain an object of all the unique ancestors
+    anc <- unique(phy$edge[,1])
+    #This bit is to allow packages like "selac" the ability to deal with this function directly:
+    if(is.null(rate)){
+        Q=Q
+    }else{
+        if (any(is.nan(p.new)) || any(is.infinite(p.new))) return(1000000)
+        Q[] <- c(p.new, 0)[rate]
+        diag(Q) <- -rowSums(Q)
+    }
+    
+    liks.dummy <- liks
+    liks.dummy[TIPS,] = 0
+    liks.dummy[TIPS,state.num] = 1
+    comp.dummy <- comp
+    for (i  in seq(from = 1, length.out = nb.node)) {
+        #the ancestral node at row i is called focal
+        focal <- anc[i]
+        #Get descendant information of focal
+        desRows <- which(phy$edge[,1]==focal)
+        desNodes <- phy$edge[desRows,2]
+        v.dummy <- 1
+        for(desIndex in sequence(length(desRows))){
+            v.dummy <- v.dummy * expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks.dummy[desNodes[desIndex],]
+        }
+        comp.dummy[focal] <- sum(v.dummy)
+        liks.dummy[focal, ] <- v.dummy/comp.dummy[focal]
+    }
+    #Specifies the root:
+    root <- nb.tip + 1L
+    #If any of the logs have NAs restart search:
+    if(is.na(sum(log(comp[-TIPS])))){return(1000000)}
+    else{
+        equil.root <- NULL
+        for(i in 1:ncol(Q)){
+            posrows <- which(Q[,i] >= 0)
+            rowsum <- sum(Q[posrows,i])
+            poscols <- which(Q[i,] >= 0)
+            colsum <- sum(Q[i,poscols])
+            equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+        }
+        if (is.null(root.p)){
+            flat.root = equil.root
+            k.rates <- 1/length(which(!is.na(equil.root)))
+            flat.root[!is.na(flat.root)] = k.rates
+            flat.root[is.na(flat.root)] = 0
+            loglik <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(flat.root)+log(liks.dummy[root,])))))
+        }else{
+            if(is.character(root.p)){
+                # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
+                if(root.p == "yang"){
+                    diag(Q) = 0
+                    equil.root = colSums(Q) / sum(Q)
+                    loglik <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(equil.root)+log(liks.dummy[root,])))))
+                    if(is.infinite(loglik)){
+                        return(1000000)
+                    }
+                }else{
+                    # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                    root.p = liks.dummy[root,] / sum(liks.dummy[root,])
+                    loglik <- -(sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
+                }
+            }else{# root.p!==NULL will fix root probabilities based on user supplied vector:
+                loglik <- (sum(log(comp.dummy[-TIPS])) + log(sum(exp(log(root.p)+log(liks.dummy[root,])))))
+                if(is.infinite(loglik)){
+                    return(1000000)
+                }
+            }
+        }
+    }
+    loglik
+    
+}
+
+
+rate.cat.set.rayDISC <- function(phy,data,model,charnum){
 	k <- 1
 	factored <- factorData(data, charnum=charnum)
 	nl <- ncol(factored)
