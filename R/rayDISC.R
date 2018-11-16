@@ -293,7 +293,6 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         }
     }
     
-
     if(diagn==TRUE){
         if(verbose == TRUE){
             cat("Finished. Performing diagnostic tests.", "\n")
@@ -442,7 +441,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             flat.root[!is.na(flat.root)] = k.rates
             flat.root[is.na(flat.root)] = 0
             root.p <- flat.root
-            loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+            loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))
         }else{
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
@@ -450,19 +449,19 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                     diag(Q) <- 0
                     equil.root <- colSums(Q) / sum(Q)
                     root.p <- equil.root
-                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+                    loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))
                     if(is.infinite(loglik)){
                         return(1000000)
                     }
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks[root,] / sum(liks[root,])
-                    loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+                    loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
             else{
-                loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+                loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))
                 if(is.infinite(loglik)){
                     return(1000000)
                 }
@@ -476,7 +475,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
         }
         loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
     }
-	loglik
+	-loglik
 }
 
 
