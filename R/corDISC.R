@@ -325,8 +325,6 @@ dev.cordisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
         for(state.index in 1:dim(Q)[1]){
             dummy.liks.vec[state.index] <- CalculateLewisLikelihood(p=p.new, phy=phy, liks=liks, Q=Q, rate=rate, root.p=root.p, state.num=state.index)
         }
-        print(dummy.liks.vec)
-        print(root.p)
         loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
     }
 	-loglik
