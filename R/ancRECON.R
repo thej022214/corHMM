@@ -16,7 +16,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
     
     if(hrm==FALSE){
         if(ntraits==1){
-			data.sort<-data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
+			data.sort <- data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
 		}
 		if(ntraits==2){
 			data.sort<-data.frame(data[,2], data[,3], row.names=data[,1])
