@@ -348,9 +348,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                         if(is.character(root.p)){
                             # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                             if(root.p == "yang"){
-                                Q.tmp <- Q
-                                diag(Q.tmp) = 0
-                                root.p = colSums(Q.tmp) / sum(Q.tmp)
+                                root.p <- Null(Q)
+                                root.p = colSums(Q) / sum(Q)
                                 pupko.L[focal, ] <- root.state
                             }else{
                                 # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
@@ -498,9 +497,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                 if(root.p == "yang"){
-                    Q.tmp <- Q
-                    diag(Q.tmp) = 0
-                    root.p = colSums(Q.tmp) / sum(Q.tmp)
+                    root.p <- Null(Q)
+                    root.p = colSums(Q) / sum(Q)
                     liks.down[root, ] <- root.p * liks.down[root, ]
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
@@ -625,9 +623,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                 if(root.p == "yang"){
-                    Q.tmp <- Q
-                    diag(Q.tmp) = 0
-                    root.p = colSums(Q.tmp) / sum(Q.tmp)
+                    root.p <- Null(Q)
+                    root.p = colSums(Q) / sum(Q)
                     liks[root,] <- root.p * liks[root, ]
                     liks[root,] <- liks[root,] / sum(liks[root,])
                 }else{
