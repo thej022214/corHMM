@@ -298,9 +298,8 @@ dev.cordisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
                 if(root.p == "yang"){
-                    diag(Q) = 0
-                    equil.root = colSums(Q) / sum(Q)
-                    root.p <- equil.root
+                    root.p <- Null(Q)
+                    root.p = colSums(Q) / sum(Q)
                     loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))
                     if(is.infinite(loglik)){
                         return(1000000)
