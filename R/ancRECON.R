@@ -349,7 +349,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                             # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                             if(root.p == "yang"){
                                 root.p <- Null(Q)
-                                root.p = colSums(Q) / sum(Q)
+                                root.p <- c(root.p/sum(root.p))
                                 pupko.L[focal, ] <- root.state
                             }else{
                                 # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
@@ -498,7 +498,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                 if(root.p == "yang"){
                     root.p <- Null(Q)
-                    root.p = colSums(Q) / sum(Q)
+                    root.p <- c(root.p/sum(root.p))
                     liks.down[root, ] <- root.p * liks.down[root, ]
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
@@ -624,7 +624,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                 if(root.p == "yang"){
                     root.p <- Null(Q)
-                    root.p = colSums(Q) / sum(Q)
+                    root.p <- c(root.p/sum(root.p))
                     liks[root,] <- root.p * liks[root, ]
                     liks[root,] <- liks[root,] / sum(liks[root,])
                 }else{

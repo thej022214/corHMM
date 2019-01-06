@@ -282,7 +282,7 @@ dev.corpaint<-function(p,phy,liks,Q,rate,regimes,root.p){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
                 if(root.p == "yang"){
                     root.p <- Null(Q)
-                    root.p = colSums(Q) / sum(Q)
+                    root.p <- c(root.p/sum(root.p))
                     loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
                     if(is.infinite(loglik)){
                         return(1000000)
