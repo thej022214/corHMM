@@ -558,8 +558,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
 			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]
-			comp[focal] <- sum(v*root.p)
-			liks.final[focal, ] <- (v*root.p)/comp[focal]
+			comp[focal] <- sum(v)
+			liks.final[focal, ] <- v/comp[focal]
 		}
 
         if(get.tip.states == TRUE){

@@ -322,7 +322,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
             colnames(lik.anc$lik.anc.states) <- state.names
 		}
 	}
-	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, lewis.asc.bias=lewis.asc.bias, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit, model=model, charnum=charnum, lower=lb, upper=ub, par.vec=est.pars)
+	obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),ntraits=1, solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, lewis.asc.bias=lewis.asc.bias, opts=opts, data=data, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect,bound.hit=bound.hit, model=model, charnum=charnum, lower=lb, upper=ub, par.vec=est.pars, root.p=root.p)
 	if(!is.null(matching$message.data)){ # Some taxa were included in data matrix but not not used because they were not in the tree
 		obj$message.data <- matching$message.data
 		obj$data <- matching$data # Data used for analyses were different than submitted data; return this matrix
