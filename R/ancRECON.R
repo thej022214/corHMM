@@ -499,7 +499,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 if(root.p == "yang"){
                     root.p <- Null(Q)
                     root.p <- c(root.p/sum(root.p))
-                    liks.down[root, ] <- root.p * liks.down[root, ]
+                    print(root.p)
+                    print(liks.down[root,])
+                    liks.down[root, ] <-  liks.down[root, ] * root.p
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
