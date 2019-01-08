@@ -485,6 +485,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             equil.root <- c(equil.root,rowsum/(rowsum+colsum))
         }
         if (is.null(root.p)){
+            print("please, not here")
             flat.root = equil.root
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
@@ -492,8 +493,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             liks.down[root, ] <- flat.root * liks.down[root, ]
             liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             root.p = flat.root
-        }
-        else{
+        }else{
             if(is.character(root.p)){
                 # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
                 if(root.p == "yang"){

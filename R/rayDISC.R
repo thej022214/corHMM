@@ -162,8 +162,8 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         if(verbose == TRUE){
             cat("Calculating likelihood from a set of fixed parameters", "\n")
         }
-		out<-NULL
-		out$solution<-p
+		out <- NULL
+		out$solution <- p
         phy <- reorder(phy, "pruningwise")
         if(state.recon=="subsequently") {
             out$objective <- dev.raydisc(log(out$solution),phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, lewis.asc.bias=lewis.asc.bias)
