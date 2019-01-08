@@ -467,6 +467,8 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             }
         }
     }
+    print(liks[root,])
+    
     if(lewis.asc.bias == TRUE){
         dummy.liks.vec <- numeric(dim(Q)[1])
         for(state.index in 1:dim(Q)[1]){
