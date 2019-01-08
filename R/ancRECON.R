@@ -515,7 +515,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             }
         }
 		#The up-pass
-		liks.up<-liks
+		liks.up <- liks
 		states<-apply(liks,1,which.max)
 		N <- dim(phy$edge)[1]
 		comp <- numeric(nb.tip + nb.node)
@@ -523,12 +523,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			focal <- anc[i]
 			if(!focal==root){
 				#Gets mother and sister information of focal:
-				focalRow<-which(phy$edge[,2]==focal)
-				motherRow<-which(phy$edge[,1]==phy$edge[focalRow,1])
-				motherNode<-phy$edge[focalRow,1]
-				desNodes<-phy$edge[motherRow,2]
-				sisterNodes<-desNodes[(which(!desNodes==focal))]
-				sisterRows<-which(phy$edge[,2]%in%sisterNodes==TRUE)
+				focalRow <- which(phy$edge[,2]==focal)
+				motherRow <- which(phy$edge[,1]==phy$edge[focalRow,1])
+				motherNode <- phy$edge[focalRow,1]
+				desNodes <- phy$edge[motherRow,2]
+				sisterNodes <- desNodes[(which(!desNodes==focal))]
+				sisterRows <- which(phy$edge[,2]%in%sisterNodes==TRUE)
 				#If the mother is not the root then you are calculating the probability of being in either state.
 				#But note we are assessing the reverse transition, j to i, rather than i to j, so we transpose Q to carry out this calculation:
 				if(motherNode!=root){
@@ -536,7 +536,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				}else{
                     #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
                     #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
-					v <- 1
+					v <- root.p
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
