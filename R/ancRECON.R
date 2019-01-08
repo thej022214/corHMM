@@ -498,8 +498,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 if(root.p == "yang"){
                     root.p <- Null(Q)
                     root.p <- c(root.p/sum(root.p))
-                    print(root.p)
-                    print(liks.down[root,])
                     liks.down[root, ] <-  liks.down[root, ] * root.p
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
@@ -572,12 +570,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
 		liks.final[root,] <- liks.down[root,]
-		root.final <- liks.down[root,] * root.p
-		comproot <- sum(root.final)
-		liks.final[root,] <- root.final/comproot
+        #root.final <- liks.down[root,] * root.p
+        #comproot <- sum(root.final)
+        #liks.final[root,] <- root.final/comproot
 
         if(get.likelihood == TRUE){
-############NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
+            #NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
             loglik <- as.numeric(log(liks[root,lik.states[root]]))
             return(loglik)
         }else{
