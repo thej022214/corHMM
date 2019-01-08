@@ -536,7 +536,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				}else{
                     #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
                     #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
-					v <- root.p
+					v <- liks.down[root, ]
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
