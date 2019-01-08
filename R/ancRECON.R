@@ -451,10 +451,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
 	}
 	if(method=="marginal"){
-        if(is.character(root.p)){
+        #        if(is.character(root.p)){
             #Fairly certain this is right. See Maddison (1995) and what to do at the root.
-            root.p = NULL
-        }
+            #   root.p = NULL
+            #}
         #A temporary likelihood matrix so that the original does not get written over:
 		liks.down <- liks
 		#A transpose of Q for assessing probability of j to i, rather than i to j:
@@ -485,7 +485,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             equil.root <- c(equil.root,rowsum/(rowsum+colsum))
         }
         if (is.null(root.p)){
-            print("please, not here")
             flat.root = equil.root
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
