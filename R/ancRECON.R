@@ -451,10 +451,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
 	}
 	if(method=="marginal"){
-        #        if(is.character(root.p)){
+        #if(is.character(root.p)){
             #Fairly certain this is right. See Maddison (1995) and what to do at the root.
             #   root.p = NULL
-            #}
+        #}
         #A temporary likelihood matrix so that the original does not get written over:
 		liks.down <- liks
 		#A transpose of Q for assessing probability of j to i, rather than i to j:
@@ -571,7 +571,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
-		liks.final[root,] <- liks.down[root,] * root.p
+		liks.final[root,] <- liks.down[root,]
 		root.final <- liks.down[root,] * root.p
 		comproot <- sum(root.final)
 		liks.final[root,] <- root.final/comproot
