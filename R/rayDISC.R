@@ -467,7 +467,6 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             }
         }
     }
-    print((liks[root,] * root.p)/sum(liks[root,] * root.p))
     
     if(lewis.asc.bias == TRUE){
         dummy.liks.vec <- numeric(dim(Q)[1])
