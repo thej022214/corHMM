@@ -515,6 +515,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             }
         }
 		#The up-pass
+        print(liks.down[root,])
 		liks.up <- liks
 		states<-apply(liks,1,which.max)
 		N <- dim(phy$edge)[1]
