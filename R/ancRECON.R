@@ -489,7 +489,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
             flat.root[is.na(flat.root)] = 0
-            liks.down[root, ] <- flat.root * liks.down[root, ]
+            #liks.down[root, ] <- flat.root * liks.down[root, ]
             liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             root.p = flat.root
         }else{
@@ -498,18 +498,18 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 if(root.p == "yang"){
                     root.p <- Null(Q)
                     root.p <- c(root.p/sum(root.p))
-                    liks.down[root, ] <-  liks.down[root, ] * root.p
+                    #liks.down[root, ] <-  liks.down[root, ] * root.p
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks.down[root,] / sum(liks.down[root,])
-                    liks.down[root, ] <- root.p * liks.down[root, ]
+                    #liks.down[root, ] <- root.p * liks.down[root, ]
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
             else{
-                liks.down[root, ] <- root.p * liks.down[root, ]
+                #liks.down[root, ] <- root.p * liks.down[root, ]
                 liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             }
         }
@@ -535,7 +535,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				}else{
                     #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
                     #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
-					v <- root.p
+					v <- 1
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
@@ -547,7 +547,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			}
 		}
 		#The final pass
-		liks.final<-liks
+		liks.final <- liks
 		comp <- numeric(nb.tip + nb.node)
 		#In this final pass, root is never encountered. But its OK, because root likelihoods are set after the loop:
 		for (i in seq(from = 1, length.out = nb.node-1)) {
@@ -556,7 +556,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			focalRows <- which(phy$edge[,2]==focal)
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
-			v <- liks.down[focal,]*expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,]
+			v <- root.p * liks.down[focal,] * (expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,])
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
@@ -568,10 +568,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
-		liks.final[root,] <- liks.down[root,]
-        #root.final <- liks.down[root,] * root.p
-        #comproot <- sum(root.final)
-        #liks.final[root,] <- root.final/comproot
+        #liks.final[root,] <- liks.down[root,] * root.p
+        root.final <- liks.down[root,] * root.p
+        comproot <- sum(root.final)
+        liks.final[root,] <- root.final/comproot
 
         if(get.likelihood == TRUE){
             #NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
