@@ -421,7 +421,7 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
         comp[focal] <- sum(v)
         if(anc == (Ntip(phy)+1)){
             print(liks[focal, ])
-            print(liks[focal, ] /sum(liks[focal, ])
+            print(liks[focal, ] /sum(liks[focal, ]))
         }
         liks[focal, ] <- v/comp[focal]
     }
