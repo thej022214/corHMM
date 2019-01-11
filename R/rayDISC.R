@@ -419,6 +419,10 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
             v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
+        if(anc == (Ntip(phy)+1)){
+            print(liks[focal, ])
+            print(liks[focal, ] /sum(liks[focal, ])
+        }
         liks[focal, ] <- v/comp[focal]
     }
     
