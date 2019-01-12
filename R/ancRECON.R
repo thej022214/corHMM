@@ -489,7 +489,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
             k.rates <- 1/length(which(!is.na(equil.root)))
             flat.root[!is.na(flat.root)] = k.rates
             flat.root[is.na(flat.root)] = 0
-            #liks.down[root, ] <- flat.root * liks.down[root, ]
+            liks.down[root, ] <- flat.root * liks.down[root, ]
             liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             root.p = flat.root
         }else{
@@ -498,18 +498,18 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 if(root.p == "yang"){
                     root.p <- Null(Q)
                     root.p <- c(root.p/sum(root.p))
-                    #liks.down[root, ] <-  liks.down[root, ] * root.p
+                    liks.down[root, ] <-  liks.down[root, ] * root.p
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks.down[root,] / sum(liks.down[root,])
-                    #liks.down[root, ] <- root.p * liks.down[root, ]
+                    liks.down[root, ] <- root.p * liks.down[root, ]
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
             else{
-                #liks.down[root, ] <- root.p * liks.down[root, ]
+                liks.down[root, ] <- root.p * liks.down[root, ]
                 liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             }
         }
