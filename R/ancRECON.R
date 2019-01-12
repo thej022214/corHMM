@@ -498,18 +498,18 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
                 if(root.p == "yang"){
                     root.p <- Null(Q)
                     root.p <- c(root.p/sum(root.p))
-                    #liks.down[root, ] <-  liks.down[root, ] * root.p
+                    liks.down[root, ] <-  liks.down[root, ] * root.p
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root,])
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-                    #root.p = liks.down[root,] / sum(liks.down[root,])
+                    root.p = liks.down[root,] / sum(liks.down[root,])
                     liks.down[root, ] <- root.p * liks.down[root, ]
                     liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
                 }
             }
             # root.p!==NULL will fix root probabilities based on user supplied vector:
             else{
-                #liks.down[root, ] <- root.p * liks.down[root, ]
+                liks.down[root, ] <- root.p * liks.down[root, ]
                 liks.down[root, ] <- liks.down[root,] / sum(liks.down[root, ])
             }
         }
@@ -569,9 +569,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
         liks.final[root,] <- liks.down[root,]
-        root.final <- liks.down[root,] * root.p
-        comproot <- sum(root.final)
-        liks.final[root,] <- root.final/comproot
+        #root.final <- liks.down[root,] * root.p
+        #comproot <- sum(root.final)
+        #liks.final[root,] <- root.final/comproot
 
         if(get.likelihood == TRUE){
             #NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
