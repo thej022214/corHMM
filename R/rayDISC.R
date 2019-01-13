@@ -455,7 +455,6 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
                 }else{
                     # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
                     root.p = liks[root,] / sum(liks[root,])
-                    print(root.p)
                     loglik <- sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,]))))
                 }
             }
