@@ -533,7 +533,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 				}else{
                     #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
                     #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
-					v <- 1
+					v <- root.p
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
@@ -554,7 +554,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 			focalRows <- which(phy$edge[,2]==focal)
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
-			v <- root.p * liks.down[focal,] * (expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,])
+			v <- liks.down[focal,] * (expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,])
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
@@ -567,9 +567,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
         }
         #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
         liks.final[root,] <- liks.down[root,]
-        root.final <- liks.down[root,] * root.p
-        comproot <- sum(root.final)
-        liks.final[root,] <- root.final/comproot
+        #root.final <- liks.down[root,] * root.p
+        #comproot <- sum(root.final)
+        #liks.final[root,] <- root.final/comproot
 
         if(get.likelihood == TRUE){
             #NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
