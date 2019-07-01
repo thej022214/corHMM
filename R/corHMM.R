@@ -123,11 +123,15 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
                 dat.red <- dat[-taxa.missing.data.drop,]
                 phy.red <- drop.tip(phy, taxa.missing.data.drop)
                 dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
-                par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+                #Seems like phangorn has changed:
+                phy.tmp <- multi2di(phy.red)
+                par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
             }else{
                 dat <- as.matrix(data.sort)
                 dat <- phyDat(dat,type="USER", levels=c("0","1"))
-                par.score <- parsimony(phy, dat, method="fitch")/2
+                #Seems like phangorn has changed:
+                phy.tmp <- multi2di(phy)
+                par.score <- parsimony(phy.tmp, dat, method="fitch")/2
             }
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
@@ -189,11 +193,15 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
                             dat.red <- dat[-taxa.missing.data.drop,]
                             phy.red <- drop.tip(phy, taxa.missing.data.drop)
                             dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
-                            par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+                            #Seems like phangorn has changed:
+                            phy.tmp <- multi2di(phy.red)
+                            par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
                         }else{
                             dat <- as.matrix(data.sort)
                             dat <- phyDat(dat,type="USER", levels=c("0","1"))
-                            par.score <- parsimony(phy, dat, method="fitch")/2
+                            #Seems like phangorn has changed:
+                            phy.tmp <- multi2di(phy)
+                            par.score <- parsimony(phy.tmp, dat, method="fitch")/2
                         }
                         tl <- sum(phy$edge.length)
 						mean.change = par.score/tl
@@ -309,11 +317,13 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
                         dat.red <- dat[-taxa.missing.data.drop,]
                         phy.red <- drop.tip(phy, taxa.missing.data.drop)
                         dat.red <- phyDat(dat.red,type="USER", levels=c("0","1"))
-                        par.score <- parsimony(phy.red, dat.red, method="fitch")/2
+                        phy.tmp <- multi2di(phy.red)
+                        par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
                     }else{
                         dat <- as.matrix(data.sort)
                         dat <- phyDat(dat,type="USER", levels=c("0","1"))
-                        par.score <- parsimony(phy, dat, method="fitch")/2
+                        phy.tmp <- multi2di(phy)
+                        par.score <- parsimony(phy.tmp, dat, method="fitch")/2
                     }
 					tl <- sum(phy$edge.length)
 					mean.change = par.score/tl
@@ -681,6 +691,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	}
 	loglik
 }
+
 
 rate.cat.set.corHMM<-function(phy,data.sort,rate.cat){
 

@@ -118,7 +118,9 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
 			dat<-as.matrix(data.sort)
 			dat<-phyDat(dat,type="USER", levels=c("0","1"))
-			par.score<-parsimony(phy, dat, method="fitch")
+            #Seems like phangorn has changed:
+            phy.tmp <- multi2di(phy)
+			par.score<-parsimony(phy.tmp, dat, method="fitch")
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
 			if(mean.change==0){

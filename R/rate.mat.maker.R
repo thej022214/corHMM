@@ -17,7 +17,7 @@ rate.mat.maker<-function(rate.cat, hrm=TRUE, ntraits=NULL, nstates=NULL, model=c
 		matFINAL<-mat1+mat2
 		rate.mat.index <- matrix(NA, k*rate.cat, k*rate.cat)
 		np <- k + (rate.cat-1) * 6
-		index<-matFINAL==1
+		index <- matFINAL==1
 		rate.mat.index[index] <- 1:np
 		if (rate.cat == 1){
 			rownames(rate.mat.index) <- c("(0)","(1)")
