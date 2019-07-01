@@ -204,7 +204,9 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 			}else{
 			  dat <- as.matrix(data.sort)
 			  dat <- phyDat(dat,type="USER", levels=sort(unique(c(dat))))
-			  par.score <- parsimony(phy, dat, method="fitch")/2
+              #Seems like phangorn has changed:
+              phy.tmp <- multi2di(phy)
+			  par.score <- parsimony(phy.tmp, dat, method="fitch")/2
 			}
 			
 			tl <- sum(phy$edge.length)
