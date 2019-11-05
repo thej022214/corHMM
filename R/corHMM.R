@@ -454,7 +454,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 
 	#Approximates the Hessian using the numDeriv function
 	if(diagn==TRUE){
-		h <- hessian(func=dev.corhmm, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
+		h <- hessian(func=dev.corhmm, x=log(est.pars), phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p)
 		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		solution.se <- matrix(sqrt(diag(pseudoinverse(h)))[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		hess.eig <- eigen(h,symmetric=TRUE)
