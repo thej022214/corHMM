@@ -99,6 +99,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 
 	lower = rep(lb, model.set.final$np)
 	upper = rep(ub, model.set.final$np)
+    phy <- reorder(phy, "pruningwise")
 
 	if(optim.method=="twoStep"){
 		if(!is.null(p)){
@@ -570,7 +571,6 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p) {
 	nb.node <- phy$Nnode
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
-	phy <- reorder(phy, "pruningwise")
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
 	k.rates <- dim(Q)[2] / 2
