@@ -54,6 +54,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
 		}
 		else{
+		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
 			rate <- rate.mat
             col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
             row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
