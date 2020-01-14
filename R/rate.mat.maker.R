@@ -1,162 +1,187 @@
 #Rate matrix maker and manipulating functions
 
-#written by Jeremy M. Beaulieu and Jeffrey C. Oliver
-
-rate.mat.maker<-function(rate.cat, hrm=TRUE, ntraits=NULL, nstates=NULL, model=c("ER", "SYM", "ARD")){
-	if(hrm==TRUE){
-		k=2
-		mat1 <- matrix(NA, k*rate.cat, k*rate.cat)
-		mat2 <- matrix(NA, k*rate.cat, k*rate.cat)
-		vec.tmp1<-rep(c(0,1),rate.cat)
-		vec.tmp2<-rep(1:rate.cat, rep(2,rate.cat))-1
-		
-		for(i in 1:(k*rate.cat)){
-			mat1[i,]<-abs(vec.tmp1-vec.tmp1[i])
-			mat2[i,]<-abs(vec.tmp2-vec.tmp2[i])
-		}
-		matFINAL<-mat1+mat2
-		rate.mat.index <- matrix(NA, k*rate.cat, k*rate.cat)
-		np <- k + (rate.cat-1) * 6
-		index <- matFINAL==1
-		rate.mat.index[index] <- 1:np
-		if (rate.cat == 1){
-			rownames(rate.mat.index) <- c("(0)","(1)")
-			colnames(rate.mat.index) <- c("(0)","(1)")			
-		}
-		if (rate.cat == 2){
-			rownames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)")
-			colnames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)")
-		}
-		if (rate.cat == 3){
-			rownames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)")
-			colnames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)")
-		}
-		if (rate.cat == 4){
-			rownames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)")
-			colnames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)")
-		}
-		if (rate.cat == 5){
-			rownames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)","(0,R5)","(1,R5)")
-			colnames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)","(0,R5)","(1,R5)")
-		}
-		if (rate.cat == 6){
-			rownames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)","(0,R5)","(1,R5)","(0,R6)","(1,R6)")
-			colnames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)","(0,R5)","(1,R5)","(0,R6)","(1,R6)")
-		}
-		if (rate.cat == 7){
-			rownames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)","(0,R5)","(1,R5)","(0,R6)","(1,R6)","(0,R7)","(1,R7)")
-			colnames(rate.mat.index) <- c("(0,R1)","(1,R1)","(0,R2)","(1,R2)","(0,R3)","(1,R3)","(0,R4)","(1,R4)","(0,R5)","(1,R5)","(0,R6)","(1,R6)","(0,R7)","(1,R7)")
-		}		
-	}
-	if(hrm==FALSE){
-		k=ntraits
-		nl=2
-		if(ntraits==1){
-			k <- 1
-			nl <- nstates
-			if (is.character(model)) {
-				rate.mat.index <- matrix(NA, nl, nl) #An nl x nl matrix, filled with NA values
-				tmp2 <- cbind(1:(nl^k), 1:(nl^k)) # For setting diagonals
-				index<-matrix(TRUE,nl^k,nl^k)
-				diag(index) <- FALSE
-				if (model == "ER") {
-					np <- 1 #np is the number of parameters in the rate matrix
-					rate.mat.index[index] <- 1:np
-				}
-				if (model == "SYM") {
-					np <- nl * (nl - 1)/2
-					sel <- col(rate.mat.index) < row(rate.mat.index)
-					#Use transpose of the rate category matrix to finish enumerating:
-					rate.mat.index <- t(rate.mat.index)
-					rate.mat.index[sel] <- 1:np
-                    rate.mat.index[upper.tri(rate.mat.index)] = t(rate.mat.index)[upper.tri(rate.mat.index)]
-                }
-				if (model == "ARD") {
-					np <- nl*(nl - 1)
-					rate.mat.index[index] <- 1:np
-				}
-			}
-		}
-		if(ntraits==2){
-			#Hard-coded for now
-			mat1<-matrix(,nl^k,nl^k)
-			mat2<-matrix(,nl^k,nl^k)
-			vec.tmp1<-c(0,0,1,1)
-			vec.tmp2<-c(0,1,0,1)
-			for(i in 1:(nl^k)){
-				mat1[i,]<-abs(vec.tmp1-vec.tmp1[i])
-				mat2[i,]<-abs(vec.tmp2-vec.tmp2[i])
-			}
-			matFINAL<-mat1+mat2
-			
-			if (is.character(model)) {
-				rate.mat.index <- matrix(NA, nl^k, nl^k)
-				if (model == "ER"){
-					np <- 1
-					index<-matFINAL==1
-					rate.mat.index[index] <- 1:np
-				}
-				if (model == "SYM") {
-					np <- 4
-					index<-matFINAL==1
-					rate.mat.index[index][c(1,2,4,6)] <- rate.mat.index[index][c(3,5,7,8)] <- 1:np
-				}
-				if (model == "ARD") {
-					np <- 8
-					index<-matFINAL==1
-					rate.mat.index[index] <- 1:np
-				}
-			}
-		}
-		if(ntraits==3){
-			#Hard-coded for now
-			mat1<-matrix(,nl^k,nl^k)
-			mat2<-matrix(,nl^k,nl^k)
-			mat3<-matrix(,nl^k,nl^k)
-			vec.tmp1<-c(0,1,0,0,1,1,0,1)
-			vec.tmp2<-c(0,0,1,0,1,0,1,1)
-			vec.tmp3<-c(0,0,0,1,0,1,1,1)
-			
-			for(i in 1:(nl^k)){
-				mat1[i,]<-abs(vec.tmp1-vec.tmp1[i])
-				mat2[i,]<-abs(vec.tmp2-vec.tmp2[i])
-				mat3[i,]<-abs(vec.tmp3-vec.tmp3[i])
-			}
-			matFINAL<-mat1+mat2+mat3
-			
-			if (is.character(model)) {
-				rate.mat.index <- matrix(NA, nl^k, nl^k)
-				if (model == "ER"){
-					np <- 1
-					index<-matFINAL==1
-					rate.mat.index[index] <- 1:np
-				}
-				if (model == "SYM") {
-					np <- 12
-					index<-matFINAL==1
-					rate.mat.index[index][c(1,2,3,5,6,8,9,11,12,15,18,21)] <- rate.mat.index[index][c(4,7,10,13,16,14,19,17,20,22,23,24)] <- 1:np
-				}
-				if (model == "ARD") {
-					np <- 24
-					index<-matFINAL==1
-					rate.mat.index[index] <- 1:np
-				}
-			}
-		}
-		if(ntraits==1){
-			rownames(rate.mat.index) <- as.character(1:nl)
-			colnames(rate.mat.index) <- as.character(1:nl)
-		}
-		if(ntraits==2){
-			rownames(rate.mat.index) <- c("(0,0)","(0,1)","(1,0)","(1,1)")
-			colnames(rate.mat.index) <- c("(0,0)","(0,1)","(1,0)","(1,1)")
-		}
-		if(ntraits==3){
-			rownames(rate.mat.index) <- c("(0,0,0)","(1,0,0)","(0,1,0)","(0,0,1)","(1,1,0)","(1,0,1)","(0,1,1)","(1,1,1)")
-			colnames(rate.mat.index) <- c("(0,0,0)","(1,0,0)","(0,1,0)","(0,0,1)","(1,1,0)","(1,0,1)","(0,1,1)","(1,1,1)")
-		}			
-	}
-	return(rate.mat.index)
+#written by Jeremy M. Beaulieu and Jeffrey C. Oliver, modified by James D. Boyko
+rate.mat.maker<- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL, 
+          model = c("ER", "SYM", "ARD")) 
+{
+  if (hrm == TRUE) {
+    k = 2
+    mat1 <- matrix(NA, k * rate.cat, k * rate.cat)
+    mat2 <- matrix(NA, k * rate.cat, k * rate.cat)
+    vec.tmp1 <- rep(c(0, 1), rate.cat)
+    vec.tmp2 <- rep(1:rate.cat, rep(2, rate.cat)) - 1
+    for (i in 1:(k * rate.cat)) {
+      mat1[i, ] <- abs(vec.tmp1 - vec.tmp1[i])
+      mat2[i, ] <- abs(vec.tmp2 - vec.tmp2[i])
+    }
+    matFINAL <- mat1 + mat2
+    rate.mat.index <- matrix(NA, k * rate.cat, k * rate.cat)
+    np <- k + (rate.cat - 1) * 6
+    index <- matFINAL == 1
+    rate.mat.index[index] <- 1:np
+    if (rate.cat == 1) {
+      rownames(rate.mat.index) <- c("(0)", "(1)")
+      colnames(rate.mat.index) <- c("(0)", "(1)")
+    }
+    if (rate.cat == 2) {
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)")
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)")
+    }
+    if (rate.cat == 3) {
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)")
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)")
+    }
+    if (rate.cat == 4) {
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)")
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)")
+    }
+    if (rate.cat == 5) {
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)", "(0,R5)", "(1,R5)")
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)", "(0,R5)", "(1,R5)")
+    }
+    if (rate.cat == 6) {
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)")
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)")
+    }
+    if (rate.cat == 7) {
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)", 
+                                    "(0,R7)", "(1,R7)")
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)", 
+                                    "(0,R7)", "(1,R7)")
+    }
+  }
+  if (hrm == FALSE) {
+    k = ntraits
+    nl = 2
+    if (ntraits == 1) {
+      k <- 1
+      nl <- nstates
+      if (is.character(model)) {
+        rate.mat.index <- matrix(NA, nl, nl)
+        tmp2 <- cbind(1:(nl^k), 1:(nl^k))
+        index <- matrix(TRUE, nl^k, nl^k)
+        diag(index) <- FALSE
+        if (model == "ER") {
+          np <- 1
+          rate.mat.index[index] <- 1:np
+        }
+        if (model == "SYM") {
+          np <- nl * (nl - 1)/2
+          sel <- col(rate.mat.index) < row(rate.mat.index)
+          rate.mat.index <- t(rate.mat.index)
+          rate.mat.index[sel] <- 1:np
+          rate.mat.index[upper.tri(rate.mat.index)] = t(rate.mat.index)[upper.tri(rate.mat.index)]
+        }
+        if (model == "ARD") {
+          np <- nl * (nl - 1)
+          rate.mat.index[index] <- 1:np
+        }
+      }
+    }
+    if (ntraits == 2) {
+      mat1 <- matrix(, nl^k, nl^k)
+      mat2 <- matrix(, nl^k, nl^k)
+      vec.tmp1 <- c(0, 0, 1, 1)
+      vec.tmp2 <- c(0, 1, 0, 1)
+      for (i in 1:(nl^k)) {
+        mat1[i, ] <- abs(vec.tmp1 - vec.tmp1[i])
+        mat2[i, ] <- abs(vec.tmp2 - vec.tmp2[i])
+      }
+      matFINAL <- mat1 + mat2
+      if (is.character(model)) {
+        rate.mat.index <- matrix(NA, nl^k, nl^k)
+        if (model == "ER") {
+          np <- 1
+          index <- matFINAL == 1
+          rate.mat.index[index] <- 1:np
+        }
+        if (model == "SYM") {
+          np <- 4
+          index <- matFINAL == 1
+          rate.mat.index[index][c(1, 2, 4, 6)] <- rate.mat.index[index][c(3, 
+                                                                          5, 7, 8)] <- 1:np
+        }
+        if (model == "ARD") {
+          np <- 8
+          index <- matFINAL == 1
+          rate.mat.index[index] <- 1:np
+        }
+      }
+    }
+    if (ntraits == 3) {
+      mat1 <- matrix(, nl^k, nl^k)
+      mat2 <- matrix(, nl^k, nl^k)
+      mat3 <- matrix(, nl^k, nl^k)
+      vec.tmp1 <- c(0, 1, 0, 0, 1, 1, 0, 1)
+      vec.tmp2 <- c(0, 0, 1, 0, 1, 0, 1, 1)
+      vec.tmp3 <- c(0, 0, 0, 1, 0, 1, 1, 1)
+      for (i in 1:(nl^k)) {
+        mat1[i, ] <- abs(vec.tmp1 - vec.tmp1[i])
+        mat2[i, ] <- abs(vec.tmp2 - vec.tmp2[i])
+        mat3[i, ] <- abs(vec.tmp3 - vec.tmp3[i])
+      }
+      matFINAL <- mat1 + mat2 + mat3
+      if (is.character(model)) {
+        rate.mat.index <- matrix(NA, nl^k, nl^k)
+        if (model == "ER") {
+          np <- 1
+          index <- matFINAL == 1
+          rate.mat.index[index] <- 1:np
+        }
+        if (model == "SYM") {
+          np <- 12
+          index <- matFINAL == 1
+          rate.mat.index[index][c(1, 2, 3, 5, 6, 8, 9, 
+                                  11, 12, 15, 18, 21)] <- rate.mat.index[index][c(4, 
+                                                                                  7, 10, 13, 16, 14, 19, 17, 20, 22, 23, 24)] <- 1:np
+        }
+        if (model == "ARD") {
+          np <- 24
+          index <- matFINAL == 1
+          rate.mat.index[index] <- 1:np
+        }
+      }
+    }
+    if (ntraits == 1) {
+      rownames(rate.mat.index) <- as.character(1:nl)
+      colnames(rate.mat.index) <- as.character(1:nl)
+    }
+    if (ntraits == 2) {
+      rownames(rate.mat.index) <- c("(0,0)", "(0,1)", "(1,0)", 
+                                    "(1,1)")
+      colnames(rate.mat.index) <- c("(0,0)", "(0,1)", "(1,0)", 
+                                    "(1,1)")
+    }
+    if (ntraits == 3) {
+      rownames(rate.mat.index) <- c("(0,0,0)", "(1,0,0)", 
+                                    "(0,1,0)", "(0,0,1)", "(1,1,0)", "(1,0,1)", "(0,1,1)", 
+                                    "(1,1,1)")
+      colnames(rate.mat.index) <- c("(0,0,0)", "(1,0,0)", 
+                                    "(0,1,0)", "(0,0,1)", "(1,1,0)", "(1,0,1)", "(0,1,1)", 
+                                    "(1,1,1)")
+    }
+  }
+  return(rate.mat.index)
 }
 
 rate.par.drop <- function(rate.mat.index=NULL,drop.par=NULL){
@@ -220,3 +245,142 @@ rate.par.eq <- function(rate.mat.index=NULL,eq.par=NULL){
 	return(rate.mat.index)
 }
 
+# JDB modifications - alternative index matrix construction. instructions below.
+
+convert2I <- function(Q){
+  I <- matrix(0, dim(Q)[1], dim(Q)[2])
+  diag(I) <- 1
+  return(I)
+}
+
+getStateMat <- function(nState){
+  StateMat <- matrix(1:(nState^2),nState,nState)
+  diag(StateMat) <- 0
+  StateMat[StateMat>0] <- 1:length(StateMat[StateMat>0])
+  return(StateMat)
+}
+
+dropStateMatPars <- function(StateMat, Pars){
+  for(i in Pars){
+    StateMat[StateMat==i] <- 0
+  }
+  StateMat[StateMat>0] <- 1:length(StateMat[StateMat>0])
+  return(StateMat)
+}
+
+keepStateMatPars <- function(StateMat, Pars){
+  tmp <- matrix(0, dim(StateMat)[1], dim(StateMat)[2])
+  for(i in Pars){
+    tmp[StateMat==i] <- 1
+  }
+  tmp[tmp>0] <- 1:length(tmp[tmp>0])
+  return(tmp)
+}
+
+equateStateMatPars <- function(StateMat, ParsList){
+  if(!class(ParsList) == "list"){
+    ParsList <- list(ParsList)
+  }
+  TestMat <- do.call(rbind, ParsList)
+  RowLow <- apply(TestMat, 1, min)
+  ParsList <- ParsList[match(sort(RowLow), RowLow)]
+  newMat <- StateMat
+  pars <- StateMat[StateMat > 0]
+  for(i in 1:length(ParsList)){
+    newMat[match(ParsList[[i]], StateMat)] <- min(ParsList[[i]])
+  }
+  pars <- newMat[newMat > 0]
+  for(i in 1:length(unique(pars))){
+    if(!i %in% pars){
+      pars[pars == min(pars[pars > i])] <- i
+    }
+  }
+  newMat[newMat > 0] <- pars
+  return(newMat)
+}
+
+updateStateMats <- function(StateMats){
+  tmp <- unlist(lapply(StateMats, max)) 
+  newIndMax <- sapply(1:length(tmp), function(x) sum(tmp[1:x]))
+  for(i in 2:length(StateMats)){
+    StateMats[[i]][StateMats[[i]] > 0] <- ((newIndMax[i-1]+1):newIndMax[i])[(StateMats[[i]])]
+  }
+  return(StateMats)
+}
+
+getFullMat <- function(StateMats, RateClassMat){
+  FullMat <- convert2I(RateClassMat) %x% matrix(0, dim(StateMats[[1]])[1], dim(StateMats[[1]])[2])
+  IndMat <- matrix(0, length(StateMats), length(StateMats))
+  for(i in 1:length(StateMats)){
+    tmpIndMat <- IndMat
+    diag(tmpIndMat)[i] <-  1
+    FullMat <- FullMat + tmpIndMat %x% StateMats[[i]]
+  }
+  StartingHiddenInd <- max(FullMat)
+  NonDiagonal <- which(c(lower.tri(RateClassMat) | upper.tri(RateClassMat)))
+  # a matrix for determining where in the full mat we're going
+  IndMat <- matrix(0, dim(RateClassMat)[1], dim(RateClassMat)[2])
+  # a matrix that contains the diagonals being implemented
+  HRMat <- matrix(0, dim(StateMats[[1]])[1], dim(StateMats[[1]])[2])
+  for(i in 1:length(NonDiagonal)){
+    tmpIndMat <- IndMat
+    tmpHRMat <- HRMat
+    diag(tmpHRMat) <- StartingHiddenInd + RateClassMat[NonDiagonal[i]]
+    tmpIndMat[NonDiagonal[i]] <-  1
+    FullMat <- FullMat + tmpIndMat %x% tmpHRMat
+  }
+  return(FullMat)
+}
+
+rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model=c("ER", "SYM", "ARD")){
+  
+  StateMats <- vector("list", rate.cat)
+  
+  for(i in 1:rate.cat){
+    StateMats[[i]] <- getStateMat(ntraits)
+  }
+  
+  RateClassMat <- getStateMat(rate.cat)
+  StateMats <- updateStateMats(StateMats) 
+  FullMat <- getFullMat(StateMats, RateClassMat)
+  
+  StateNames <- paste("(", rep(0:(ntraits-1), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
+  
+  rownames(FullMat) <- colnames(FullMat) <- StateNames
+  FullMat[FullMat == 0] <- NA
+  return(FullMat)
+}
+
+# step 1: create the individual processes that you are trying to model (the number of matricies you create is the number of hidden states you're interested in modeling)
+# StateMatA <- getStateMat(nState = 3)
+# StateMatB <- getStateMat(nState = 3)
+# StateMatC <- getStateMat(nState = 3)
+# StateMatD <- getStateMat(nState = 3)
+# 
+# StateMats <- list(StateMatA, StateMatB, StateMatC, StateMatD)
+# 
+# # step 2: determine how those processes are related to one another
+# RateClassMat <- getStateMat(4)
+# 
+# # this updates all of the matricies to have estimated paramaters
+# 
+# #StateMats <- updateStateMats(StateMats) 
+# 
+# # step 3: combine the processes and their relations into a single matrix
+# FullMat <- getFullMat(StateMats, RateClassMat)
+# 
+# require(hisse)
+# trans.rate <- TransMatMakerMuHiSSE(hidden.traits=3, include.diagonals = TRUE)
+# 
+# # hardcoded beacuse lazy 3 state
+# hiMat <- rbind(cbind(FullMat, 0, 0, 0, 0),0,0,0,0)
+# nObsStates <- dim(StateMats[[1]])[1]
+# nHiStates <- length(StateMats)
+# nObsParams <- nHiStates*nObsStates
+# IndMat <- matrix(1:nObsParams, nObsStates, nHiStates)
+# IndVec <- as.vector(rbind(IndMat, (nObsParams+1):(nObsParams+dim(IndMat)[2])))
+# 
+# hiMat <- hiMat[IndVec,]
+# hiMat <- hiMat[,IndVec]
+# 
+# trans.rate[1:dim(trans.rate)[1], 1:dim(trans.rate)[2]] <- hiMat
