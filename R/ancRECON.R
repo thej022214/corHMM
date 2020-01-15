@@ -52,13 +52,15 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	  drop.states = NULL
 		if(is.null(rate.mat)){
 		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
+		  rate.mat <- model.set.final$index.matrix
+		  rate <- model.set.final$rate
 		}
 		else{
 		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
 			rate <- rate.mat
-            col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
-            row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
-            drop.states <- col.sums[which(col.sums == row.sums)]
+      col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
+      row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
+      drop.states <- col.sums[which(col.sums == row.sums)]
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 		}
 		#Makes a matrix of tip states and empty cells corresponding
@@ -66,7 +68,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 		x <- data.sort[,1]
 		TIPS <- 1:nb.tip
 		tranQ <- Q <- model.set.final$Q
-		rate.mat <- rate <- model.set.final$rate
 		liks <- model.set.final$liks
 	}
 	if(hrm==FALSE){
