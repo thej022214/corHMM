@@ -69,10 +69,10 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 
 	#Some initial values for use later
 	k=2
-
 	ub = log(100)
 	lb = -20
-
+	order.test <- TRUE
+	
 	obj <- NULL
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
@@ -89,7 +89,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 
 	# this allows for custom rate matricies! 
 	if(!is.null(rate.mat)){
-		rate <- rate.mat
+		order.test <- FALSE
+	  rate <- rate.mat
 		model.set.final$np <- max(rate, na.rm=TRUE)
 		rate[is.na(rate)]=max(rate, na.rm=TRUE)+1
 		model.set.final$rate <- rate
@@ -112,7 +113,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 			cat("Calculating likelihood from a set of fixed parameters", "\n")
 			out<-NULL
 			est.pars<-log(p)
-			out$objective <- dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out$objective <- dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			est.pars <- exp(est.pars)
 		}
 		else{
@@ -154,20 +155,20 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 			upper = rep(ub, model.set.final$np)
 			opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
 			cat("Finished. Beginning simulated annealing Round 1...", "\n")
-			out.sann <- GenSA(rep(log(ip), model.set.final$np), fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out.sann <- GenSA(rep(log(ip), model.set.final$np), fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			cat("Finished. Refining using subplex routine...", "\n")
             #out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
-			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			cat("Finished. Beginning simulated annealing Round 2...", "\n")
-			out.sann <- GenSA(out$solution, fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out.sann <- GenSA(out$solution, fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			cat("Finished. Refining using subplex routine...", "\n")
             #out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
-			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			cat("Finished. Beginning simulated annealing Round 3...", "\n")
-			out.sann <- GenSA(out$solution, fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out.sann <- GenSA(out$solution, fn=dev.corhmm, lower=lower, upper=upper, control=list(max.call=sann.its), phy=phy,liks=model.set.final$liks, Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			cat("Finished. Refining using subplex routine...", "\n")
             #out = subplex(out.sann$par, fn=dev.corhmm, control=list(.Machine$double.eps^0.25, parscale=rep(0.1, length(out.sann$par))), phy=phy,liks=model.set.init$liks,Q=model.set.init$Q,rate=model.set.init$rate,root.p=root.p)
-			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out = nloptr(x0=out.sann$par, eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 
 			loglik <- -out$objective
 			est.pars <- exp(out$solution)
@@ -179,7 +180,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 			cat("Calculating likelihood from a set of fixed parameters", "\n")
 			out<-NULL
 			est.pars<-log(p)
-			out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+			out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 			loglik <- -out$objective
 			est.pars <- exp(est.pars)
 		}
@@ -219,7 +220,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 						}
 						ip[ip < exp(lb)] = exp(lb)
 						ip[ip > exp(ub)] = exp(lb)
-						out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+						out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 						tmp = matrix(,1,ncol=(1+model.set.final$np))
 						tmp[,1] = out$objective
 						tmp[,2:(model.set.final$np+1)] = out$solution
@@ -296,7 +297,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 									starts[38] <- pp.tmp[order(pp.tmp)][7]
 								}
 							}
-							out.alt = nloptr(x0=rep(log(starts), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+							out.alt = nloptr(x0=rep(log(starts), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 							tmp[,1] = out.alt$objective
 							tmp[,2:(model.set.final$np+1)] = starts
 							if(out.alt$objective < out$objective){
@@ -408,7 +409,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 								starts[38] <- pp.tmp[order(pp.tmp)][7]
 							}
 						}
-						out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+						out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 						tmp[,1] = out$objective
 						tmp[,2:(model.set.final$np+1)] = out$solution
 						tmp
@@ -427,7 +428,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 			else{
 				cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
 				ip=ip
-				out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+				out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 				loglik <- -out$objective
 				est.pars <- exp(out$solution)
 			}
@@ -461,7 +462,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 
 	#Approximates the Hessian using the numDeriv function
 	if(diagn==TRUE){
-		h <- hessian(func=dev.corhmm, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = TRUE)
+		h <- hessian(func=dev.corhmm, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		solution.se <- matrix(sqrt(diag(pseudoinverse(h)))[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 		hess.eig <- eigen(h,symmetric=TRUE)

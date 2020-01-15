@@ -334,6 +334,14 @@ getFullMat <- function(StateMats, RateClassMat){
 
 rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model=c("ER", "SYM", "ARD")){
   
+  if(rate.cat == 1){
+    FullMat <- getStateMat(ntraits)
+    StateNames <- paste("(", rep(0:(ntraits-1), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
+    rownames(FullMat) <- colnames(FullMat) <- StateNames
+    FullMat[FullMat == 0] <- NA
+    return(FullMat)
+  }
+  
   StateMats <- vector("list", rate.cat)
   
   for(i in 1:rate.cat){
