@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "marginal", "scaled", "none"), optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=10, n.cores=NULL, sann.its=5000, diagn=FALSE, mV=FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states=c("joint", "marginal", "scaled", "none"), optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, diagn=FALSE, mV=TRUE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -31,7 +31,31 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
         }
     }
   
+  #### Some of James' PreReqs
   dev.corhmm <- funcDecider(mV = mV)
+  
+  data.legend <- input.data <- data
+  nCol <- dim(data)[2]
+  # convert data to numeric
+  for(i in 2:nCol){
+    data[,i] <- as.factor(data[,i])
+  }
+  
+  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
+  if(nCol > 2){
+    cat("\nInput data has more than a single column of trait information, converting...")
+    old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    Traits <- unique(old.data)
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[,1], d = match(old.data, Traits))
+    names(Traits) <- 1:nTraits
+    cat(paste("\n", nTraits, " unique traits found.", "\n", sep = ""))
+    print(gsub("_", " & ", Traits))
+    cat("\n")
+  }
+  
+  data[,2] <- as.numeric(data[,2])
+  data.legend$legend <- data[,2]
   
 	# Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
 	matching <- corHMM:::match.tree.data(phy,data)
@@ -63,9 +87,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 	counts <- table(data.sort[,1])
 	levels <- levels(as.factor(data.sort[,1]))
 	cols <- as.factor(data.sort[,1])
-	cat("State distribution in data:\n")
-	cat("States:",levels,"\n",sep="\t")
-	cat("Counts:",counts,"\n",sep="\t")
+	  cat("State distribution in data:\n")
+	  cat("States:",levels,"\n",sep="\t")
+	  cat("Counts:",counts,"\n",sep="\t")
 
 	#Some initial values for use later
 	k=2
@@ -84,7 +108,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 	if(mV == FALSE){
 	  model.set.final <- rate.cat.set.corHMM(phy=phy,data.sort=data.sort,rate.cat=rate.cat)
 	} else{
-	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
+	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
 	  phy <- reorder(phy, "pruningwise")
 	}
 
@@ -476,7 +500,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 		eigvect<-NULL
 	}
 	
-	StateNames <- paste("(", rep(0:(length(levels)-1), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(levels)), ")", sep = "")
+	StateNames <- paste("(", rep(1:(length(levels)), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(levels)), ")", sep = "")
 	rownames(solution) <- rownames(solution.se) <- colnames(solution) <- colnames(solution.se) <- StateNames
 	if (is.character(node.states)) {
 	  if (node.states == "marginal" || node.states == "scaled"){
@@ -484,7 +508,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, node.states=c("joint", "m
 	  }
 	}
 	
-		obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),rate.cat=rate.cat,solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, data=data.sort, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect, root.p=root.p)
+		obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),rate.cat=rate.cat,solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, data=input.data, data.legend = data.legend, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect, root.p=root.p)
 	class(obj)<-"corhmm"
 	return(obj)
 }
@@ -776,14 +800,14 @@ rate.cat.set.corHMM <- function (phy, data.sort, rate.cat) {
 }
 
 # JDB modified functions
-rate.cat.set.corHMM.JDB<-function(phy,data.sort,rate.cat, ntraits){
+rate.cat.set.corHMM.JDB<-function(phy,data.sort,rate.cat, ntraits, model){
   
 	obj <- NULL
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	obj$rate.cat<-rate.cat
 
-	rate <- rate.mat.maker.JDB(rate.cat=rate.cat, ntraits = ntraits)
+	rate <- rate.mat.maker.JDB(rate.cat=rate.cat, ntraits = ntraits, model = model)
 	index.matrix<-rate
 	rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 

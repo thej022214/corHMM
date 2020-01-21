@@ -332,27 +332,52 @@ getFullMat <- function(StateMats, RateClassMat){
   return(FullMat)
 }
 
-rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model=c("ER", "SYM", "ARD")){
+rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model="ARD"){
   
   if(rate.cat == 1){
     FullMat <- getStateMat(ntraits)
-    StateNames <- paste("(", rep(0:(ntraits-1), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
+    StateNames <- paste("(", rep(1:ntraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
     rownames(FullMat) <- colnames(FullMat) <- StateNames
+    if(model == "ER"){
+      FullMat[FullMat > 0] <- 1
+    }
+    if(model == "SYM"){
+      FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
+      FullMat <- t(FullMat) 
+      FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
+    }
     FullMat[FullMat == 0] <- NA
     return(FullMat)
   }
   
   StateMats <- vector("list", rate.cat)
   
+  #i should have put the if statements outside... but it's w/e
   for(i in 1:rate.cat){
-    StateMats[[i]] <- getStateMat(ntraits)
+    if(model == "ARD"){
+      StateMats[[i]] <- getStateMat(ntraits)
+    }
+    
+    if(model == "ER"){
+      FullMat <- getStateMat(ntraits)
+      FullMat[FullMat > 0] <- 1
+      StateMats[[i]] <- FullMat
+    }
+    
+    if(model == "SYM"){
+      FullMat <- getStateMat(ntraits)
+      FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
+      FullMat <- t(FullMat) 
+      FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
+      StateMats[[i]] <- FullMat
+    }
   }
   
   RateClassMat <- getStateMat(rate.cat)
   StateMats <- updateStateMats(StateMats) 
   FullMat <- getFullMat(StateMats, RateClassMat)
   
-  StateNames <- paste("(", rep(0:(ntraits-1), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
+  StateNames <- paste("(", rep(1:ntraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
   
   rownames(FullMat) <- colnames(FullMat) <- StateNames
   FullMat[FullMat == 0] <- NA
