@@ -51,12 +51,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 	  ntraits <- length(levels)
 	  drop.states = NULL
 		if(is.null(rate.mat)){
-		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
+		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
 		  rate.mat <- model.set.final$index.matrix
 		  rate <- model.set.final$rate
 		}
 		else{
-		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels))
+		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
 			rate <- rate.mat
       col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
       row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
@@ -622,7 +622,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data.sort=data, rate.cat=rate.cat)
       }
       if(mV == TRUE){
-        data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data.sort=data, rate.cat=rate.cat, ntraits = ntraits)
+        data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data.sort=data, rate.cat=rate.cat, ntraits = ntraits, model = model)
       }
     }
 
