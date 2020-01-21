@@ -249,7 +249,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 						tmp = matrix(,1,ncol=(1+model.set.final$np))
 						tmp[,1] = out$objective
 						tmp[,2:(model.set.final$np+1)] = out$solution
-						for(i in 2:nstarts){
+						if(nstarts > 1){
+						  for(i in 2:nstarts){
 						#Temporary solution for ensuring an ordered Q with respect to the rate classes. If a simpler model is called this feature is automatically turned off:
 							if(mean.change==0){
 								starts=runif(0.01+exp(lb), 1, model.set.final$np)
@@ -259,69 +260,6 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 							starts[starts < exp(lb)] = exp(lb)
 							starts[starts > exp(ub)] = exp(lb)
 							par.order<-NA
-							if(rate.cat == 2){
-								try(par.order<-starts[3] > starts[8])
-								if(!is.na(par.order)){
-									pp.tmp <- c(starts[3],starts[8])
-									starts[3] <- min(pp.tmp)
-									starts[8] <- max(pp.tmp)
-								}
-							}
-							if(rate.cat == 3){
-								try(par.order <- starts[3] > starts[9] | starts[9] > starts[14])
-								if(!is.na(par.order)){
-									pp.tmp <- c(starts[3],starts[9],starts[14])
-									starts[3] <- min(pp.tmp)
-									starts[9] <- median(pp.tmp)
-									starts[14] <- max(pp.tmp)
-								}
-							}
-							if(rate.cat == 4){
-								try(par.order <- starts[3] > starts[9] | starts[9] > starts[15] | starts[15] > starts[20])
-								if(!is.na(par.order)){
-									pp.tmp <- c(starts[3],starts[9],starts[15],starts[20])
-									starts[3] <- pp.tmp[order(pp.tmp)][1]
-									starts[9] <- pp.tmp[order(pp.tmp)][2]
-									starts[15] <- pp.tmp[order(pp.tmp)][3]
-									starts[20] <- pp.tmp[order(pp.tmp)][4]
-								}
-							}
-							if(rate.cat == 5){
-								try(par.order <- starts[3] > starts[9] | starts[9] > starts[15] | starts[15] > starts[21] | starts[21] > starts[26])
-								if(!is.na(par.order)){
-									pp.tmp <- c(starts[3],starts[9],starts[15],starts[21],starts[26])
-									starts[3] <- pp.tmp[order(pp.tmp)][1]
-									starts[9] <- pp.tmp[order(pp.tmp)][2]
-									starts[15] <- pp.tmp[order(pp.tmp)][3]
-									starts[21] <- pp.tmp[order(pp.tmp)][4]
-									starts[26] <- pp.tmp[order(pp.tmp)][5]
-								}
-							}
-							if(rate.cat == 6){
-								try(par.order <- starts[3] > starts[9] | starts[9] > starts[15] | starts[15] > starts[21] | starts[21] > starts[27] | starts[27] > starts[32])
-								if(!is.na(par.order)){
-									pp.tmp <- c(starts[3],starts[9],starts[15],starts[21],starts[27],starts[32])
-									starts[3] <- pp.tmp[order(pp.tmp)][1]
-									starts[9] <- pp.tmp[order(pp.tmp)][2]
-									starts[15] <- pp.tmp[order(pp.tmp)][3]
-									starts[21] <- pp.tmp[order(pp.tmp)][4]
-									starts[27] <- pp.tmp[order(pp.tmp)][5]
-									starts[32] <- pp.tmp[order(pp.tmp)][6]
-								}
-							}
-							if(rate.cat == 7){
-								try(par.order <- starts[3] > starts[9] | starts[9] > starts[15] | starts[15] > starts[21] | starts[21] > starts[27] | starts[27] > starts[33] | starts[33] > starts[38])
-								if(!is.na(par.order)){
-									pp.tmp <- c(starts[3],starts[9],starts[15],starts[21],starts[27],starts[33],starts[38])
-									starts[3] <- pp.tmp[order(pp.tmp)][1]
-									starts[9] <- pp.tmp[order(pp.tmp)][2]
-									starts[15] <- pp.tmp[order(pp.tmp)][3]
-									starts[21] <- pp.tmp[order(pp.tmp)][4]
-									starts[27] <- pp.tmp[order(pp.tmp)][5]
-									starts[33] <- pp.tmp[order(pp.tmp)][6]
-									starts[38] <- pp.tmp[order(pp.tmp)][7]
-								}
-							}
 							out.alt = nloptr(x0=rep(log(starts), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 							tmp[,1] = out.alt$objective
 							tmp[,2:(model.set.final$np+1)] = starts
@@ -333,7 +271,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 								out = out
 								ip = ip
 							}
-						}
+						  }
+						  }
 						loglik <- -out$objective
 						est.pars <- exp(out$solution)
 					}
