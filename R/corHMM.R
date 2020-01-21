@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states=c("joint", "marginal", "scaled", "none"), optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, diagn=FALSE, mV=TRUE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", get.tip.states = FALSE, optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, diagn=FALSE, mV=TRUE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -405,7 +405,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	}
 	TIPS <- 1:nb.tip
 	if (node.states == "marginal" || node.states == "scaled"){
-		lik.anc <- ancRECON(phy, data, est.pars, hrm=TRUE, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p)
+		lik.anc <- ancRECON(phy, data, est.pars, hrm=TRUE, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, mV = mV)
 		pr<-apply(lik.anc$lik.anc.states,1,which.max)
 		phy$node.label <- pr
 		tip.states <- lik.anc$lik.tip.states
