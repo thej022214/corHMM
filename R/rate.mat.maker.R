@@ -317,7 +317,8 @@ getFullMat <- function(StateMats, RateClassMat){
     FullMat <- FullMat + tmpIndMat %x% StateMats[[i]]
   }
   StartingHiddenInd <- max(FullMat)
-  NonDiagonal <- which(c(lower.tri(RateClassMat) | upper.tri(RateClassMat)))
+  NonDiagonal <- c(which(lower.tri(RateClassMat) & RateClassMat > 0), 
+                   which(upper.tri(RateClassMat) & RateClassMat > 0))
   # a matrix for determining where in the full mat we're going
   IndMat <- matrix(0, dim(RateClassMat)[1], dim(RateClassMat)[2])
   # a matrix that contains the diagonals being implemented
