@@ -287,7 +287,7 @@ equateStateMatPars <- function(StateMat, ParsList){
   newMat <- StateMat
   pars <- StateMat[StateMat > 0]
   for(i in 1:length(ParsList)){
-    newMat[match(ParsList[[i]], StateMat)] <- min(ParsList[[i]])
+    newMat[StateMat %in% ParsList[[i]]] <- min(ParsList[[i]])
   }
   pars <- newMat[newMat > 0]
   for(i in 1:length(unique(pars))){
@@ -384,6 +384,33 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
   FullMat[FullMat == 0] <- NA
   return(FullMat)
 }
+
+getRateMat4Dat <- function(data, phy, rate.cat = 1, model = "ARD"){
+  
+  data.legend <- input.data <- data
+  nCol <- dim(data)[2]
+  # convert data to numeric
+  for(i in 2:nCol){
+    data[,i] <- as.factor(data[,i])
+  }
+  
+  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
+  if(nCol > 2){
+    old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    Traits <- unique(old.data)
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[,1], d = match(old.data, Traits))
+    names(Traits) <- 1:nTraits
+    cat("\n")
+  }
+  
+  rate.mat <- corHMM:::rate.mat.maker.JDB(rate.cat = rate.cat, ntraits = nTraits, model = model)
+  rate.mat[is.na(rate.mat)] <- 0
+  legend <- gsub("_", " & ", Traits)
+  res <- list(legend = legend, rate.mat = rate.mat)
+  return(res)
+}
+
 
 # step 1: create the individual processes that you are trying to model (the number of matricies you create is the number of hidden states you're interested in modeling)
 # StateMatA <- getStateMat(nState = 3)
