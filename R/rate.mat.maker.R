@@ -264,7 +264,10 @@ dropStateMatPars <- function(StateMat, Pars){
   for(i in Pars){
     StateMat[StateMat==i] <- 0
   }
-  StateMat[StateMat>0] <- 1:length(StateMat[StateMat>0])
+  pars <- unique(as.vector(StateMat))[-1]
+  for(i in 1:length(pars)){
+    StateMat[StateMat == pars[i]] <- i
+  }
   return(StateMat)
 }
 
@@ -401,7 +404,6 @@ getRateMat4Dat <- function(data, phy, rate.cat = 1, model = "ARD"){
     nTraits <- length(Traits)
     data <- data.frame(sp = data[,1], d = match(old.data, Traits))
     names(Traits) <- 1:nTraits
-    cat("\n")
   }
   
   rate.mat <- corHMM:::rate.mat.maker.JDB(rate.cat = rate.cat, ntraits = nTraits, model = model)
