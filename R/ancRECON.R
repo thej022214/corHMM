@@ -2,125 +2,77 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, mV = FALSE){
 
+  
+  #Ensures that weird root state probabilities that do not sum to 1 are input:
+  if(!is.null(root.p)){
+    if(!is.character(root.p)){
+      root.p <- root.p/sum(root.p)
+    }
+  }
+  if(mV == TRUE & method != "marginal"){
+    cat("\nAs of right now multivariate corHMM is only compatible with marginal ancestral state reconstruction. Either set ASR method to marginal or use binary characters. \nAll complaints about this lack of functionality will happily be recieved by:\n\t Jeremy M. Beaulieu - jmbeauli@uark.edu")
+    return(NULL)
+  }
+  
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
 	phy$edge.length[phy$edge.length<=1e-5]=1e-5
-    
-    #Ensures that weird root state probabilities that do not sum to 1 are input:
-    if(!is.null(root.p)){
-        if(!is.character(root.p)){
-            root.p <- root.p/sum(root.p)
-        }
-    }
-    
-    if(hrm==FALSE){
-        if(ntraits==1){
-			data.sort <- data.frame(data[,charnum+1],data[,charnum+1],row.names=data[,1])
-		}
-		if(ntraits==2){
-			data.sort<-data.frame(data[,2], data[,3], row.names=data[,1])
-		}
-		if(ntraits==3){
-			data.sort<-data.frame(data[,2], data[,3], data[,4], row.names=data[,1])
-		}
+	
+	if (hrm == FALSE) {
+	  if (ntraits == 1) {
+	    data.sort <- data.frame(data[, charnum + 1], data[, 
+	                                                      charnum + 1], row.names = data[, 1])
+	  }
+	  if (ntraits == 2) {
+	    data.sort <- data.frame(data[, 2], data[, 3], row.names = data[, 
+	                                                                   1])
+	  }
+	  if (ntraits == 3) {
+	    data.sort <- data.frame(data[, 2], data[, 3], data[, 
+	                                                       4], row.names = data[, 1])
+	  }
+	}else{
+	  data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
+	  data.sort <- data.sort[phy$tip.label,]
 	}
-	else{
-		data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
-	}
-	data.sort<-data.sort[phy$tip.label,]
+	data.sort <- data.sort[phy$tip.label, ]
+	levels <- levels(as.factor(data.sort[,1]))
+
 	#Some initial values for use later
 	k=2
 	obj <- NULL
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
+	
 	#Builds the rate matrix based on the specified rate.cat. Not exactly the best way
 	#to go about this, but it is the best I can do for now -- it works, so what me worry?
 	if(hrm==TRUE){
-        get.tip.states = TRUE
+	  ntraits <- length(levels)
+	  drop.states = NULL
 		if(is.null(rate.mat)){
-			rate<-rate.mat.maker(hrm=TRUE,rate.cat=rate.cat)
-			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-			drop.states = NULL
+		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
+		  rate.mat <- model.set.final$index.matrix
+		  rate <- model.set.final$rate
 		}
 		else{
+		  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
 			rate <- rate.mat
-            col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
-            row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
-            drop.states <- col.sums[which(col.sums == row.sums)]
+      col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
+      row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
+      drop.states <- col.sums[which(col.sums == row.sums)]
 			rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 		}
 		#Makes a matrix of tip states and empty cells corresponding
 		#to ancestral nodes during the optimization process.
 		x <- data.sort[,1]
 		TIPS <- 1:nb.tip
-
-		for(i in 1:nb.tip){
-			if(is.na(x[i])){x[i]=2}
-		}
-		if (rate.cat == 1){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			TIPS <- 1:nb.tip
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,1]=1}
-				if(x[i]==1){liks[i,2]=1}
-				if(x[i]==2){liks[i,1:2]=1}
-			}
-		}
-		if (rate.cat == 2){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,c(1,3)]=1}
-				if(x[i]==1){liks[i,c(2,4)]=1}
-				if(x[i]==2){liks[i,1:4]=1}
-			}
-		}
-		if (rate.cat == 3){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,c(1,3,5)]=1}
-				if(x[i]==1){liks[i,c(2,4,6)]=1}
-				if(x[i]==2){liks[i,1:6]=1}
-			}
-		}
-		if (rate.cat == 4){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,c(1,3,5,7)]=1}
-				if(x[i]==1){liks[i,c(2,4,6,8)]=1}
-				if(x[i]==2){liks[i,1:8]=1}
-			}
-		}
-		if (rate.cat == 5){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,c(1,3,5,7,9)]=1}
-				if(x[i]==1){liks[i,c(2,4,6,8,10)]=1}
-				if(x[i]==2){liks[i,1:10]=1}
-			}
-		}
-		if (rate.cat == 6){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,c(1,3,5,7,9,11)]=1}
-				if(x[i]==1){liks[i,c(2,4,6,8,10,12)]=1}
-				if(x[i]==2){liks[i,1:12]=1}
-			}
-		}
-		if (rate.cat == 7){
-			liks <- matrix(0, nb.tip + nb.node, k*rate.cat)
-			for(i in 1:nb.tip){
-				if(x[i]==0){liks[i,c(1,3,5,7,9,11,13)]=1}
-				if(x[i]==1){liks[i,c(2,4,6,8,10,12,14)]=1}
-				if(x[i]==2){liks[i,1:14]=1}
-			}
-		}
-		Q <- matrix(0, k*rate.cat, k*rate.cat)
-		tranQ <- matrix(0, k*rate.cat, k*rate.cat)
+		tranQ <- Q <- model.set.final$Q
+		liks <- model.set.final$liks
 	}
 	if(hrm==FALSE){
 		drop.states = NULL
-        get.tip.states = FALSE
+    get.tip.states = FALSE
 		#Imported from Jeffs rayDISC -- will clean up later, but for now, it works fine:
 		if(ntraits==1){
 			k <- 1
@@ -260,7 +212,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 
 	p[p==0] = exp(-21)
 	Q[] <- c(p, 0)[rate]
-    diag(Q) <- -rowSums(Q)
+  diag(Q) <- -rowSums(Q)
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
@@ -561,7 +513,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), hrm=
 
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
-            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, charnum=charnum, ntraits=ntraits, model=model, root.p=root.p)
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, charnum=charnum, ntraits=ntraits, model=model, root.p=root.p, mV = mV)
         }else{
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
@@ -654,7 +606,7 @@ GetTipStateBruteForceJoint <- function(p, phy, data, rate.mat, rate.cat, charnum
 }
 
 #New brute force algorithm for estimating tip states.
-GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntraits, model, root.p){
+GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntraits, model, root.p, mV = FALSE){
 
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
@@ -666,7 +618,12 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
             data.for.likelihood.function <- rate.mat.set(phy=phy, data.sort=data, ntraits=ntraits, model=model)
         }
     }else{
+      if(mV == FALSE){
         data.for.likelihood.function <- rate.cat.set.corHMM(phy=phy, data.sort=data, rate.cat=rate.cat)
+      }
+      if(mV == TRUE){
+        data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data.sort=data, rate.cat=rate.cat, ntraits = ntraits, model = model)
+      }
     }
 
     if(!is.null(rate.mat)){
@@ -685,7 +642,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         }
         ###############################
     }
-
+    dev.corhmm <- funcDecider(mV = mV)
     nodes <- unique(phy$edge[,1])
     marginal.probs <- matrix(0, nb.tip, dim(data.for.likelihood.function$Q)[2])
     for(taxon.index in 1:Ntip(phy)){
@@ -695,7 +652,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, charnum, ntr
         for(state.index in 1:dim(data.for.likelihood.function$Q)[2]){
             data.for.likelihood.function$liks[taxon.index,] = 0
             data.for.likelihood.function$liks[taxon.index,state.index] = 1
-            marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p)
+            marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE)
         }
         data.for.likelihood.function$liks[taxon.index,] = states.keep
         best.probs = max(marginal.probs.tmp[nstates])
