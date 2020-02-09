@@ -4,7 +4,7 @@
 \description{Fits a model of correlated evolution between two or three binary traits}
 \usage{
 corDISC(phy,data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), 
-node.states=c("joint", "marginal", "scaled"), lewis.asc.bias=FALSE, p=NULL, 
+node.states=c("joint", "marginal", "scaled", "none"), lewis.asc.bias=FALSE, p=NULL, 
 root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE)
 }       
 \arguments{

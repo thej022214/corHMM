@@ -5,7 +5,8 @@
 \usage{
 ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, 
 rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL,
-model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE)
+model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE,
+mV=FALSE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -20,6 +21,8 @@ model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE)
 \item{model}{if the model is not HRM, specifies the underlying model.}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{get.likelihood}{a logical indicating whether to obtain the likelihood of the rates and states. The default is \code{FALSE}.}
+\item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
+\item{mV}{a logical indicating whether to use multivariate implementation.}
 }
 \details{
 This is a stand alone function for computing the marginal, joint, or scaled likelihoods of internal nodes for a given set of transition rates. Like all other functions contained in corHMM, the tree does not have to be bifurcating in order for analyses to be carried out. IMPORTANT: If the corDISC, corHMM, and rayDISC functions are used they automatically provide a tree with the likeliest states as internal node labels. This function is intended for circumstances where the user would like to reconstruct states based on rates estimated elsewhere (e.g. BayesTraits, Mesquite, \code{ape}).

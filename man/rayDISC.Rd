@@ -5,7 +5,7 @@
 \description{Fits a model of evolution for categorical traits, allowing for multi-state characters, polymorphisms, missing data, and incompletely resolved trees}
 \usage{
 rayDISC(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"),
-node.states=c("joint", "marginal", "scaled"), state.recon=c("subsequently"), 
+node.states=c("joint", "marginal", "scaled", "none"), state.recon=c("subsequently"), 
 lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, verbose=TRUE, 
 diagn=FALSE)
 }
