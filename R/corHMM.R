@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", get.tip.states = FALSE, optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, diagn=FALSE, mV=TRUE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", optim.method=c("subplex"), p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, diagn=FALSE, get.tip.states = FALSE, mV=FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -58,7 +58,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
   data.legend$legend <- data[,2]
   
 	# Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
-	matching <- corHMM:::match.tree.data(phy,data)
+	matching <- match.tree.data(phy,data)
 	data <- matching$data
 	phy <- matching$phy
 
@@ -155,16 +155,16 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                 dat <- as.matrix(data.sort)
                 dat.red <- dat[-taxa.missing.data.drop,]
                 phy.red <- drop.tip(phy, taxa.missing.data.drop)
-                dat.red <- phangorn:::phyDat(dat.red,type="USER", levels=levels)
+                dat.red <- phyDat(dat.red,type="USER", levels=levels)
                 #Seems like phangorn has changed:
                 phy.tmp <- multi2di(phy.red)
-                par.score <- phangorn:::parsimony(phy.tmp, dat.red, method="fitch")/2
+                par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
             }else{
                 dat <- as.matrix(data.sort)
-                dat <- phangorn:::phyDat(dat,type="USER", levels=levels)
+                dat <- phyDat(dat,type="USER", levels=levels)
                 #Seems like phangorn has changed:
                 phy.tmp <- multi2di(phy)
-                par.score <- phangorn:::parsimony(phy.tmp, dat, method="fitch")/2
+                par.score <- parsimony(phy.tmp, dat, method="fitch")/2
             }
 			tl <- sum(phy$edge.length)
 			mean.change = par.score/tl
@@ -225,16 +225,16 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                             dat <- as.matrix(data.sort)
                             dat.red <- dat[-taxa.missing.data.drop,]
                             phy.red <- drop.tip(phy, taxa.missing.data.drop)
-                            dat.red <- phangorn:::phyDat(dat.red,type="USER", levels=levels)
+                            dat.red <- phyDat(dat.red,type="USER", levels=levels)
                             #Seems like phangorn has changed:
                             phy.tmp <- multi2di(phy.red)
-                            par.score <- phangorn:::parsimony(phy.tmp, dat.red, method="fitch")/2
+                            par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
                         }else{
                             dat <- as.matrix(data.sort)
-                            dat <- phangorn:::phyDat(dat,type="USER", levels=levels)
+                            dat <- phyDat(dat,type="USER", levels=levels)
                             #Seems like phangorn has changed:
                             phy.tmp <- multi2di(phy)
-                            par.score <-phangorn:::parsimony(phy.tmp, dat, method="fitch")/2
+                            par.score <- parsimony(phy.tmp, dat, method="fitch")/2
                         }
                         tl <- sum(phy$edge.length)
 						mean.change = par.score/tl
@@ -288,14 +288,14 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                         dat <- as.matrix(data.sort)
                         dat.red <- dat[-taxa.missing.data.drop,]
                         phy.red <- drop.tip(phy, taxa.missing.data.drop)
-                        dat.red <- phangorn:::phyDat(dat.red,type="USER", levels=levels)
+                        dat.red <- phyDat(dat.red,type="USER", levels=levels)
                         phy.tmp <- multi2di(phy.red)
-                        par.score <- phangorn:::parsimony(phy.tmp, dat.red, method="fitch")/2
+                        par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
                     }else{
                         dat <- as.matrix(data.sort)
-                        dat <- phangorn:::phyDat(dat,type="USER", levels=levels)
+                        dat <- phyDat(dat,type="USER", levels=levels)
                         phy.tmp <- multi2di(phy)
-                        par.score <- phangorn:::parsimony(phy.tmp, dat, method="fitch")/2
+                        par.score <- parsimony(phy.tmp, dat, method="fitch")/2
                     }
 					tl <- sum(phy$edge.length)
 					mean.change = par.score/tl

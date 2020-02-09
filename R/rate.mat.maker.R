@@ -406,7 +406,7 @@ getRateMat4Dat <- function(data, phy, rate.cat = 1, model = "ARD"){
     names(Traits) <- 1:nTraits
   }
   
-  rate.mat <- corHMM:::rate.mat.maker.JDB(rate.cat = rate.cat, ntraits = nTraits, model = model)
+  rate.mat <- rate.mat.maker.JDB(rate.cat = rate.cat, ntraits = nTraits, model = model)
   rate.mat[is.na(rate.mat)] <- 0
   legend <- gsub("_", " & ", Traits)
   res <- list(legend = legend, rate.mat = rate.mat)
