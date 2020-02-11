@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, diagn=FALSE, get.tip.states = FALSE, mV=FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, get.tip.states = FALSE, mV=FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -355,32 +355,32 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 		tip.states <- NA
 	}
 
-	cat("Finished. Performing diagnostic tests.", "\n")
-
-	#Approximates the Hessian using the numDeriv function
-	if(diagn==TRUE){
-		h <- hessian(func=dev.corhmm, x=est.pars, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
-		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-		solution.se <- matrix(sqrt(diag(pseudoinverse(h)))[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-		hess.eig <- eigen(h,symmetric=TRUE)
-		eigval<-signif(hess.eig$values, 2)
-		eigvect<-round(hess.eig$vectors, 2)
-	} else{
-		solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-		solution.se <- matrix(0,dim(solution)[1],dim(solution)[1])
-		eigval<-NULL
-		eigvect<-NULL
-	}
-	
+  # finalize the output
+	solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 	StateNames <- paste("(", rep(1:(length(levels)), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(levels)), ")", sep = "")
 	rownames(solution) <- rownames(solution.se) <- colnames(solution) <- colnames(solution.se) <- StateNames
+	AIC <- -2*loglik+2*model.set.final$np
+	AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set  .final$np-1)))
+	
 	if (is.character(node.states)) {
 	  if (node.states == "marginal" || node.states == "scaled"){
 	    colnames(lik.anc$lik.anc.states) <- StateNames
 	  }
 	}
 	
-		obj = list(loglik = loglik, AIC = -2*loglik+2*model.set.final$np,AICc = -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1))),rate.cat=rate.cat,solution=solution, solution.se=solution.se, index.mat=model.set.final$index.matrix, data=input.data, data.legend = data.legend, phy=phy, states=lik.anc$lik.anc.states, tip.states=tip.states, iterations=out$iterations, eigval=eigval, eigvect=eigvect, root.p=root.p)
+		obj = list(loglik = loglik, 
+		           AIC = AIC,
+		           AICc = AICc,
+		           rate.cat=rate.cat,
+		           solution=solution, 
+		           index.mat=model.set.final$index.matrix, 
+		           data=input.data, 
+		           data.legend = data.legend, 
+		           phy=phy, 
+		           states=lik.anc$lik.anc.states, 
+		           tip.states=tip.states, 
+		           iterations=out$iterations, 
+		           root.p=root.p)
 	class(obj)<-"corhmm"
 	return(obj)
 }
