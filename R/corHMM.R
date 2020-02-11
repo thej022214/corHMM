@@ -235,6 +235,13 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 				mean.change = par.score/tl
 				random.restart<-function(nstarts){
 					tmp = matrix(,1,ncol=(1+model.set.final$np))
+					if(mean.change==0){
+					  starts=rep(0.01+exp(lb), model.set.final$np)
+					}else{
+					  starts<-rexp(model.set.final$np, 1/mean.change)
+					}
+					starts[starts < exp(lb)] = exp(lb)
+					starts[starts > exp(ub)] = exp(lb)
 					out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 					tmp[,1] = out$objective
 					tmp[,2:(model.set.final$np+1)] = out$solution
