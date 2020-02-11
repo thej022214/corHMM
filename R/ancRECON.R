@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE){
 
   #Ensures that weird root state probabilities that do not sum to 1 are input:
   if(!is.null(root.p)){
@@ -81,12 +81,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             for (desIndex in sequence(length(desRows))){
                 #If a tip calculate C_y(i) for the tips and stores in liks matrix:
                 if(any(desNodes[desIndex]==phy$edge[,1])==FALSE){
-                    if(hrm==TRUE){
-                        v <- c(rep(1, k*rate.cat))
-                    }
-                    if(hrm==FALSE){
-                        v <- c(rep(1, nl^k))
-                    }
+                    v <- c(rep(1, k*rate.cat))
                     Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
                     #Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
                     v <- v * liks[desNodes[desIndex],]
@@ -165,12 +160,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 Pij <- expm(Q * tz, method=c("Ward77"))
                 #Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
                 #Calculates L_z(i):
-                if(hrm==TRUE){
-                    v <- c(rep(1, k*rate.cat))
-                }
-                if(hrm==FALSE){
-                    v <- c(rep(1, nl^k))
-                }
+                 v <- c(rep(1, k*rate.cat))
                 if(is.na(known.state.vector[focal])){
                     for (desIndex in sequence(length(desRows))){
                         v <- v * pupko.L[desNodes[desIndex],]

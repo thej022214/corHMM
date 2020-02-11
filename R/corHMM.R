@@ -174,7 +174,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 			}
 			restart.set<-mclapply(1:nstarts, random.restart, mc.cores=n.cores)
 			#Finds the best fit within the restart.set list
-			best.fit<-which.min(unlist(lapply(1:nstarts,function(i) lapply(restart.set[[i]][,1],min))))
+			best.fit<-which.min(unlist(lapply(restart.set, function(x) x[1])))
 			#Generates an object to store results from restart algorithm:
 			out<-NULL
 			out$objective=unlist(restart.set[[best.fit]][,1])
