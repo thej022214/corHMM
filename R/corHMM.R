@@ -143,7 +143,6 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 		loglik <- -out$objective
 		est.pars <- exp(est.pars)
 	}else{
-		#If a user-specified starting value(s) is supplied:
 		if(is.null(ip)){
 		  #If a user-specified starting value(s) is not supplied this begins loop through a set of randomly chosen starting values:
 			#Sets parameter settings for random restarts by taking the parsimony score and dividing
@@ -190,6 +189,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 			loglik <- -out$objective
 			est.pars <- exp(out$solution)
 		}else{
+		  # the user has specified initial params
 			cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
 			ip=ip
 			out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
