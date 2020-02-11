@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=NULL, sann.its=5000, get.tip.states = FALSE, mV=FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE, mV=FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -142,123 +142,54 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 		out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
 		loglik <- -out$objective
 		est.pars <- exp(est.pars)
-	}
-	#If a user-specified starting value(s) is not supplied this begins loop through a set of randomly chosen starting values:
-	else{
+	}else{
 		#If a user-specified starting value(s) is supplied:
 		if(is.null(ip)){
-			if(is.null(n.cores)){
-				cat("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
-				#If the analysis is to be run a single processor:
-				if(is.null(n.cores)){
-					#Sets parameter settings for random restarts by taking the parsimony score and dividing
-					#by the total length of the tree
-                      taxa.missing.data.drop <- which(is.na(data.sort[,1]))
-                      if(length(taxa.missing.data.drop) != 0){
-                          tip.labs <- names(taxa.missing.data.drop)
-                          dat <- as.matrix(data.sort)
-                          dat.red <- dat[-taxa.missing.data.drop,]
-                          phy.red <- drop.tip(phy, taxa.missing.data.drop)
-                          dat.red <- phyDat(dat.red,type="USER", levels=levels)
-                          #Seems like phangorn has changed:
-                          phy.tmp <- multi2di(phy.red)
-                          par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
-                      }else{
-                          dat <- as.matrix(data.sort)
-                          dat <- phyDat(dat,type="USER", levels=levels)
-                          #Seems like phangorn has changed:
-                          phy.tmp <- multi2di(phy)
-                          par.score <- parsimony(phy.tmp, dat, method="fitch")/2
-                      }
-                      tl <- sum(phy$edge.length)
-					mean.change = par.score/tl
-					if(mean.change==0){
-						ip=0.01+exp(lb)
-					}else{
-						ip <- rexp(model.set.final$np, 1/mean.change)
-					}
-					ip[ip < exp(lb)] = exp(lb)
-					ip[ip > exp(ub)] = exp(lb)
-					out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
-					tmp = matrix(,1,ncol=(1+model.set.final$np))
-					tmp[,1] = out$objective
-					tmp[,2:(model.set.final$np+1)] = out$solution
-					if(nstarts > 1){
-					  for(i in 2:nstarts){
-					#Temporary solution for ensuring an ordered Q with respect to the rate classes. If a simpler model is called this feature is automatically turned off:
-						if(mean.change==0){
-							starts=runif(0.01+exp(lb), 1, model.set.final$np)
-						}else{
-							starts<-rexp(model.set.final$np, 1/mean.change)
-						}
-						starts[starts < exp(lb)] = exp(lb)
-						starts[starts > exp(ub)] = exp(lb)
-						par.order<-NA
-						out.alt = nloptr(x0=rep(log(starts), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
-						tmp[,1] = out.alt$objective
-						tmp[,2:(model.set.final$np+1)] = starts
-						if(out.alt$objective < out$objective){
-							out = out.alt
-							ip = starts
-						}
-						else{
-							out = out
-							ip = ip
-						}
-					  }
-					  }
-					loglik <- -out$objective
-					est.pars <- exp(out$solution)
+		  #If a user-specified starting value(s) is not supplied this begins loop through a set of randomly chosen starting values:
+			#Sets parameter settings for random restarts by taking the parsimony score and dividing
+			#by the total length of the tree
+			cat("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
+                taxa.missing.data.drop <- which(is.na(data.sort[,1]))
+                if(length(taxa.missing.data.drop) != 0){
+                    tip.labs <- names(taxa.missing.data.drop)
+                    dat <- as.matrix(data.sort)
+                    dat.red <- dat[-taxa.missing.data.drop,]
+                    phy.red <- drop.tip(phy, taxa.missing.data.drop)
+                    dat.red <- phyDat(dat.red,type="USER", levels=levels)
+                    phy.tmp <- multi2di(phy.red)
+                    par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
+                }else{
+                    dat <- as.matrix(data.sort)
+                    dat <- phyDat(dat,type="USER", levels=levels)
+                    phy.tmp <- multi2di(phy)
+                    par.score <- parsimony(phy.tmp, dat, method="fitch")/2
+                }
+			tl <- sum(phy$edge.length)
+			mean.change = par.score/tl
+			random.restart<-function(nstarts){
+				tmp = matrix(,1,ncol=(1+model.set.final$np))
+				if(mean.change==0){
+				  starts=rep(0.01+exp(lb), model.set.final$np)
+				}else{
+				  starts<-rexp(model.set.final$np, 1/mean.change)
 				}
+				starts[starts < exp(lb)] = exp(lb)
+				starts[starts > exp(ub)] = exp(lb)
+				out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
+				tmp[,1] = out$objective
+				tmp[,2:(model.set.final$np+1)] = out$solution
+				tmp
 			}
-			#If the analysis is to be run on multiple processors:
-			else{
-				#Sets parameter settings for random restarts by taking the parsimony score and dividing
-				#by the total length of the tree
-				cat("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
-                  taxa.missing.data.drop <- which(is.na(data.sort[,1]))
-                  if(length(taxa.missing.data.drop) != 0){
-                      tip.labs <- names(taxa.missing.data.drop)
-                      dat <- as.matrix(data.sort)
-                      dat.red <- dat[-taxa.missing.data.drop,]
-                      phy.red <- drop.tip(phy, taxa.missing.data.drop)
-                      dat.red <- phyDat(dat.red,type="USER", levels=levels)
-                      phy.tmp <- multi2di(phy.red)
-                      par.score <- parsimony(phy.tmp, dat.red, method="fitch")/2
-                  }else{
-                      dat <- as.matrix(data.sort)
-                      dat <- phyDat(dat,type="USER", levels=levels)
-                      phy.tmp <- multi2di(phy)
-                      par.score <- parsimony(phy.tmp, dat, method="fitch")/2
-                  }
-				tl <- sum(phy$edge.length)
-				mean.change = par.score/tl
-				random.restart<-function(nstarts){
-					tmp = matrix(,1,ncol=(1+model.set.final$np))
-					if(mean.change==0){
-					  starts=rep(0.01+exp(lb), model.set.final$np)
-					}else{
-					  starts<-rexp(model.set.final$np, 1/mean.change)
-					}
-					starts[starts < exp(lb)] = exp(lb)
-					starts[starts > exp(ub)] = exp(lb)
-					out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
-					tmp[,1] = out$objective
-					tmp[,2:(model.set.final$np+1)] = out$solution
-					tmp
-				}
-				restart.set<-mclapply(1:nstarts, random.restart, mc.cores=n.cores)
-				#Finds the best fit within the restart.set list
-				best.fit<-which.min(unlist(lapply(1:nstarts,function(i) lapply(restart.set[[i]][,1],min))))
-				#Generates an object to store results from restart algorithm:
-				out<-NULL
-				out$objective=unlist(restart.set[[best.fit]][,1])
-				out$solution=unlist(restart.set[[best.fit]][,2:(model.set.final$np+1)])
-				loglik <- -out$objective
-				est.pars <- exp(out$solution)
-			}
-		}
-		else{
+			restart.set<-mclapply(1:nstarts, random.restart, mc.cores=n.cores)
+			#Finds the best fit within the restart.set list
+			best.fit<-which.min(unlist(lapply(1:nstarts,function(i) lapply(restart.set[[i]][,1],min))))
+			#Generates an object to store results from restart algorithm:
+			out<-NULL
+			out$objective=unlist(restart.set[[best.fit]][,1])
+			out$solution=unlist(restart.set[[best.fit]][,2:(model.set.final$np+1)])
+			loglik <- -out$objective
+			est.pars <- exp(out$solution)
+		}else{
 			cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
 			ip=ip
 			out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
