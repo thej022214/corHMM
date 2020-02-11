@@ -37,7 +37,6 @@ getRateMats <- function(pp=NULL, rate.mat=NULL, rate.cat=NULL){
     RateClassMat <- matrix(apply(ClassCoord, 1, function(x) rate.mat[x[1], x[2]]), length(RateCats), length(RateCats), dimnames = list(RateCats, RateCats))
     RateMats$RateClassMat <- RateClassMat
   }
-  names(RateMats) <- c(RateCats, "RateClassMat")
   return(RateMats)
 }
 

@@ -12,10 +12,34 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
   }
 
 	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
-	phy$edge.length[phy$edge.length<=1e-5]=1e-5
-	data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
-	data.sort <- data.sort[phy$tip.label,]
-	levels <- levels(as.factor(data.sort[,1]))
+  
+  nCol <- dim(data)[2]
+  # convert data to numeric
+  for(i in 2:nCol){
+    data[,i] <- as.factor(data[,i])
+  }
+  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
+  if(nCol > 2){
+    cat("\nInput data has more than a single column of trait information, converting...")
+    old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    Traits <- unique(old.data)
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[,1], d = match(old.data, Traits))
+    names(Traits) <- 1:nTraits
+    cat(paste("\n", nTraits, " unique traits found.", "\n", sep = ""))
+    print(gsub("_", " & ", Traits))
+    cat("\n")
+  }
+  data[,2] <- as.numeric(data[,2])
+  
+  matching <- match.tree.data(phy,data)
+  data <- matching$data
+  phy <- matching$phy
+  
+  phy$edge.length[phy$edge.length<=1e-5]=1e-5
+  data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
+  data.sort <- data.sort[phy$tip.label,]
+  levels <- levels(as.factor(data.sort[,1]))
 
 	#Some initial values for use later
 	k=2
