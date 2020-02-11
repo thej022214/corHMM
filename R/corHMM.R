@@ -2,7 +2,7 @@
 
 #written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE, mV=FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE){
 
 	# Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
 	if(is.null(node.states)){
@@ -30,9 +30,6 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
             root.p <- root.p/sum(root.p)
         }
     }
-  
-  #### Some of James' PreReqs
-  dev.corhmm <- funcDecider(mV = mV)
   
   data.legend <- input.data <- data
   nCol <- dim(data)[2]
@@ -105,12 +102,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	nstarts=nstarts
 	ip=ip
 
-	if(mV == FALSE){
-	  model.set.final <- rate.cat.set.corHMM(phy=phy,data.sort=data.sort,rate.cat=rate.cat)
-	} else{
-	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
-	  phy <- reorder(phy, "pruningwise")
-	}
+  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
+  phy <- reorder(phy, "pruningwise")
 
 	# this allows for custom rate matricies! 
 	if(!is.null(rate.mat)){
@@ -198,20 +191,20 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 		}
 	}
   
-	#Starts the summarization process:
+	#Starts the ancestral state reconstructions:
 	if(node.states != "none") {
 		cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
 	}
 	TIPS <- 1:nb.tip
 	if (node.states == "marginal" || node.states == "scaled"){
-		lik.anc <- ancRECON(phy, data, est.pars, hrm=TRUE, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, mV = mV)
+		lik.anc <- ancRECON(phy, data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states)
 		pr<-apply(lik.anc$lik.anc.states,1,which.max)
 		phy$node.label <- pr
 		tip.states <- lik.anc$lik.tip.states
 		row.names(tip.states) <- phy$tip.label
 	}
 	if (node.states == "joint"){
-		lik.anc <- ancRECON(phy, data, est.pars, hrm=TRUE, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL,root.p=root.p)
+		lik.anc <- ancRECON(phy, data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL,root.p=root.p)
 		phy$node.label <- lik.anc$lik.anc.states
 		tip.states <- lik.anc$lik.tip.states
 	}
@@ -577,7 +570,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data.sort,rate.cat, ntraits, model){
 	return(obj)
 }
 
-dev.corhmm.JDB <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
+dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
   p = exp(p)
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
@@ -667,13 +660,4 @@ dev.corhmm.JDB <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
       }
     }
   return(loglik)
-}
-
-funcDecider <- function(mV){
-  if(mV == FALSE){
-    return(dev.corhmm.JMB)
-  }
-  if(mV == TRUE){
-    return(dev.corhmm.JDB)
-  }
 }
