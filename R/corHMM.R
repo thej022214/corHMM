@@ -293,7 +293,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
   # finalize the output
 	solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
 	StateNames <- paste("(", rep(1:(length(levels)), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(levels)), ")", sep = "")
-	rownames(solution) <- rownames(solution.se) <- colnames(solution) <- colnames(solution.se) <- StateNames
+	rownames(solution) <- colnames(solution) <- StateNames
 	AIC <- -2*loglik+2*model.set.final$np
 	AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
 	
