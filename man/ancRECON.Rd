@@ -3,26 +3,22 @@
 \title{Ancestral state reconstruction}
 \description{Infers ancestral states based on a set of model parameters}
 \usage{
-ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"), hrm=FALSE, 
-rate.cat, ntraits=NULL, charnum=NULL, rate.mat=NULL,
-model=c("ER", "SYM", "ARD"), root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE,
-mV=FALSE)
+ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"),
+rate.cat, ntraits=NULL, rate.mat=NULL,
+model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
 \item{data}{a data matrix containing species information (see Details).}
 \item{p}{a vector of transition rates to be used to estimate ancestral states.}
-\item{method}{method used to calculate ancestral states at internal nodes (see Details).}
-\item{hrm}{a logical indicating whether the underlying model is the hidden rates model (HRM). The default is \code{FALSE}.} 
+\item{method}{method used to calculate ancestral states at internal nodes. Can be one of: "joint", "marginal", or "scaled" (see Details).}
 \item{rate.cat}{specifies the number of rate categories in the HRM.} 
 \item{ntraits}{specifies the number of traits in the data file if the underlying model is not the HRM.}
-\item{charnum}{specifies the number of characters in the data file used in rayDISC.}
 \item{rate.mat}{a user-supplied rate matrix index of parameters to be optimized.}
 \item{model}{if the model is not HRM, specifies the underlying model.}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{get.likelihood}{a logical indicating whether to obtain the likelihood of the rates and states. The default is \code{FALSE}.}
 \item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
-\item{mV}{a logical indicating whether to use multivariate implementation.}
 }
 \details{
 This is a stand alone function for computing the marginal, joint, or scaled likelihoods of internal nodes for a given set of transition rates. Like all other functions contained in corHMM, the tree does not have to be bifurcating in order for analyses to be carried out. IMPORTANT: If the corDISC, corHMM, and rayDISC functions are used they automatically provide a tree with the likeliest states as internal node labels. This function is intended for circumstances where the user would like to reconstruct states based on rates estimated elsewhere (e.g. BayesTraits, Mesquite, \code{ape}).
