@@ -333,6 +333,8 @@ getFullMat <- function(StateMats, RateClassMat){
     tmpIndMat[NonDiagonal[i]] <-  1
     FullMat <- FullMat + tmpIndMat %x% tmpHRMat
   }
+  StateNames <- paste("(", rep(1:(dim(StateMats[[1]])[1]), dim(RateClassMat)[1]), ",", rep(paste("R", 1:dim(RateClassMat)[1], sep = ""), each = dim(StateMats[[1]])[1]), ")", sep = "")
+  colnames(FullMat) <- rownames(FullMat) <- StateNames
   return(FullMat)
 }
 
