@@ -108,6 +108,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	# this allows for custom rate matricies! 
 	if(!is.null(rate.mat)){
 		order.test <- FALSE
+		rate.mat[rate.mat == 0] <- NA
 	  rate <- rate.mat
 		model.set.final$np <- max(rate, na.rm=TRUE)
 		rate[is.na(rate)]=max(rate, na.rm=TRUE)+1
