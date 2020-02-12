@@ -40,12 +40,16 @@ getRateMats <- function(pp=NULL, rate.mat=NULL, rate.cat=NULL){
   return(RateMats)
 }
 
-plotMKmodel <- function(pp, rate.cat = NULL, col.func = plasma, arrow.scale = 2, text.scale = 3){
+plotMKmodel <- function(pp, rate.cat = NULL, display = "column", col.func = plasma, arrow.scale = 1, text.scale = 1, vertex.scale = 1){
   
   if(class(pp) == "matrix" & is.null(rate.cat)){
     return(cat("Error: user provided a rate matrix without providing the number of rate categories."))
   }
-
+  
+  vertex.scalar <- vertex.scale
+  arrow.scale <- arrow.scale * 2
+  text.scale <- text.scale * 3
+  
   # decompose the matrix solution
   if(class(pp) == "corhmm"){
     RateMats <- getRateMats(pp = pp)
@@ -54,21 +58,27 @@ plotMKmodel <- function(pp, rate.cat = NULL, col.func = plasma, arrow.scale = 2,
   if(class(pp) == "matrix"){
     RateMats <- getRateMats(rate.mat = pp, rate.cat = rate.cat)
   }
-  ## getting the colours set up and changing mats into vectors
-  # the arrows need to be the same colours as the matrix, but i want the arrows to be transparent
-  # get the rates from the matrix and ensure it's in the same order as the edges
+  
+  # i need the max rate to ensure all the colors are scaled the same way
   edge.rates <- lapply(RateMats, function(x) as.vector(na.exclude(as.vector(t(x)))))
-  max.rate <- max(do.call(rbind, edge.rates))
-  scaled.edge.rates <- lapply(edge.rates, function(x) x/max.rate)
-  cols <- col.func(101, alpha = 0.5)
-  edge.cols <- lapply(scaled.edge.rates, function(x) cols[round(x*100)+1])
-
+  max.rate <- max(unlist(edge.rates))
+  
   # if there is one rate cat there is only one matrix (any more and we need an additional one)
   if(rate.cat == 1){
     xlim <- c(-1,5)
   }else{
-    par(mfrow=c(rate.cat+1,1))
-    xlim <- c(0,3)
+    if(display == "column"){
+      par(mfrow=c(rate.cat+1,1))
+      xlim <- c(0,3)
+    }
+    if(display == "row"){
+      par(mfrow=c(1, rate.cat+1))
+      xlim <- c(-1,4)
+    }
+    if(display == "square"){
+      par(mfrow=c(ceiling((rate.cat+1)/2), ceiling((rate.cat+1)/2)))
+      xlim <- c(-1,4)
+    }
   }
   
   # loop over all the plots
@@ -79,15 +89,25 @@ plotMKmodel <- function(pp, rate.cat = NULL, col.func = plasma, arrow.scale = 2,
     diag(IndMat) <- NA
     arrow.scalar <- arrow.scale/nCol
     text.scalar <- text.scale/nCol
-    
-    # setup the matrix with non-diagonal elements
-    IndVec <- as.vector(na.omit(as.vector(IndMat)))
-    edge.rates <- RateMats[[i]][IndVec]
-    scaled.edge.rates <- edge.rates/max.rate
     cols <- col.func(101, alpha = 1)
-    mat.cols <- cols[round(scaled.edge.rates*100)+1]
+    
+    ## based on the value of rate we decide what the color will be
+    # we don't want elements of the rate matrix, only the off diag
+    # for the mat we need it in column order
+    IndVecMat <- as.vector(na.omit(as.vector(IndMat)))
+    mat.rates <- RateMats[[i]][IndVecMat]
+    mat.rates[mat.rates == 0] <- NA
+    scaled.mat.rates <- mat.rates/max.rate
+    mat.cols <- cols[round(scaled.mat.rates*100)+1]
     mat.cols[is.na(mat.cols)] <- "black"
-        
+    # for the edges we need it in row order
+    IndVecEdg <- as.vector(na.omit(as.vector(t(IndMat))))
+    edge.rates <- RateMats[[i]][IndVecEdg]
+    # if there are 0s in edge rates the matrix needs the color black, but the BS needs blanks
+    edge.rates <- edge.rates[edge.rates != 0]
+    scaled.edge.rates <- edge.rates/max.rate
+    edge.cols <- cols[round(scaled.edge.rates*100)+1]
+    
     # define the main title of the plots
     main.title <- paste("Rate Category ", i, " (R",i, ")", sep = "")
     if(i == length(RateMats) & rate.cat == 1){
@@ -97,6 +117,7 @@ plotMKmodel <- function(pp, rate.cat = NULL, col.func = plasma, arrow.scale = 2,
       main.title <- "Rate Category Transitions"
     }
     
+    IndVec <- as.vector(na.omit(as.vector(t(IndMat))))
     # make an igraph object
     tmp <- RateMats[[i]]
     tmp[is.na(tmp)] <- 0
@@ -109,15 +130,15 @@ plotMKmodel <- function(pp, rate.cat = NULL, col.func = plasma, arrow.scale = 2,
                 layout = layout_in_circle(g1),
                 vertex.label.font = 2,
                 vertex.shape = "none",
-                vertex.label.cex = 1,
+                vertex.label.cex = vertex.scalar,
                 vertex.label.color = "black",
                 vertex.label.family="Helvetica",
-                edge.color = edge.cols[[i]],
+                edge.color = edge.cols,
                 edge.width = 2,
                 edge.arrow.size = arrow.scalar,
                 main = main.title)
     # plot the associated markov matrix
-    label.text <- as.character(round(edge.rates, 2))
+    label.text <- as.character(round(mat.rates, 2))
     label.text[label.text == 0] <- "<0.01"
     label.text[is.na(label.text)] <- "--"
     label.names <- vertex.attributes(g1)$name
