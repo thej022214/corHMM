@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.width=6, fig.height=8)
 ```
 
+# corHMMv2.0 Vignette
+
 corHMM is an R-package for creating and optimizing Markov models and hidden Markov models. These models describe evolution as discrete transitions between observed states. Although not discussed in this vignette, corHMM also does ancestral state reconstruction (see details of ancRECON function for more). We choose to focus on model creation rather than ancestral state reconstruction because ASR is exactly correlated with your model. If you choose an unrealistic model of trait evolution, your ancestral state reconstruction is equally unrealistic. Choosing a model specific to your question is of utmost importance in any comparative method, and in corHMMv2.0 we provide users with the tools to create their own hidden Markov models.
 
 This vignette is composed of three sections: 
@@ -37,8 +39,9 @@ This vignette is composed of three sections:
     * 3.2: corHMM works for n States
     * 3.3: corHMMv2.0 is the same as previous versions
 
-#Section 1: default use of corHMM
-##1.1: No hidden rate categories
+# Section 1: default use of corHMM
+
+## 1.1: No hidden rate categories
 
 We'll use the primate dataset that comes with corHMM.
 
@@ -95,7 +98,7 @@ head(MK_3state$data.legend)
 
 This takes the user input data table and adds a new column that corresponds to the corHMM state of that row's trait combination. The 3 possible combinations in this case are having a tail and being sexually dimorphic (state 1), not having a tail and being sexually dimorphic (state 2), or not having a tail and not being sexually dimorphic (state 3). These are the states that will be used for all corHMM outputs.
 
-####1.2: A trait with any number of states and any number of hidden rate categories
+#### 1.2: A trait with any number of states and any number of hidden rate categories
 
 The major difference between corHMMv2.0 and previous versions is allowing models of any number of states and any number of hidden rate categories (*hidden rate categories will be explained in more depth in section 2*). Running a hidden Markov model (HMM) is as easy as assigning a value greater than 1 to the rate.cat input. We will use the 3-state data from above and assign 2 rate categories. 
 
@@ -111,9 +114,11 @@ round(HMM_3state$solution,3)
 
 Looking at the solution of this hidden Markov model is intimidating, but the same principles of interpreting the transition rate matrices apply. You still read rates from row to column. However, we have added different rate categories (as represented by R1 and R2. Each rate category contains the same model we had in section 1.1. That is to say, (0,R1),(1,R1), and (2,R1) are a Markov model of transitions between states 1, 2, and 3. If you're confused, don't worry. This becomes much easier to interpret once you've learned how to design and build your own HMM.
 
-#Section 2: custom corHMM models
-##2.1: Creating and using custom rate matrices
-###2.1.1: One rate category
+# Section 2: custom corHMM models
+
+## 2.1: Creating and using custom rate matrices
+
+### 2.1.1: One rate category
 
 A rate matrix is the best way for you to communicate your model to corHMM because it allows you to specify how traits are expected to evolve. If you believe that traits evolve in a certain order, that there are different rates of character evolution in different clades, or that there are hidden precursors before a state can evolve, then a custom model is the best way to specify your particular hypothesis.
 
@@ -150,7 +155,7 @@ round(MK_3state_customSYM$solution, 3)
 
 As you can see, transitions between, from, and to states are equal, as we had hoped.
 
-###2.1.2: Any number of rate categories
+### 2.1.2: Any number of rate categories
 
 If you wanted to add hidden rate categories you need to know 2 things: 
 
@@ -212,8 +217,9 @@ And now we can plot the HMM with rates instead of indices.
 plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
 ```
 
-##2.2: Some examples of "biologically informed" models
-###2.2.1: The precursor model
+## 2.2: Some examples of "biologically informed" models
+
+### 2.2.1: The precursor model
 
 The precursor from Marazzi et al. (2012) is a good example to start with. They were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). There are 2 states, absence (0) and presence (1) of extrafloral nectaries. However, they proposed that only species with a precursor could gain EFNs. Unfortunately, this precursor is not observed. Here is how we could code this rate matrix in corHMM.
 
@@ -277,7 +283,7 @@ round(res_precur_corHMM$solution, 3)
 * Entry (3,4) is the rate of gain of extrafloral nectaries when the precursor is present.
 * Entry (4,3) is the rate of loss of extrafloral nectaries when the precursor is present.
 
-###2.2.2: Ordered habitat change
+### 2.2.2: Ordered habitat change
 
 I'm working on a project concerned with the ancestral habitat during primary endosymbiosis. The possible habitats are marine, freshwater, and terrestrial. The phylogeny contains many species with a diverse range of life histories. Cyanobacteria can move freely between all of these states. But, some species may move between terrestrial and marine through freshwater. Finally, some species may move freely between aquatic states, but once they become terrestrial they are stuck there. In this section I will demonstrate how to create a custom hidden Markov model which satisfies all of these requirements. First I'm going to need 3 state matrices.
 
@@ -350,7 +356,8 @@ And it is. To run this model, we would only need to specify the data, the phylog
 <!-- plotMKmodel(res_MFT) -->
 <!-- ``` -->
 
-###2.2.3: Ontological relationship of multiple characters
+### 2.2.3: Ontological relationship of multiple characters
+
 Lets say we had a dataset with multiple characters: presence or absence of limbs, presence or absence of fingers, corporeal or incorporeal form. It could look something like this...
 
 ```{r}
@@ -390,7 +397,7 @@ plotMKmodel(ontRes, display = "column")
 ```
 
 
-##2.3: Estimating models when node states are fixed
+## 2.3: Estimating models when node states are fixed
 
 Jeremy's code goes here.
 
