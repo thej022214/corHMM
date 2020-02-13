@@ -1,19 +1,24 @@
 \name{equateStateMatPars}
 \alias{equateStateMatPars}
-\title{Equates specific rates from an index matrix}
-\description{Equates rates from an index matrix for use as custom models}
+\title{Equates specific rates within an index matrix}
+\description{Equates rates within an index matrix for use in custom models}
 \usage{
 equateStateMatPars(StateMat, ParsList)
 }       
 \arguments{
-\item{StateMat}{The index matrix of class matrix to be modified.}
-\item{ParsList}{A list of vectors containing index values which will be equated from the index matrix. The function will go through all the elements of the list equating the paramaters indicated within that element.}
+\item{StateMat}{The index matrix to be modified.}
+\item{ParsList}{A list of vectors containing index values which will be equated from the index matrix. }
 }
 \details{
-Outputs an index of the rate parameters which are to be optimized in corHMM. equateStateMatPars is part of several functions which help the user efficiently create custom index matrices. The use of this function comes in combination with other functions such as getStateMat, dropStateMatPars, updateStateMats, and getFullMat.
+The function will go through all the elements of the list equating the paramaters indicated within that element. equateStateMatPars is part of several functions which help the user efficiently create custom index matrices. The use of this function comes in combination with other functions such as getStateMat, dropStateMatPars, and getFullMat.
 }
 \value{
 Returns a rate matrix index
+}
+\seealso{
+\code{\link{getStateMat}},
+\code{\link{dropStateMatPars}},
+\code{\link{getFullMat}}
 }
 \examples{
 #Generate a matrix for 3 traits:

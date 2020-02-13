@@ -9,10 +9,15 @@ getStateMat(nState)
 \item{nState}{specifies the number of states.}
 }
 \details{
-Outputs an index of the rate parameters which are to be optimized in corHMM. By itself, an nState index matrix is the same as running corHMM with model = "ARD" and a single rate category. The use of this function comes in combination with other functions such as dropStateMatPars, equateStateMatPars, updateStateMats, and getFullMat.
+By itself, an nState index matrix is the same as running corHMM with model = "ARD" and a single rate category. This function is best used in combination with other functions: dropStateMatPars, equateStateMatPars, and getFullMat.
 }
 \value{
 Returns a rate matrix index
+}
+\seealso{
+\code{\link{dropStateMatPars}},
+\code{\link{equateStateMatPars}},
+\code{\link{getFullMat}}
 }
 \examples{
 #Generate a matrix for 3 traits:

@@ -311,7 +311,10 @@ updateStateMats <- function(StateMats){
   return(StateMats)
 }
 
-getFullMat <- function(StateMats, RateClassMat){
+getFullMat <- function(StateMats, RateClassMat, UpdateRates = TRUE){
+  if(UpdateRates == TRUE){
+    StateMats <- updateStateMats(StateMats)
+  }
   FullMat <- convert2I(RateClassMat) %x% matrix(0, dim(StateMats[[1]])[1], dim(StateMats[[1]])[2])
   IndMat <- matrix(0, length(StateMats), length(StateMats))
   for(i in 1:length(StateMats)){
