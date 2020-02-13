@@ -105,6 +105,7 @@ plotMKmodel <- function(pp, rate.cat = NULL, display = "column", col.func = plas
     edge.rates <- RateMats[[i]][IndVecEdg]
     # if there are 0s in edge rates the matrix needs the color black, but the BS needs blanks
     edge.rates <- edge.rates[edge.rates != 0]
+    edge.rates <- edge.rates[!is.na(edge.rates)]
     scaled.edge.rates <- edge.rates/max.rate
     edge.cols <- cols[round(scaled.edge.rates*100)+1]
     
