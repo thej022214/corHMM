@@ -8,8 +8,8 @@ corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "margina
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
 \item{data}{a data matrix containing species information (see Details).}
-\item{rate.cat}{specifies the number of rate categories in the HRM.}
-\item{rate.mat}{a user-supplied rate matrix index of parameters to be optimized.}
+\item{rate.cat}{specifies the number of rate categories.}
+\item{rate.mat}{a user-supplied index of parameters to be optimized.}
 \item{model}{specifies one of three default underlying models ("ARD", "ER", or "SYM").} 
 \item{node.states}{method used to calculate ancestral states at internal nodes (see Details).}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood.}
@@ -18,10 +18,12 @@ corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "margina
 \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
 \item{n.cores}{the number of processor cores to spread out the random restarts.}
 \item{sann.its}{a numeric indicating the number of times the simulated annealing algorithm should call the objective function.}
-\item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
+\item{get.tip.states}{a logical indicating whether tip reconstructions should be output. The default is \code{FALSE}.}
 }
 \details{
-The function takes a tree and a trait file and estimates transition rates and ancestral states for a single binary character using the hidden rates model (HRM). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states in reconstructing ancestral character states. For example, for a model with two rate classes, slow (S) and fast (F), underlie each observed state of 0 and 1. Since we only observe states, we treat each observation as having a probability of 1 for being either in the F and S categories. In other words, a character state 0 at a tip is assumed to have a probability of 1 for being 0_S and 0_F. The likelihood function is then maximized using the bounded subplex optimization routine (\code{optim.method=subplex}) implemented in the R package \code{nloptr}, which provides a common interface to NLopt, an open-source library for nonlinear optimization. Users can also set \code{optim.method=twoStep} to specify a multi-step process that first involves a simulated annealing step followed by maximizing the likelihood using the subplex routine. In the former case, however, it is recommended that \code{nstarts} is set to a large value (e.g. 100) to ensure that the maximum likelihood solution is found. Users can set \code{n.cores} to parse the random restarts onto multiple processors.
+The function takes a tree and a trait file and estimates transition rates and ancestral states for any number of discrete characters using a Markov model. These models describe evolution as discrete transitions between observed states. If rate.class > 1, then the model is a hidden Markov model (HMM; also known as a hidden rates model (HRM)). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states. Essentially a hidden Markov model allows for multiple processes to describe the evolution of your observed character. This could be another (hidden) state or a large group of them. Regardless of the reason, an HMM is saying that not all observed characters are expected to act the same way. 
+
+From a more technical standpoint, let's say we have two rate classes, slow (S) and fast (F). They underlie each observed state of 0 and 1. Since we only observe states, we treat each observation as having a probability of 1 for being either in the F and S categories. In other words, a character state 0 at a tip is assumed to have a probability of 1 for being 0_S and 0_F. The likelihood function is then maximized using the bounded subplex optimization routine implemented in the R package \code{nloptr}, which provides a common interface to NLopt, an open-source library for nonlinear optimization. In the former case, however, it is recommended that \code{nstarts} is set to a large value (e.g. 100) to ensure that the maximum likelihood solution is found. Users can set \code{n.cores} to parse the random restarts onto multiple processors.
 
 The input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. The first column of the trait file must contain the species labels to match to the tree, with any number of columns following. Note that for a given full model, the different rate classes are ordered from slowest (rate class R1) to fastest (rate class Rn) with respect to state 0.
 
@@ -35,24 +37,25 @@ Ancestral states can be estimated using marginal, joint, scaled, or none approac
 \item{$AIC}{Akaike information criterion.}
 \item{$AICc}{Akaike information criterion corrected for sample size.}
 \item{$rate.cat}{The number of rate categories specified.}
-\item{$solution}{a matrix containing the maximum likelihood estimates of the transition rates. Note that the rate classes are ordered from slowest (R1) to fastest (Rn) with respect to state 0}
-\item{$solution.se}{a matrix containing the approximate standard errors of the transition rates. The standard error is calculated as the square root of the diagonal of the inverse of the Hessian matrix.}
-\item{$index.mat}{The indices of the parameters being estimated are returned. The numbers correspond to the row in the \code{eigvect} and can useful for identifying the parameters that are causing the objective function to be at a saddlepoint.}
+\item{$solution}{a matrix containing the maximum likelihood estimates of the transition rates. Note that the rate classes are ordered from slowest (R1) to fastest (Rn) with respect to state 0.}
+\item{$index.mat}{The indices of the parameters being estimated are returned}
 \item{$opts}{Internal settings of the likelihood search}
 \item{$data}{User-supplied dataset.}
+\item{$data.legend}{User-supplied dataset with an extra column of trait values corresponding to how corHMM calls the user data.}
 \item{$phy}{User-supplied tree.}
 \item{$states}{The likeliest states at each internal node. The state and rates reconstructed at internal nodes are in the order of the column headings of the rates matrix.}
 \item{$tip.states}{The likeliest state at each tip. The state and rates reconstructed at the tips are in the order of the column headings of the rates matrix.}
 \item{$iterations}{The number of iterations used by the optimization routine.}
-\item{$eigval}{The eigenvalues from the decomposition of the Hessian of the likelihood function. If any \code{eigval<0} then one or more parameters were not optimized during the likelihood search}
-\item{$eigvect}{The eigenvectors from the decomposition of the Hessian of the likelihood function is returned}
+\item{$root.p}{The root prior used in model estimation.}
 }
 \examples{
 ## Not run
 # data(primates)
+# phy <- multi2di(primates[[1]])
+# data <- primates[[2]]
 ## Obtain the fit of second rate class underlying a binary character:
-# pp<-corHMM(primates$tree,primates$trait[,c(1,2)],rate.cat=2,node.states="marginal")
-# pp
+# MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
+# MK_3state
 }
 \references{
 Beaulieu J.M., B.C. O'Meara, and M.J. Donoghue. 2013. Identifying hidden rate changes in the evolution of a binary morphological character: the evolution of plant habit in campanulid angiosperms. Systematic Biology 62:725-737.

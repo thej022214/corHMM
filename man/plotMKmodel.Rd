@@ -1,7 +1,7 @@
 \name{plotMKmodel}
 \alias{plotMKmodel}
 \title{Plot a Markov model}
-\description{Will plots a diagram of a Markov model from the output of corHMM or a custom index matrix}
+\description{Plots a diagram of a Markov model from the output of corHMM or a custom index matrix}
 \usage{
 plotMKmodel(pp, rate.cat = NULL, display = "column", col.func = plasma, arrow.scale = 1, text.scale = 1, vertex.scale = 1)
 }
@@ -10,12 +10,12 @@ plotMKmodel(pp, rate.cat = NULL, display = "column", col.func = plasma, arrow.sc
 \item{rate.cat}{if using a custom matrix then the number of rate categories must be indicated.}
 \item{display}{the structure of the plot. one of "column", "square", or "row".}
 \item{col.func}{the type of color gradient to be used (see: ?viridis for all options).}
-\item{arrow.scale}{size of the arrows for the Markov diagram.}
-\item{text.scale}{size of the text for the plotted matrix.} 
-\item{vertex.scale}{size of the text for the Markov diagram.} 
+\item{arrow.scale}{determines the size of the arrows for the Markov diagram.}
+\item{text.scale}{determines the size of the text for the plotted matrix.} 
+\item{vertex.scale}{determines the size of the text for the Markov diagram.} 
 }
 \details{
-Plots Markov models in a ball and stick type diagram next to matricies. If plotting a hidden rates model it will produce a compound plot describing how the different rate classes are related to one another. If the input is a corHMM result then arrows are colored by relative rate. If the input is a custom matrix arrows are colored by the paramater index.
+Plots Markov models in a ball and stick type diagram next to its corresponding matrix. If plotting a hidden rates model it will produce a compound plot describing how the different rate classes are related to one another. If the input is a corHMM result then arrows are colored by relative rate. If the input is a custom matrix arrows are colored by the paramater index.
 }
 \value{
 Returns a ball and stick diagram of the input model.  
