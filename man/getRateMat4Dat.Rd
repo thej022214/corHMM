@@ -3,11 +3,10 @@
 \title{Produce a index matrix and legend from a dataset}
 \description{Takes a dataset and phylogeny to produce a legend and index matrix that can be manipulated and given to corHMM}
 \usage{
-getRateMat4Dat(data, phy, rate.cat = 1, model = "ARD")
+getRateMat4Dat(data, rate.cat = 1, model = "ARD")
 }       
 \arguments{
 \item{data}{a data matrix containing species information.}
-\item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
 \item{rate.cat}{The number of rate categories. If rate.cat > 1, you are creating a hidden Markov model.}
 \item{model}{One of "ARD", "SYM", or "ER". ARD: all rates differ. SYM: rates between two states do not differ (e.g. the rate from 1 to 2 is the same as 2 to 1). ER: all rates are equal.}
 }
@@ -23,7 +22,7 @@ data(primates)
 phy <- primates[[1]]
 phy <- multi2di(phy)
 data <- primates[[2]]
-getRateMat4Dat(data, phy)
+getRateMat4Dat(data)
 }
 \author{James D. Boyko}
 \keyword{models}
