@@ -42,11 +42,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
   if(nCol > 2){
     cat("\nInput data has more than a single column of trait information, converting...")
     old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-    Traits <- unique(old.data)
-    for(i in nCol:2){
-      Levels_i<- levels(data[,i])
-      Traits <- Traits[c(sapply(Levels_i, function(x) grep(x, Traits)))]
-    }
+    Traits <- levels(as.factor(unique(old.data)))
     nTraits <- length(Traits)
     data <- data.frame(sp = data[,1], d = match(old.data, Traits))
     names(Traits) <- 1:nTraits

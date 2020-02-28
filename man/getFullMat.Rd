@@ -3,12 +3,11 @@
 \title{Combines several rate class index matrices}
 \description{Combines rate class index matrices by a RateClassMat to output a single index matrix for use in corHMM}
 \usage{
-getFullMat(StateMats, RateClassMat, UpdateRates = TRUE)
+getFullMat(StateMats, RateClassMat = NULL)
 }       
 \arguments{
 \item{StateMats}{A list of index matrices of class matrix. These matrices describe individual rate classes.}
-\item{RateClassMat}{An index matrix of class matrix. This matrix describes how rate class matrices are related to one another.}
-\item{UpdateRates}{A logical constant indicating whether you want your distinct rate class matrices to have independent parameters.}
+\item{RateClassMat}{TRUE or FALSE as to whether an index matrix was provided. This matrix describes how rate class matrices are related to one another.}
 }
 \details{
 This function takes a list of rate class matrices (StateMats) and how they are related to one another (RateClassMat). getFullMat is part of several functions which help the user efficiently create custom index matrices. The use of this function comes in combination with other functions such as getStateMat, dropStateMatPars, equateStateMatPars.

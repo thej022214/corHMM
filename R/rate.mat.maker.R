@@ -311,9 +311,10 @@ updateStateMats <- function(StateMats){
   return(StateMats)
 }
 
-getFullMat <- function(StateMats, RateClassMat, UpdateRates = TRUE){
-  if(UpdateRates == TRUE){
-    StateMats <- updateStateMats(StateMats)
+getFullMat <- function(StateMats, RateClassMat = NULL){
+  StateMats <- updateStateMats(StateMats)
+  if(is.null(RateClassMat)){
+    RateClassMat <- getStateMat(length(StateMats))
   }
   FullMat <- convert2I(RateClassMat) %x% matrix(0, dim(StateMats[[1]])[1], dim(StateMats[[1]])[2])
   IndMat <- matrix(0, length(StateMats), length(StateMats))
@@ -414,6 +415,19 @@ getRateMat4Dat <- function(data, rate.cat = 1, model = "ARD"){
     data <- data.frame(sp = data[,1], d = match(old.data, Traits))
     names(Traits) <- 1:nTraits
   }
+  
+  # if(Pagel == TRUE){
+  #   IMats <- lapply(StateMats, corHMM:::convert2I)
+  #   CurrentMat <- StateMats[[1]]
+  #   for(i in 2:length(StateMats)){
+  #     # this produces an independent model
+  #     CurrentMat <- CurrentMat %x% IMats[[i]] + corHMM:::convert2I(CurrentMat) %x% StateMats[[i]]
+  #     IndepMat <- CurrentMat
+  #     # update it to be a dependent model
+  #     CurrentMat[which(CurrentMat > 0)] <- 1:length(which(CurrentMat > 0))
+  #     DepMat <- CurrentMat
+  #   }
+  # }
   
   rate.mat <- rate.mat.maker.JDB(rate.cat = rate.cat, ntraits = nTraits, model = model)
   rate.mat[is.na(rate.mat)] <- 0
