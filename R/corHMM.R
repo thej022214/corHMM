@@ -32,23 +32,34 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     }
   
   data.legend <- input.data <- data
+
   nCol <- dim(data)[2]
-  # convert data to numeric
-  for(i in 2:nCol){
-    data[,i] <- as.factor(data[,i])
+  LevelList <- StateMats <- vector("list", nCol - 1)
+  for (i in 2:nCol) {
+    data[, i] <- as.factor(data[, i])
+    StateMats[[i - 1]] <- getStateMat(length(levels(data[, i])))
+    LevelList[[i - 1]] <- levels(as.factor(data[, i]))
   }
-  
-  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
-  if(nCol > 2){
+  if (nCol > 2) {
     cat("\nInput data has more than a single column of trait information, converting...")
-    old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-    Traits <- levels(as.factor(unique(old.data)))
+    combined.data <- apply(data[, 2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    TraitList <- expand.grid(LevelList)
+    Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x,  collapse = "_"))))
     nTraits <- length(Traits)
-    data <- data.frame(sp = data[,1], d = match(old.data, Traits))
+    nObs <- length(unique(combined.data))
+    data <- data.frame(sp = data[, 1], d = match(combined.data, Traits))
     names(Traits) <- 1:nTraits
-    cat(paste("\n", nTraits, " unique traits found.", "\n", sep = ""))
+    cat(paste("\n", nTraits, " unique trait combinations found.", "\n", sep = ""))
     print(gsub("_", " & ", Traits))
     cat("\n")
+    if (nObs != nTraits) {
+      cat("The potential number of trait combinations is", paste(nTraits, ",", sep = ""), "but only", nObs, "were found.\n\n")
+    }
+  }
+  else {
+    Traits <- levels(as.factor(unique(data[, 2])))
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[, 1], d = match(data[, 2], Traits))
   }
   
   data[,2] <- as.numeric(data[,2])
@@ -102,7 +113,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	nstarts=nstarts
 	ip=ip
 
-  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
+  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nTraits, model = model)
   phy <- reorder(phy, "pruningwise")
 
 	# this allows for custom rate matricies! 
@@ -198,14 +209,14 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	}
 	TIPS <- 1:nb.tip
 	if (node.states == "marginal" || node.states == "scaled"){
-		lik.anc <- ancRECON(phy, data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states)
+		lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states)
 		pr<-apply(lik.anc$lik.anc.states,1,which.max)
 		phy$node.label <- pr
 		tip.states <- lik.anc$lik.tip.states
 		row.names(tip.states) <- phy$tip.label
 	}
 	if (node.states == "joint"){
-		lik.anc <- ancRECON(phy, data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL,root.p=root.p)
+		lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL,root.p=root.p)
 		phy$node.label <- lik.anc$lik.anc.states
 		tip.states <- lik.anc$lik.tip.states
 	}
@@ -217,7 +228,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 
   # finalize the output
 	solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-	StateNames <- paste("(", rep(1:(length(levels)), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(levels)), ")", sep = "")
+	StateNames <- paste("(", rep(1:nTraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nTraits), ")", sep = "")
 	rownames(solution) <- colnames(solution) <- StateNames
 	AIC <- -2*loglik+2*model.set.final$np
 	AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
@@ -532,17 +543,32 @@ rate.cat.set.corHMM <- function (phy, data.sort, rate.cat) {
 }
 
 # JDB modified functions
-rate.cat.set.corHMM.JDB<-function(phy,data.sort,rate.cat, ntraits, model){
+rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
   
 	obj <- NULL
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	obj$rate.cat<-rate.cat
-
-	rate <- rate.mat.maker.JDB(rate.cat=rate.cat, ntraits = ntraits, model = model)
+  
+  rate <- getRateMat4Dat(data, model)$rate.mat
+	if(rate.cat > 1){
+	  StateMats <- vector("list", rate.cat)
+	  for(i in 1:rate.cat){
+	    StateMats[[i]] <- getRateMat4Dat(data, model)$rate.mat
+	  }
+	  rate <- getFullMat(StateMats)
+	}
+  rate[rate == 0] <- NA
 	index.matrix<-rate
 	rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-
+  
+	data <- corProcessData(data)
+	data[,2] <- as.numeric(data[,2])
+	matching <- match.tree.data(phy,data)
+	data <- matching$data
+	data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
+	data.sort <- data.sort[phy$tip.label,]
+	
 	#Makes a matrix of tip states and empty cells corresponding
 	#to ancestral nodes during the optimization process.
 	x <- data.sort[,1]
@@ -550,9 +576,10 @@ rate.cat.set.corHMM.JDB<-function(phy,data.sort,rate.cat, ntraits, model){
   if(min(x) !=0){
     x <- x - min(x)
   }
-	for(i in 1:nb.tip){
-		if(is.na(x[i])){x[i]=2}
-	}
+	# this is being removed temporarily - this handles NA tip states
+	# for(i in 1:nb.tip){
+	# 	if(is.na(x[i])){x[i]=2}
+	# }
 
 	tmp <- matrix(0, nb.tip + nb.node, ntraits)
 	for(i in 1:nb.tip){
@@ -661,4 +688,32 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
       }
     }
   return(loglik)
+}
+
+corProcessData <- function(data){
+  nCol <- dim(data)[2]
+  LevelList <- StateMats <- vector("list", nCol-1)
+  # convert data to numeric
+  for(i in 2:nCol){
+    data[,i] <- as.factor(data[,i])
+    StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
+    LevelList[[i-1]] <- levels(as.factor(data[,i]))
+  }
+  
+  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
+  if(nCol > 2){
+    combined.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    TraitList <- expand.grid(LevelList)
+    Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x, collapse = "_"))))
+    nTraits <- length(Traits)
+    nObs <- length(unique(combined.data))
+    data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
+    names(Traits) <- 1:nTraits
+  }else{
+    # if multiple columns are found we still will sort it through levels for consistency
+    Traits <- levels(as.factor(unique(data[,2])))
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
+  }
+  return(data)
 }

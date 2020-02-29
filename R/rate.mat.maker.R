@@ -394,43 +394,64 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
   return(FullMat)
 }
 
-getRateMat4Dat <- function(data, rate.cat = 1, model = "ARD"){
+getRateMat4Dat <- function(data, model = "ARD"){
   
   data.legend <- input.data <- data
   nCol <- dim(data)[2]
+  LevelList <- StateMats <- vector("list", nCol-1)
   # convert data to numeric
   for(i in 2:nCol){
     data[,i] <- as.factor(data[,i])
+    StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
+    LevelList[[i-1]] <- levels(as.factor(data[,i]))
   }
   
   # will automatically detect if the input data has multiple columns and convert it to corHMM format.
   if(nCol > 2){
-    old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-    Traits <- unique(old.data)
-    for(i in nCol:2){
-      Levels_i<- levels(data[,i])
-      Traits <- Traits[c(sapply(Levels_i, function(x) grep(x, Traits)))]
-    }
+    combined.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    TraitList <- expand.grid(LevelList)
+    Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x, collapse = "_"))))
     nTraits <- length(Traits)
-    data <- data.frame(sp = data[,1], d = match(old.data, Traits))
+    nObs <- length(unique(combined.data))
+    data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
     names(Traits) <- 1:nTraits
+    
+    # up to this point is book keeping now we make matrices
+    IMats <- lapply(StateMats, convert2I)
+    # this ensures that a rate mat for multi character data doesn't allow dual transitions
+    CurrentMat <- StateMats[[1]]
+    for(i in 2:length(StateMats)){
+      # this produces an independent model
+      CurrentMat <- CurrentMat %x% IMats[[i]] + convert2I(CurrentMat) %x% StateMats[[i]]
+      IndepMat <- CurrentMat
+      # update it to be a dependent model
+      CurrentMat[which(CurrentMat > 0)] <- 1:length(which(CurrentMat > 0))
+      rate.mat <- CurrentMat
+    }
+  }else{
+    Traits <- levels(as.factor(unique(data[,2])))
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
+    rate.mat <- StateMats[[1]]
   }
   
-  # if(Pagel == TRUE){
-  #   IMats <- lapply(StateMats, corHMM:::convert2I)
-  #   CurrentMat <- StateMats[[1]]
-  #   for(i in 2:length(StateMats)){
-  #     # this produces an independent model
-  #     CurrentMat <- CurrentMat %x% IMats[[i]] + corHMM:::convert2I(CurrentMat) %x% StateMats[[i]]
-  #     IndepMat <- CurrentMat
-  #     # update it to be a dependent model
-  #     CurrentMat[which(CurrentMat > 0)] <- 1:length(which(CurrentMat > 0))
-  #     DepMat <- CurrentMat
-  #   }
-  # }
+  if(model == "ER"){
+    rate.mat[rate.mat > 0] <- 1
+  }
   
-  rate.mat <- rate.mat.maker.JDB(rate.cat = rate.cat, ntraits = nTraits, model = model)
-  rate.mat[is.na(rate.mat)] <- 0
+  if(model == "SYM"){
+    rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
+    rate.mat <- t(rate.mat) 
+    rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
+  }
+  
+  # adjusting the rate mat if there are any unobsered states
+  ObservedTraits <- which(1:nTraits %in% data[,2])
+  rate.mat[-ObservedTraits, ] <- 0
+  rate.mat[, -ObservedTraits] <- 0
+  rate.mat[rate.mat > 0] <- 1:length(rate.mat[rate.mat > 0])
+  
+  colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nTraits, ")", sep ="")
   legend <- gsub("_", " & ", Traits)
   names(legend) <- 1:nTraits
   res <- list(legend = legend, rate.mat = rate.mat)

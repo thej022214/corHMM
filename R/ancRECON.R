@@ -10,32 +10,36 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
       root.p <- root.p/sum(root.p)
     }
   }
-
-	#Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
-  
+  #data consistency stuff
+  input.data <- data
   nCol <- dim(data)[2]
-  # convert data to numeric
-  for(i in 2:nCol){
-    data[,i] <- as.factor(data[,i])
+  LevelList <- StateMats <- vector("list", nCol - 1)
+  for (i in 2:nCol) {
+    data[, i] <- as.factor(data[, i])
+    StateMats[[i - 1]] <- getStateMat(length(levels(data[, i])))
+    LevelList[[i - 1]] <- levels(as.factor(data[, i]))
   }
-  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
-  if(nCol > 2){
-    cat("\nInput data has more than a single column of trait information, converting...")
-    old.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-    Traits <- unique(old.data)
+  if (nCol > 2) {
+    combined.data <- apply(data[, 2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+    TraitList <- expand.grid(LevelList)
+    Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x,  collapse = "_"))))
     nTraits <- length(Traits)
-    data <- data.frame(sp = data[,1], d = match(old.data, Traits))
+    nObs <- length(unique(combined.data))
+    data <- data.frame(sp = data[, 1], d = match(combined.data, Traits))
     names(Traits) <- 1:nTraits
-    cat(paste("\n", nTraits, " unique traits found.", "\n", sep = ""))
-    print(gsub("_", " & ", Traits))
-    cat("\n")
   }
-  data[,2] <- as.numeric(data[,2])
+  else {
+    Traits <- levels(as.factor(unique(data[, 2])))
+    nTraits <- length(Traits)
+    data <- data.frame(sp = data[, 1], d = match(data[, 2], Traits))
+  }
   
+  data[,2] <- as.numeric(data[,2])
   matching <- match.tree.data(phy,data)
   data <- matching$data
   phy <- matching$phy
-  
+
+  #Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
   phy$edge.length[phy$edge.length<=1e-5]=1e-5
   data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
   data.sort <- data.sort[phy$tip.label,]
@@ -50,11 +54,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
   ntraits <- length(levels)
   drop.states = NULL
 	if(is.null(rate.mat)){
-	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
+	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nTraits, model = model)
 	  rate.mat <- model.set.final$index.matrix
 	  rate <- model.set.final$rate
 	}else{
-	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=rate.cat, ntraits = length(levels), model = model)
+	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nTraits, model = model)
 		rate <- rate.mat
     col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
     row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
@@ -365,7 +369,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
-            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=data.sort, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p)
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=nTraits, model=model, root.p=root.p)
         }else{
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
@@ -456,7 +460,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
 
-    data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data.sort=data, rate.cat=rate.cat, ntraits = ntraits, model = model)
+    data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model)
 
     if(!is.null(rate.mat)){
         rate <- rate.mat
@@ -480,7 +484,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
         marginal.probs.tmp <- numeric(dim(data.for.likelihood.function$Q)[2])
         nstates = which(!data.for.likelihood.function$liks[taxon.index,] == 0)
         states.keep = data.for.likelihood.function$liks[taxon.index,]
-        for(state.index in 1:dim(data.for.likelihood.function$Q)[2]){
+        for(state.index in setdiff(1:dim(data.for.likelihood.function$Q)[2], drop.states)){
             data.for.likelihood.function$liks[taxon.index,] = 0
             data.for.likelihood.function$liks[taxon.index,state.index] = 1
             marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE)
