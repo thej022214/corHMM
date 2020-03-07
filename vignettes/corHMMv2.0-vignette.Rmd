@@ -18,15 +18,74 @@ knitr::opts_chunk$set(fig.width=6, fig.height=8)
 
 #Introduction
 
-corHMM is an R-package for creating and optimizing generalized hidden Markov models (HMM). These models describe evolution as discrete transitions between observed states. Although hidden Markov models are frequently referred to as "hidden rate models", "hidden rate class models", or "hidden state models", they all refer to some form of a HMM. A hidden state is a way of conceptualizing a rate class. With multiple hidden states, you have multiple rate classes. We focus on model creation in this vignette. Choosing a model specific to your question is of utmost importance in any comparative method, and in corHMMv2.0 we provide users with the tools to create their own hidden Markov models.
+The original version of the R-package `corHMM` contained a number of distinct functions for conducting various analyses of discrete morphological characters. This included the `corHMM()` function for fitting a hidden rates model for a binary character, which uses "hidden" states as a means of allowing transition rates to vary across a tree. In reality, the hidden rates model falls within a general class of models known as hidden Markov model (HMM), and it need not only be applied to binary characters. The use of hidden states is a way of conceptualizing a rate class. With multiple hidden states, you have multiple rate classes. So, whether the focal trait is binary or contains multiple states, or whether the observed states represents a set of binary and multistate characters, hidden states can be applied as a means of allowing heterogeneity in the transition model. Choosing a model specific to your question is of utmost importance in any comparative method, and in this new version of `corHMM` we provide users with the tools to create their own hidden Markov models.
 
-This vignette is composed of three sections: 
+Before delving into this further it may be worth showing a little of what is underneath the hood, so to speak. To begin, consider a single binary character with states *0* and *1*. If the question was to understand the asymmetry in the transition between these two states, the model, **Q**, would be a simple 2x2 matrix,
 
-* __Section 1 demonstrates the default use of corHMMv2.0__
+$$
+Q =
+\begin{bmatrix} 
+-  & q_{0-1} \\ 
+q_{1-0} & - \\ 
+\end{bmatrix}
+$$
+This *transition rate matrix* is read as describing the transition rate *from* ROW *to* COLUMN. And as you can see there are just two transitions going from 0 to 1, and from 1 to 0 because there are only two states possible in this model. Now, suppose we have a second character that is also binary. This means that the number of possible states you *could* observe is expanded to account for all the combination of states between two characters -- that is, you could observe *00*, *01*, *10*, or *11*. To accomodate this, we need to expand our model now such that it becomes a 4x4 matrix,
+
+$$
+Q =
+\begin{bmatrix} 
+-  & q_{00-01} & q_{00-10} & q_{00-11}\\ 
+q_{01-00} & - & q_{01-10} & q_{01-11}\\ 
+q_{10-00} & q_{10-01} & - & q_{10-11}\\ 
+q_{11-00} & q_{11-01} & q_{11-10} & -\\ 
+\end{bmatrix}
+$$
+
+The model is also considerably more complex as the number of transitions in this rate matrix now goes from 2 to 12. However, with these models we often make a simplifying assumption: we do not allow for transitions in two states to occur at the same time. In other words, if a lineage is in state *00* it cannot immediately transition to state *11*, rather, it must first transition either to state *01* or *10* before finally transitioning to state *11*. So, we can simplify the matrix by removing these "dual" transitions from the model completely,
+
+$$
+Q =
+\begin{bmatrix} 
+-  & q_{00-01} & q_{00-10} & -\\ 
+q_{01-00} & - & - & q_{01-11}\\ 
+q_{10-00} & - & - & q_{10-11}\\ 
+- & q_{11-01} & q_{11-10} & -\\ 
+\end{bmatrix}
+$$
+
+What we just described is essentially the popular model of Pagel (1994), which tests for correlated evolution between two binary characters. But, one thing that is not obvious: the states in the model need not be represented solely as combinations of binary characters. For example, the focal character may be two characters, like say, flowers that are red with and without petals, and blue flowers with and without petals. One could just code it as a single multistate character, where *1*=red petals, *2*=red no petals, *3*=blue petals, and *4*=blue, no petals. The model would then be,
+
+$$
+Q =
+\begin{bmatrix} 
+-  & q_{1-2} & q_{1-3} & q_{1-4}\\ 
+q_{2-1} & - & q_{2-3} & q_{2-4}\\ 
+q_{3-1} & q_{3-2} & - & q_{3-4}\\ 
+q_{4-1} & q_{4-2} & q_{4-3} & -\\ 
+\end{bmatrix}
+$$
+
+Notice it is the same as before, but the states are transformed from binary combinations to a multistate character. And to make this point even clearer, we will drop the "dual" transitions,
+
+$$
+Q =
+\begin{bmatrix} 
+-  & q_{1-2} & q_{1-3} & -\\ 
+q_{2-1} & - & - & q_{2-4}\\ 
+q_{3-1} & - & - & q_{3-4}\\ 
+- & q_{4-2} & q_{4-3} & -\\ 
+\end{bmatrix}
+$$
+
+Again, exactly the same. 
+
+Here we have modified `corHMM()` to transform any character or set of characters into a *single* multistate character. The model can then be expanded to accomodate an arbitrary number of hidden states. Thus, `corHMM()` now contains `rayDISC()` and `corDISC()` capabilities with the added bonus of allow for hidden states. This vignette is comprised of three sections. where we demonstrate all these extensions as well as other new features: 
+
+* __Section 1 Default use of corHMM__
     * 1.1: No hidden rate categores
     * 1.2: Any number of hidden rate categories
 
-* __Section 2 demonstrates how to make and interpret custom models__
+* __Section 2 How to make and interpret custom models__
     * 2.1: Creating and using custom rate matrices
         * 2.1.1: One rate category
         * 2.1.2: Any number of rate categories
@@ -36,12 +95,12 @@ This vignette is composed of three sections:
         * 2.2.3: Ontological relationship of multiple characters
     * 2.3: Estimating models when node states are fixed
 
-* __Section 3 uses various tests to demonstrate that corHMM is working as intended__
+* __Section 3 Unit tests of corHMM__
     * 3.1: rayDISC-_like_ models in corHMM
     * 3.2: corHMM works for n States
     * 3.3: corHMMv2.0 is the same as previous versions
 
-# Section 1: default use of corHMM
+# Section 1: Default use of corHMM
 
 ## 1.1: No hidden rate categories
 
@@ -127,7 +186,7 @@ plotMKmodel(HMM_3state)
 
 If you're confused, don't worry. This becomes much easier to interpret once you've learned how to create custom corHMM models.
 
-# Section 2: custom corHMM models
+# Section 2: How to make and interpret custom models
 
 ## 2.1: Creating and using custom rate matrices
 
@@ -417,7 +476,7 @@ plotMKmodel(Ont_res.corHMM)
 
 Jeremy's code goes here.
 
-<!-- #Section 3: unit tests of corHMM -->
+<!-- #Section 3: Unit tests of corHMM -->
 <!-- ##3.1: rayDISC-_like_ models in corHMM -->
 
 <!-- rayDISC is a function that runs Markov models where all states are observed. I have implemented this functionality within corHMM so that users only need to use one function when working with corHMM. Let's simulate a fresh 3-state dataset. -->
