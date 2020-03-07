@@ -3,7 +3,9 @@
 \title{Hidden Rates Model}
 \description{Estimates hidden rates underlying the evolution of a binary character}
 \usage{
-corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE)
+corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
+p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, 
+get.tip.states = FALSE)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}

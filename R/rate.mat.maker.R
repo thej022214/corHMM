@@ -1,7 +1,7 @@
 #Rate matrix maker and manipulating functions
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver, modified by James D. Boyko
-rate.mat.maker<- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL, 
+rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL, 
           model = c("ER", "SYM", "ARD")) 
 {
   if (hrm == TRUE) {

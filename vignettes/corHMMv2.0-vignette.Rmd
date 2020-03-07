@@ -1,0 +1,506 @@
+---
+title: "Using corHMM 2.0"
+author: "James D. Boyko and Jeremy M. Beaulieu"
+output: 
+  pdf_document:
+    fig_caption: yes
+vignette: >
+   %\VignetteEngine{knitr::rmarkdown}
+   %\VignetteIndexEntry{Running MuHiSSE}
+   \usepackage[utf8]{inputenc}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=6, fig.height=8)
+```
+
+#Introduction
+
+corHMM is an R-package for creating and optimizing generalized hidden Markov models (HMM). These models describe evolution as discrete transitions between observed states. Although hidden Markov models are frequently referred to as "hidden rate models", "hidden rate class models", or "hidden state models", they all refer to some form of a HMM. A hidden state is a way of conceptualizing a rate class. With multiple hidden states, you have multiple rate classes. We focus on model creation in this vignette. Choosing a model specific to your question is of utmost importance in any comparative method, and in corHMMv2.0 we provide users with the tools to create their own hidden Markov models.
+
+This vignette is composed of three sections: 
+
+* __Section 1 demonstrates the default use of corHMMv2.0__
+    * 1.1: No hidden rate categores
+    * 1.2: Any number of hidden rate categories
+
+* __Section 2 demonstrates how to make and interpret custom models__
+    * 2.1: Creating and using custom rate matrices
+        * 2.1.1: One rate category
+        * 2.1.2: Any number of rate categories
+    * 2.2: Some examples of "biologically informed" models
+        * 2.2.1: Precursor model
+        * 2.2.2: Ordered habitat change
+        * 2.2.3: Ontological relationship of multiple characters
+    * 2.3: Estimating models when node states are fixed
+
+* __Section 3 uses various tests to demonstrate that corHMM is working as intended__
+    * 3.1: rayDISC-_like_ models in corHMM
+    * 3.2: corHMM works for n States
+    * 3.3: corHMMv2.0 is the same as previous versions
+
+# Section 1: default use of corHMM
+
+## 1.1: No hidden rate categories
+
+We'll use the primate dataset that comes with corHMM.
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(1985)
+require(ape)
+require(expm)
+require(corHMM)
+data(primates)
+phy <- primates[[1]]
+phy <- multi2di(phy)
+data <- primates[[2]]
+```
+
+```{r, fig.align="center", fig.width=6, fig.height=6}
+plot(phy, show.tip.label = FALSE)
+tiplabels(pch = 16, col = data[,2]+1, cex = 0.5)
+tiplabels(pch = 16, col = data[,3]+3, cex = 0.5, offset = 0.5)
+```
+
+We have two characters each with two possible states. Trait 1 could either be presence (red) or absence of (black) tails. And trait 2 could be the presence (blue) or the absence (green) of coccyx. 
+
+The default use of corHMM only requires that you declare your *phylogeny*, your *dataset*, the number of *rate categories* (more detail about this later). 
+
+We have updated corHMMv2.0 to handle different types of input data. Previously, the data could only contain two columns: [,1] a column of species names, and [,2] a column of state values. As of corHMMv2.0, the first column must be species names (as in the previous version), but there can be any number of data columns. If your dataset does have 2 or more columns of trait information, each column is taken to describe an independently evolving character. Because of this, dual transitions are automatically disallowed. For eg. a species cannot go from absence of tail and coccyx to presence of tail and coccyx.
+
+```{r}
+MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
+```
+
+By default, a marginal ancestral state reconstruction will be preformed. 
+
+```{r}
+MK_3state
+```
+
+When you run your corHMM object you are greeted with a summary of the model. Your model fit is described by the negative log likelihood (-lnL), Akaike information criterion (AIC), and sample size corrected Akaike information criterion (AICc). You are also given the number of rate categories (Rate.cat) and number of taxa (ntax). Below *Fit* is the real meat of the model: *Rates*.
+
+The rates describe transitions between states and are organized as a matrix. This *transition rate matrix* can be read as describing the transition rate **from** ROW **to** COLUMN. For example, if you were interested in the transition rate from State 1 (absence of tails & coccyx) to State 2 (presence of coccyx and absence of tails) you would be looking at the Row 1, Column 2, entry. For a time calibrated ultrametric tree, these rates will depend on the age of your phylogeny. So a rate of 0.1 for a tree that is 10 Million Years old represents one transition from state A to state B every 100,000,000 years. 
+
+Interpreting a Markov matrix can be difficult, especially when you're just starting out. This problem is compounded when users begin to use the more complex Hidden Markov models (which is done by setting rate.cat > 1). To help users we have implemented a new plotting function.
+
+```{r, fig.align="center", fig.width=6, fig.height=4}
+plotMKmodel(MK_3state)
+```
+
+This function can take a corHMM object (which is the result of running corHMM) or a custom rate matrix (discussed in a later section) and plot the model in two parts. On the left is a ball and stick diagram depicting the transitions between the states. On the right is a simplified rate matrix (a rounded version of the solution output of corHMM). The colors of the arrows match the rates.
+
+corHMM automatically converts multi-column data, like we provided, into a single column of unique combinations that correspond to a particular value. So that users know which traits correspond to which values we provide a data legend.
+
+```{r}
+head(MK_3state$data.legend)
+```
+
+Alternatively, a user can supply their dataset to getRateMat4Dat which as one of its output provides a legend consistent with the corHMM function. The other output is an index matrix (or rate matrix) which describes which rates are to be estimated in corHMM.
+
+```{r}
+getRateMat4Dat(data)
+```
+
+
+#### 1.2: A trait with any number of states and any number of hidden rate categories
+
+The major difference between corHMMv2.0 and previous versions is allowing models of any number of states and any number of hidden rate categories (*hidden rate categories will be explained in more depth in section 2*). Running a hidden Markov model (HMM) only requires assigning a value greater than 1 to the rate.cat input. We will use the data from above and assign 2 rate categories. 
+
+```{r}
+HMM_3state <- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM")
+```
+
+Models with more states take longer to run. Hidden rate models are no exception, and we have increased the number of parameters being estimated from 6 (in a 3-state one rate category Markov model) to 14 by adding a hidden rate category. In section 1.1 we left our parameters unconstrained. We estimated all transisions as independent and allowed for transitions from all states to any other state. However, we can constrain a model in corHMM in two different ways. The easiest way is to set the model to either "SYM" or "ER". This is what we've done for the HMM_3state model above. By setting model = "SYM", we have said that the transition rates between any two states are equal. If we set model = "ER", then we would have constrained all transition rates between states to be the same. Finally, if model = "ARD" (the default), then all transition rates are independently estimated. Although this type of restriction is common, it is often more useful to manually restrict your model (which is described in the next section).
+
+```{r}
+round(HMM_3state$solution,3)
+```
+
+Looking at the solution of this hidden Markov model is intimidating, but the same principles of interpreting the transition rate matrices apply. You still read rates from row to column. However, we have added different rate categories (as represented by R1 and R2. Each rate category contains the same model we had in section 1.1. That is to say, (0,R1),(1,R1), and (2,R1) are a Markov model of transitions between states 1, 2, and 3. We can plot the HMM using the plotMKmodel function. It will plot the underlying structure of model in discrete parts. The first 2 plots are descriptions of how observed states transition, whereas the final plot describes how these rate classes transition between one another.
+
+```{r}
+plotMKmodel(HMM_3state)
+```
+
+If you're confused, don't worry. This becomes much easier to interpret once you've learned how to create custom corHMM models.
+
+# Section 2: custom corHMM models
+
+## 2.1: Creating and using custom rate matrices
+
+### 2.1.1: One rate category
+
+A rate matrix is the best way for you to communicate your model to corHMM because it allows you to specify how traits are expected to evolve. If you believe that traits evolve in a certain order, that there are different rates of character evolution in different clades, or that there are hidden precursors before a state can evolve, then a custom model is the best way to specify your particular hypothesis.
+
+At its core, the purpose of a rate matrix (rate.mat) is to indicate to corHMM which parameters are being estimated. A rate.mat does not actually contain *rates*. It would more appropriately named an index matrix because it specifies to corHMM which rates in the matrix are being estimated and if any of them are expected to be identical.
+
+Let's start by using the getRateMat4Dat function. 
+
+```{r}
+LegendAndRateMat <- getRateMat4Dat(data)
+RateMat <- LegendAndRateMat$rate.mat
+RateMat
+```
+
+This is the rate.mat that was internally called when we ran our model in section 1.1. The numbers in this matrix are not rates, they are used to index the parameters within corHMM. Each distinct number is a parameter to be estimated independently from all others. Let's manually create the symmetric model we used in secion 1.2. We want transitions *to* a state to be the same as *from* that state. 
+
+
+```{r}
+pars2equal <- list(c(1,2), c(3,4))
+StateMatA_constrained <- equateStateMatPars(RateMat, pars2equal)
+StateMatA_constrained
+```
+
+We used equateStateMatPars whose first argument is *the rate matrix being modified* and second argument is *list of the parameters to be equated* to recreate the "SYM" model. 
+
+```{r}
+pars2equal
+```
+
+You should make sure that you have the appropriate number of rate categories. A user rate matrix will not be duplicated or changed by corHMM to a correct number of rate categories. Rather, corHMM will output an error. This custom model can only be used if the appropriate number of rate categories is indicated. We can now give this rate.mat to corHMM, and it will estimate this constrained model.
+
+```{r}
+MK_3state_customSYM <- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = StateMatA_constrained)
+round(MK_3state_customSYM$solution, 3)
+```
+
+As you can see, transitions between, from, and to states are equal, as we had hoped.
+
+### 2.1.2: Any number of rate categories
+
+If you wanted to add hidden rate categories you need to know 2 things: 
+
+First, you need to know the dynamics within each rate category. In our case we might expect that at times, the whole process undergoes drift, with no strong trends. We can describe that in R1 with a model where all rates are equal. However, we may also think that for some species once they gain tails, they never lose them. We will describe that process in R2.
+
+```{r}
+RateCat1 <- getRateMat4Dat(data)$rate.mat # R1
+RateCat1 <- equateStateMatPars(RateCat1, c(1:4)) # set all rates to be equal
+RateCat1
+RateCat2 <- getRateMat4Dat(data)$rate.mat # R2
+RateCat2 <- dropStateMatPars(RateCat2, 3) # once you have tails, you don't lose them (unless you went back into the drift category)
+RateCat2
+```
+
+Second, you need to know how R1 and R2 relate to one another. This is an optional step. By default, corHMM will assume that all RateClasses can be transitioned between independently. If you do decide to specify how the rate categories relate to one another, your RateClassMat will have as many states as there are rate categories. I.e. the RateClassMat doesn't care about how many observed states you have. R1 and R2 describe how our three observed states change, but the RateClassMat describes how species change between R1 and R2. R1 and R2 could temporate or tropical, island or mainland, presence or absence of a necessary mutation. It is everything and anything that can influence the evolution of your observed character. 
+
+In this case, we'll specify that transitions from R1 to R2 is the same as R2 to R1. This also introduces a new function, getStateMat. This simple function will create an index matrix of size nState specified by the user.
+
+```{r}
+RateClassMat <- getStateMat(2) # the size of this state matrix is the no. of rate classes
+RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
+RateClassMat
+```
+
+We now group all of our rate classes together in a list. The order doesn't matter as long as it is consistent with how you want rate classes to change. The first element of the list corresponds to R1, the second to R2, etc.
+
+```{r}
+StateMats <- list(RateCat1, RateCat2)
+```
+
+With that, we have all components necessary to create our model. We put it all together with getFullMat. getFullmat requires that the first input be a list of the rate class matrices and the second argument be how they are related to one another.
+
+```{r}
+FullMat <- getFullMat(StateMats, RateClassMat)
+FullMat
+```
+
+Even though we created this larger index matrix from its individuals components we may not be sure it's exactly what we want. We can use plotMKmodel to also plot an index matrix. This makes it easy to make sure the custom you model you created is the one you want. 
+
+```{r, fig.align = "center", fig.width=10, fig.height=3}
+plotMKmodel(pp = FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
+```
+
+The first two plots are transitions between our observed states 1,2,3. If we focus just on those we can see the same general model structure that was present in section 1.1. As we intended, the dynamics of R1 differ from R2. R1 is an equal rates model, whereas R2 disallows transitions from state 4 to 1 or 2. The 3rd and final plot (Rate Category Transition matrix) describes how species transition between R1 and R2. 
+
+Since this is the model we intended on making, we can run corHMM with our custom matrix.
+
+```{r}
+HMM_3state_custom <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")
+round(HMM_3state_custom$solution, 3)
+```
+
+And now we can plot the HMM with rates instead of indices. 
+
+```{r, fig.width=10, fig.height=3}
+plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
+```
+
+## 2.2: Some examples of "biologically informed" models
+
+### 2.2.1: The precursor model
+
+The precursor from Marazzi et al. (2012) is a good example to start with. They were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). There are 2 states, absence (0) and presence (1) of extrafloral nectaries. However, they proposed that only species with a precursor could gain EFNs. Unfortunately, this precursor is not observed. Here is how we could code this model in corHMM using custom rate matrices.
+
+We'll start by loading a simulated dataset consistent with the presence and absence of extrafloral nectaries.
+
+```{r}
+phy <- read.tree("randomBD.tree")
+load("simulatedData.Rsave")
+head(Precur_Dat)
+```
+
+Let's get a starting rate matrix based on our dataset. 
+
+```{r}
+Precur_LegendAndMat <- getRateMat4Dat(Precur_Dat)
+Precur_LegendAndMat
+```
+
+This legend tells us that the absence of EFNs will be State 1 in corHMM and the presence of EFNs will be State 2. The rate matrix tells us how these observed states are allowed to transition between one another. As of now, the rate of gain and rate of loss will differ. However, what if we wanted to model an unobserved state that influences our observed character? We can code this hidden state using different rate classes. The precursor is expected to be an unobserved character without which it is impossible to gain an EFN. Once we have the precursor however, transitions from absence to presence of EFN will be allowed. Now that we know how the hidden state influences our observed character we can make this using different rate classes.
+
+The first rate class will represent how our observed character changes in the absence of the precursor. In this rate class, it will be impossible to gain an EFN.
+
+```{r}
+Precur_R1 <- Precur_LegendAndMat$rate.mat
+Precur_R1 <- dropStateMatPars(Precur_R1, 2)
+Precur_R1
+```
+
+Next, we'll create a rate class consistent with the idea of a precursor. In this rate class we expect that species can either gain or lose EFNs. This is the same as the matrix produced by getRateMat4Dat.
+
+```{r}
+Precur_R2 <- Precur_LegendAndMat$rate.mat
+Precur_R2
+```
+
+Put the rate classes together.
+
+```{r}
+Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2))
+Precur_FullMat
+```
+
+If you're unsure that the model is correct, you can plot the index matrix.
+
+```{r, fig.align="center", fig.width=10, fig.height=4}
+plotMKmodel(Precur_FullMat, 2, display = "row", text.scale = 0.7)
+```
+
+Since, it looks good we can now run corHMM making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
+
+```{r}
+Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat)
+Precur_res.corHMM
+```
+
+```{r, fig.align="center", fig.width=10, fig.height=4}
+plotMKmodel(Precur_res.corHMM, display = "row", text.scale = 0.7)
+```
+
+In addition to plotting this model, let's look at each entry (row #, col #) and interpret the biological meaning.
+
+```{r}
+round(Precur_res.corHMM$solution, 3)
+```
+
+* Entry (2,1) is the rate of loss of extrafloral nectaries when the precursor is absent.
+* Entries (3,1) and (4,1) are the rates at which the precursor is lost.
+* Entries (1,3) and (1,4) are the rates at which the precursor is gained (remember we constrained that the rate of gain and loss were the same, hence the parameter estimates being the same).
+* Entry (3,4) is the rate of gain of extrafloral nectaries when the precursor is present.
+* Entry (4,3) is the rate of loss of extrafloral nectaries when the precursor is present.
+
+### 2.2.2: Ordered habitat change
+
+I'm working on a project concerned with the ancestral habitat during primary endosymbiosis. The possible habitats are marine, freshwater, and terrestrial. The phylogeny contains many species with a diverse range of life histories. Cyanobacteria can move freely between all of these states. But, some species may move between terrestrial and marine through freshwater. Finally, some species may move freely between aquatic states, but once they become terrestrial they are stuck there. In this section I will demonstrate how to create a custom hidden Markov model which satisfies all of these requirements. First I'm going to need 3 state matrices.
+
+Start by simulating a dataset consistent with 3 states.
+
+```{r}
+Q <- matrix(abs(rnorm(9)), 3, 3)
+diag(Q) <- 0
+diag(Q) <- -rowSums(Q)
+load("simulatedData.Rsave")
+head(MFT_dat)
+summary(as.factor(MFT_dat[,2])) # how many of each state do we have?
+```
+
+Start off by getting a legend and rate matrix consistent with this dataset.
+
+```{r}
+MFT_LegendAndRate <- getRateMat4Dat(MFT_dat)
+MFT_LegendAndRate
+```
+
+In corHMM, freshwater habitat will be State 1, marine habitat will be State 2,and terrestrial habitat will be State 3. Now, we need to create 3 different rate classes that are consistent with our hypotheses of how habitat changes occurs. We'll say that Rate Class 1 is one in which linneages cannot leave a terrestrial habitat, Rate Class 2 will be linneages that transition from marine to terrestrial only by first being freshwater, and Rate Class 3 will be unrestricted movement between the habitats.
+
+For Rate Class 1 we need terrestrial to be a sink state. That means disallowing transitions out of terrestrial. Since 1 = Fresh, 2 = Marine, and 3 = Terra, that means removing from (3) to (1) and from (3) to (2). 
+
+```{r}
+MFT_R1 <- dropStateMatPars(MFT_LegendAndRate$rate.mat, c(2,4))
+MFT_R1
+```
+
+For Rate Class 2, we need to disallow transitions between terrestrial and marine. We disallow the positions (1,3) and (3,1) in the rate matrix. In this case any linneage can move into freshwater and move out of freshwater, but they are not allowed to transition directly between terrestrial and marine habitats.
+
+```{r}
+MFT_R2 <- dropStateMatPars(MFT_LegendAndRate$rate.mat, c(4,6))
+MFT_R2
+```
+
+The free-moving matrix is already provided to us by getRateMat4Dat.
+
+```{r}
+MFT_R3 <- MFT_LegendAndRate$rate.mat
+```
+
+Let's put all these matrices in a list.
+
+```{r}
+MFT_ObsStateClasses <- list(MFT_R1, MFT_R2, MFT_R3)
+MFT_ObsStateClasses
+```
+
+Since we only have 100 species let's constrain our parameters a bit further and say transitions between rate classes occur at the same rate.
+
+```{r}
+MFT_RateClassMat <- getStateMat(3) # we have 3 rate classes
+MFT_RateClassMat <- equateStateMatPars(MFT_RateClassMat, 1:6)
+```
+
+And we put it all together into a corHMM compatible rate.mat.
+
+```{r}
+MFT_FullMat <- getFullMat(MFT_ObsStateClasses, MFT_RateClassMat)
+MFT_FullMat
+```
+
+That's kind of difficult to interpret, so let's plot it out and see if it's what we wanted.
+
+```{r, fig.align = "center", fig.height=8, fig.width=8}
+plotMKmodel(pp = MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
+```
+
+And it is. To run this model, we would only need to specify the data, the phylogeny, this matrix, and that this matrix has 3 rate categories.
+
+```{r}
+MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none")
+MFT_res.corHMM
+```
+
+### 2.2.3: Ontological relationship of multiple characters
+
+Lets say we had a dataset with multiple characters: presence or absence of limbs, presence or absence of fingers, corporeal or incorporeal form. It could look something like this...
+
+```{r}
+phy <- primates[[1]]
+phy <- multi2di(phy)
+data <- primates[[2]]
+Limbs <- c("Limbs", "noLimbs")[data[,2]+1]
+Fings <- vector("numeric", length(phy$tip.label))
+Fings[which(Limbs == "Limbs")] <- round(runif(length(which(Limbs == "Limbs")), 0, 1))
+Corpo <- rep("corporeal", length(phy$tip.label))
+Ont_Dat <- data.frame(sp = phy$tip.label, limbs = Limbs, fings = Fings, corp = Corpo)
+head(Ont_Dat)
+```
+
+Previously, the user would have had to convert this dataset into something corHMM could use. This would mean taking all possible unique combinations and creating a corHMM specific dataset. Now, corHMM will internally convert this dataset and provide users with a legend in the results section for aiding the interpretation of the results. 
+
+```{r}
+Ont_LegendAndMat <- getRateMat4Dat(Ont_Dat)
+Ont_LegendAndMat
+```
+
+Even though there were 3 binary characters (meaning 8 possible states), corHMM created a matrix of 4 states. This is because all of the organisms were corporeal and thus didn't factor into the matrix structure. The next thing to notice is that s0tate 4 (No Limbs, Yes Fingers) is removed. That is because no species had that character combination. Finally, dual transitions have been removed. The transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed. 
+
+```{r}
+Ont_res.corHMM <- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")
+```
+
+```{r, fig.align="center", fig.width=6, fig.height=4}
+plotMKmodel(Ont_res.corHMM)
+```
+
+## 2.3: Estimating models when node states are fixed
+
+Jeremy's code goes here.
+
+<!-- #Section 3: unit tests of corHMM -->
+<!-- ##3.1: rayDISC-_like_ models in corHMM -->
+
+<!-- rayDISC is a function that runs Markov models where all states are observed. I have implemented this functionality within corHMM so that users only need to use one function when working with corHMM. Let's simulate a fresh 3-state dataset. -->
+
+<!-- ```{r} -->
+<!-- phy <- sim.bdtree(b = 1, d = 0.8, n = 100, stop = "taxa", extinct = FALSE) -->
+<!-- phy <- drop.extinct(phy) -->
+<!-- mean.change <- 1/sum(phy$edge.length)*20 -->
+
+<!-- Q <- matrix(abs(rnorm(9, mean.change, mean.change/2)), 3, 3) -->
+<!-- diag(Q) <- 0 -->
+<!-- diag(Q) <- -rowSums(Q) -->
+
+<!-- dat <- sim.char(phy, Q, 1, "discrete") -->
+<!-- dat <- dat[,,1] -->
+<!-- data <- data.frame(sp = names(dat), dat = dat) -->
+<!-- ``` -->
+
+<!-- We can run rayDISC easily.  -->
+
+<!-- ```{r} -->
+<!-- rayRes <- rayDISC(phy = phy, data = data, model = "ARD", root.p = "flat") -->
+<!-- ``` -->
+
+<!-- I will take the parameters from rayDISC and use corHMM to evaluate their likelihood. If all goes well the likelihood for these parameters will be the same in rayDISC and corHMM. -->
+
+<!-- ```{r} -->
+<!-- data.sort <- data.frame(data[,2], data[,2],row.names=data[,1]) -->
+<!-- data.sort <- data.sort[phy$tip.label,] -->
+<!-- model.set.final <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=1,ntraits=3, model = "ARD") -->
+<!-- p = c(na.omit(as.vector(rayRes$solution))) -->
+<!-- corRes <- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = model.set.final$rate, p = p, root.p = "flat") -->
+<!-- c(rayRes$loglik, corRes$loglik) -->
+<!-- rayRes$loglik == corRes$loglik -->
+<!-- ``` -->
+
+<!-- ##3.2: corHMM works for n States -->
+
+<!-- To test that corHMM is working for multiple states and hidden rates we need to construct a pseudo-hidden rate model. This pseudo hidden rate model will be evaluated as any rate.cat > 1 model is, but it will have the same likelihood as a model that could be run in rayDISC. The key is distributing those parameters within corHMM such that we don't expect a different likelihood.  -->
+
+<!-- ```{r} -->
+<!-- data.sort <- data.frame(data[,2], data[,2],row.names=data[,1]) -->
+<!-- data.sort <- data.sort[phy$tip.label,] -->
+<!-- model.set.final<- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=2,ntraits=3,model ="ARD") -->
+<!-- model.set.final$index.matrix -->
+<!-- ``` -->
+
+<!-- This is our 2 rate class model. However, we will assign the same parameters to R1 and R2. There should be no difference in likelihood between this model and rayDISC - *we can use the rayDISC result from section 3.1.*. -->
+
+<!-- ```{r} -->
+<!-- p = c(na.omit(as.vector(rayRes$solution)), na.omit(as.vector(rayRes$solution)), 1,1,0) -->
+<!-- corRes_2rate <- corHMM(phy = phy, data = data, rate.cat = 2, mV = TRUE, rate.mat = model.set.final$rate, p = p, root.p = "flat") -->
+<!-- c(corRes_2rate$loglik, rayRes$loglik) -->
+<!-- ``` -->
+
+<!-- ##3.3: corHMMv2.0 is the same as previous versions -->
+
+<!-- For this section I've run some models in the previous version of corHMM. I am going to use those corhmm objects to demonstrate that new corHMM and old corHMM exist in harmony. -->
+
+<!-- Is old rayDISC the same as new rayDISC? -->
+
+<!-- ```{r} -->
+<!-- load("~/Desktop/oldCorRes.Rsave") -->
+<!-- p <- na.omit(as.vector(obj$def.rayDISC$solution)) -->
+<!-- newRay <- rayDISC(phy = obj$def.rayDISC$phy, data = obj$def.rayDISC$data, model = "ARD", ntraits = 1, p = p, rate.mat = obj$def.rayDISC$index.mat, root.p = "flat") -->
+<!-- newRay$loglik == obj$def.rayDISC$loglik -->
+<!-- ``` -->
+
+<!-- Is old corHMM the same as new corHMM? -->
+
+<!-- ```{r} -->
+<!-- p <- na.omit(as.vector(obj$def.corHMM$solution)) -->
+<!-- data <- data.frame(sp = rownames(obj$def.corHMM$data), dat = obj$def.corHMM$data[,1]) -->
+<!-- newCor <- corHMM(phy = obj$def.corHMM$phy, data = data, rate.cat = 2, rate.mat = obj$def.corHMM$index.mat, p = p) -->
+<!-- obj$def.corHMM$loglik == newCor$loglik -->
+<!-- ``` -->
+
+<!-- Is old corHMM the same as new corHMM when the model is constrained? -->
+
+<!-- ```{r} -->
+<!-- p <- na.omit(as.vector(obj$const.corHMM$solution)) -->
+<!-- p <- p[c(-4, -7)] -->
+<!-- data <- data.frame(sp = rownames(obj$const.corHMM$data), dat = obj$const.corHMM$data[,1]) -->
+<!-- newCor <- corHMM(phy = obj$const.corHMM$phy, data = data, rate.cat = 2, rate.mat = obj$const.corHMM$index.mat, p = p) -->
+<!-- obj$const.corHMM$loglik == newCor$loglik -->
+<!-- ``` -->
