@@ -40,7 +40,7 @@ getRateMats <- function(pp=NULL, rate.mat=NULL, rate.cat=NULL){
   return(RateMats)
 }
 
-plotMKmodel <- function(pp, rate.cat = NULL, display = "column", col.func = plasma, arrow.scale = 1, text.scale = 1, vertex.scale = 1){
+plotMKmodel <- function(pp, rate.cat = NULL, display = "column", color = c("blue", "red"), arrow.scale = 1, text.scale = 1, vertex.scale = 1){
   
   if(class(pp) == "matrix" & is.null(rate.cat)){
     return(cat("Error: user provided a rate matrix without providing the number of rate categories."))
@@ -89,7 +89,12 @@ plotMKmodel <- function(pp, rate.cat = NULL, display = "column", col.func = plas
     diag(IndMat) <- NA
     arrow.scalar <- arrow.scale/nCol
     text.scalar <- text.scale/nCol
-    cols <- col.func(101, alpha = 1)
+    if(color[1] == "col.blind"){
+      cols <- plasma(101, alpha = 1)
+    }else{
+      RampFunc <- colorRampPalette(c(color[1], color[2]))
+      cols <- RampFunc(101)
+    }
     
     ## based on the value of rate we decide what the color will be
     # we don't want elements of the rate matrix, only the off diag
