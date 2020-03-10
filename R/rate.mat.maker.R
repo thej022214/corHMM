@@ -430,7 +430,7 @@ getRateMat4Dat <- function(data, model = "ARD"){
     }
   }else{
     Traits <- levels(as.factor(unique(data[,2])))
-    nTraits <- length(Traits)
+    nObs <- nTraits <- length(Traits)
     data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
     rate.mat <- StateMats[[1]]
   }
@@ -447,13 +447,14 @@ getRateMat4Dat <- function(data, model = "ARD"){
   
   # adjusting the rate mat if there are any unobsered states
   ObservedTraits <- which(1:nTraits %in% data[,2])
-  rate.mat[-ObservedTraits, ] <- 0
-  rate.mat[, -ObservedTraits] <- 0
+  rate.mat <- rate.mat[ObservedTraits, ]
+  rate.mat <- rate.mat[, ObservedTraits]
   rate.mat[rate.mat > 0] <- 1:length(rate.mat[rate.mat > 0])
   
-  colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nTraits, ")", sep ="")
+  colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nObs, ")", sep ="")
   legend <- gsub("_", " & ", Traits)
-  names(legend) <- 1:nTraits
+  names(legend)[ObservedTraits] <- 1:nObs
+  names(legend)[-ObservedTraits] <- "NA"
   res <- list(legend = legend, rate.mat = rate.mat)
   return(res)
 }

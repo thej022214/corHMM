@@ -48,7 +48,10 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     nTraits <- length(Traits)
     nObs <- length(unique(combined.data))
     data <- data.frame(sp = data[, 1], d = match(combined.data, Traits))
-    names(Traits) <- 1:nTraits
+    ObservedTraits <- which(1:nTraits %in% data[,2])
+    data[,2] <- match(data[,2], ObservedTraits)
+    names(Traits)[ObservedTraits] <- 1:nObs
+    names(Traits)[-ObservedTraits] <- "NA"
     cat(paste("\n", nTraits, " unique trait combinations found.", "\n", sep = ""))
     print(gsub("_", " & ", Traits))
     cat("\n")
@@ -58,7 +61,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
   }
   else {
     Traits <- levels(as.factor(unique(data[, 2])))
-    nTraits <- length(Traits)
+    nObs <- nTraits <- length(Traits)
     data <- data.frame(sp = data[, 1], d = match(data[, 2], Traits))
   }
   
@@ -113,7 +116,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	nstarts=nstarts
 	ip=ip
 
-  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nTraits, model = model)
+  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nObs, model = model)
   phy <- reorder(phy, "pruningwise")
 
 	# this allows for custom rate matricies! 
@@ -228,7 +231,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 
   # finalize the output
 	solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-	StateNames <- paste("(", rep(1:nTraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nTraits), ")", sep = "")
+	StateNames <- paste("(", rep(1:nObs, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
 	rownames(solution) <- colnames(solution) <- StateNames
 	AIC <- -2*loglik+2*model.set.final$np
 	AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
@@ -558,6 +561,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
 	  }
 	  rate <- getFullMat(StateMats)
 	}
+  nTraits <- dim(rate)[1]
   rate[rate == 0] <- NA
 	index.matrix<-rate
 	rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
@@ -587,7 +591,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
 	}
 	liks <- matrix(rep(tmp, rate.cat), nb.tip + nb.node, ntraits*rate.cat)
 	
-  Q <- matrix(0, ntraits*rate.cat, ntraits*rate.cat)
+  Q <- matrix(0, dim(rate)[1], dim(rate)[1])
   
 	obj$np<-max(rate)-1
 	obj$rate<-rate
@@ -708,7 +712,8 @@ corProcessData <- function(data){
     nTraits <- length(Traits)
     nObs <- length(unique(combined.data))
     data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
-    names(Traits) <- 1:nTraits
+    ObservedTraits <- which(1:nTraits %in% data[,2])
+    data[,2] <- match(data[,2], ObservedTraits)
   }else{
     # if multiple columns are found we still will sort it through levels for consistency
     Traits <- levels(as.factor(unique(data[,2])))

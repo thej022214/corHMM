@@ -141,7 +141,7 @@ MK_3state
 
 When you run your corHMM object you are greeted with a summary of the model. Your model fit is described by the negative log likelihood (-lnL), Akaike information criterion (AIC), and sample size corrected Akaike information criterion (AICc). You are also given the number of rate categories (Rate.cat) and number of taxa (ntax). Below *Fit* is the real meat of the model: *Rates*.
 
-The rates describe transitions between states and are organized as a matrix. This *transition rate matrix* can be read as describing the transition rate **from** ROW **to** COLUMN. For example, if you were interested in the transition rate from State 1 (absence of tails & coccyx) to State 2 (presence of coccyx and absence of tails) you would be looking at the Row 1, Column 2, entry. For a time calibrated ultrametric tree, these rates will depend on the age of your phylogeny. So a rate of 0.1 for a tree that is 10 Million Years old represents one transition from state A to state B every 100,000,000 years. 
+The rates describe transitions between states and are organized as a matrix. This *transition rate matrix* can be read as describing the transition rate **from** ROW **to** COLUMN. For example, if you were interested in the transition rate from State 1 (absence of tails & coccyx) to State 2 (absence of tails and presence of coccyx) you would be looking at the Row 1, Column 2, entry. For a time calibrated ultrametric tree, these rates will depend on the age of your phylogeny. So a rate of 0.1 for a tree that is 10 Million Years old represents one transition from state A to state B every 100,000,000 years. 
 
 Interpreting a Markov matrix can be difficult, especially when you're just starting out. This problem is compounded when users begin to use the more complex Hidden Markov models (which is done by setting rate.cat > 1). To help users we have implemented a new plotting function.
 
@@ -178,7 +178,7 @@ Models with more states take longer to run. Hidden rate models are no exception,
 round(HMM_3state$solution,3)
 ```
 
-Looking at the solution of this hidden Markov model is intimidating, but the same principles of interpreting the transition rate matrices apply. You still read rates from row to column. However, we have added different rate categories (as represented by R1 and R2. Each rate category contains the same model we had in section 1.1. That is to say, (0,R1),(1,R1), and (2,R1) are a Markov model of transitions between states 1, 2, and 3. We can plot the HMM using the plotMKmodel function. It will plot the underlying structure of model in discrete parts. The first 2 plots are descriptions of how observed states transition, whereas the final plot describes how these rate classes transition between one another.
+Looking at the solution of this hidden Markov model is intimidating, but the same principles of interpreting the transition rate matrices apply. You still read rates from row to column. However, we have added different rate categories (as represented by R1 and R2. Each rate category contains the same model we had in section 1.1. That is to say, (1,R1),(2,R1), and (3,R1) are a Markov model of transitions between states 1, 2, and 3. We can plot the HMM using the plotMKmodel function. It will plot the underlying structure of model in discrete parts. The first 2 plots are descriptions of how observed states transition, whereas the final plot describes how these rate classes transition between one another.
 
 ```{r}
 plotMKmodel(HMM_3state)
@@ -205,7 +205,6 @@ RateMat
 ```
 
 This is the rate.mat that was internally called when we ran our model in section 1.1. The numbers in this matrix are not rates, they are used to index the parameters within corHMM. Each distinct number is a parameter to be estimated independently from all others. Let's manually create the symmetric model we used in secion 1.2. We want transitions *to* a state to be the same as *from* that state. 
-
 
 ```{r}
 pars2equal <- list(c(1,2), c(3,4))
@@ -462,7 +461,7 @@ Ont_LegendAndMat <- getRateMat4Dat(Ont_Dat)
 Ont_LegendAndMat
 ```
 
-Even though there were 3 binary characters (meaning 8 possible states), corHMM created a matrix of 4 states. This is because all of the organisms were corporeal and thus didn't factor into the matrix structure. The next thing to notice is that s0tate 4 (No Limbs, Yes Fingers) is removed. That is because no species had that character combination. Finally, dual transitions have been removed. The transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed. 
+Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually found. This is because all of the organisms were corporeal and thus didn't factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. Finally, dual transitions have been removed. The transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed. 
 
 ```{r}
 Ont_res.corHMM <- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")

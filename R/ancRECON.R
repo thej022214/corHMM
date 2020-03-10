@@ -26,11 +26,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     nTraits <- length(Traits)
     nObs <- length(unique(combined.data))
     data <- data.frame(sp = data[, 1], d = match(combined.data, Traits))
+    ObservedTraits <- which(1:nTraits %in% data[,2])
+    data[,2] <- match(data[,2], ObservedTraits)
     names(Traits) <- 1:nTraits
   }
   else {
     Traits <- levels(as.factor(unique(data[, 2])))
-    nTraits <- length(Traits)
+    nObs <- nTraits <- length(Traits)
     data <- data.frame(sp = data[, 1], d = match(data[, 2], Traits))
   }
   
@@ -54,17 +56,23 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
   ntraits <- length(levels)
   drop.states = NULL
 	if(is.null(rate.mat)){
-	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nTraits, model = model)
+	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nObs, model = model)
 	  rate.mat <- model.set.final$index.matrix
 	  rate <- model.set.final$rate
 	}else{
-	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nTraits, model = model)
+	  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nObs, model = model)
 		rate <- rate.mat
     col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
     row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
     drop.states <- col.sums[which(col.sums == row.sums)]
 		rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 	}
+  if((max(na.omit(as.vector(rate)))-1) < length(p)){
+    return(cat("You have given a vector of transition rates greater than the number of parameters in the model."))
+  }
+  if((max(na.omit(as.vector(rate)))-1) > length(p)){
+    return(cat("You have given a vector of transition rates less than the number of parameters in the model."))
+  }
 	#Makes a matrix of tip states and empty cells corresponding
 	#to ancestral nodes during the optimization process.
 	x <- data.sort[,1]
@@ -369,7 +377,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
-            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=nTraits, model=model, root.p=root.p)
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=nObs, model=model, root.p=root.p)
         }else{
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
