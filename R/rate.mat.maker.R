@@ -1,8 +1,8 @@
 #Rate matrix maker and manipulating functions
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver, modified by James D. Boyko
-rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL, 
-          model = c("ER", "SYM", "ARD")) 
+rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL,
+          model = c("ER", "SYM", "ARD"))
 {
   if (hrm == TRUE) {
     k = 2
@@ -24,49 +24,49 @@ rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL
       colnames(rate.mat.index) <- c("(0)", "(1)")
     }
     if (rate.cat == 2) {
-      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
                                     "(0,R2)", "(1,R2)")
-      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
                                     "(0,R2)", "(1,R2)")
     }
     if (rate.cat == 3) {
-      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
                                     "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)")
-      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
                                     "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)")
     }
     if (rate.cat == 4) {
-      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
                                     "(1,R4)")
-      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
                                     "(1,R4)")
     }
     if (rate.cat == 5) {
-      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
                                     "(1,R4)", "(0,R5)", "(1,R5)")
-      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
                                     "(1,R4)", "(0,R5)", "(1,R5)")
     }
     if (rate.cat == 6) {
-      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
                                     "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)")
-      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
                                     "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)")
     }
     if (rate.cat == 7) {
-      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
-                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)", 
+      rownames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
+                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)",
                                     "(0,R7)", "(1,R7)")
-      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)", 
-                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)", 
-                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)", 
+      colnames(rate.mat.index) <- c("(0,R1)", "(1,R1)",
+                                    "(0,R2)", "(1,R2)", "(0,R3)", "(1,R3)", "(0,R4)",
+                                    "(1,R4)", "(0,R5)", "(1,R5)", "(0,R6)", "(1,R6)",
                                     "(0,R7)", "(1,R7)")
     }
   }
@@ -118,7 +118,7 @@ rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL
         if (model == "SYM") {
           np <- 4
           index <- matFINAL == 1
-          rate.mat.index[index][c(1, 2, 4, 6)] <- rate.mat.index[index][c(3, 
+          rate.mat.index[index][c(1, 2, 4, 6)] <- rate.mat.index[index][c(3,
                                                                           5, 7, 8)] <- 1:np
         }
         if (model == "ARD") {
@@ -151,8 +151,8 @@ rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL
         if (model == "SYM") {
           np <- 12
           index <- matFINAL == 1
-          rate.mat.index[index][c(1, 2, 3, 5, 6, 8, 9, 
-                                  11, 12, 15, 18, 21)] <- rate.mat.index[index][c(4, 
+          rate.mat.index[index][c(1, 2, 3, 5, 6, 8, 9,
+                                  11, 12, 15, 18, 21)] <- rate.mat.index[index][c(4,
                                                                                   7, 10, 13, 16, 14, 19, 17, 20, 22, 23, 24)] <- 1:np
         }
         if (model == "ARD") {
@@ -167,17 +167,17 @@ rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL
       colnames(rate.mat.index) <- as.character(1:nl)
     }
     if (ntraits == 2) {
-      rownames(rate.mat.index) <- c("(0,0)", "(0,1)", "(1,0)", 
+      rownames(rate.mat.index) <- c("(0,0)", "(0,1)", "(1,0)",
                                     "(1,1)")
-      colnames(rate.mat.index) <- c("(0,0)", "(0,1)", "(1,0)", 
+      colnames(rate.mat.index) <- c("(0,0)", "(0,1)", "(1,0)",
                                     "(1,1)")
     }
     if (ntraits == 3) {
-      rownames(rate.mat.index) <- c("(0,0,0)", "(1,0,0)", 
-                                    "(0,1,0)", "(0,0,1)", "(1,1,0)", "(1,0,1)", "(0,1,1)", 
+      rownames(rate.mat.index) <- c("(0,0,0)", "(1,0,0)",
+                                    "(0,1,0)", "(0,0,1)", "(1,1,0)", "(1,0,1)", "(0,1,1)",
                                     "(1,1,1)")
-      colnames(rate.mat.index) <- c("(0,0,0)", "(1,0,0)", 
-                                    "(0,1,0)", "(0,0,1)", "(1,1,0)", "(1,0,1)", "(0,1,1)", 
+      colnames(rate.mat.index) <- c("(0,0,0)", "(1,0,0)",
+                                    "(0,1,0)", "(0,0,1)", "(1,1,0)", "(1,0,1)", "(0,1,1)",
                                     "(1,1,1)")
     }
   }
@@ -185,64 +185,64 @@ rate.mat.maker <- function (rate.cat, hrm = TRUE, ntraits = NULL, nstates = NULL
 }
 
 rate.par.drop <- function(rate.mat.index=NULL,drop.par=NULL){
-	if(is.null(rate.mat.index)){
-		stop("Rate matrix needed.  See mat.maker to create one.\n")
-	}
-	if(is.null(drop.par)){
-		cat("No parameters indicated to drop.  Original matrix returned.\n")
-		return(rate.mat.index)
-	}
-	if(max(rate.mat.index,na.rm=TRUE) < max(drop.par,na.rm=TRUE)){
-		cat("Some parameters selected for dropping were not in the original matrix.\n")
-	}
-	drop.par <- unique(drop.par) # in case parameters listed more than once in drop vector
-	drop.par <- drop.par[order(drop.par)]
-	max <- max(rate.mat.index,na.rm=TRUE)
-	for(drop.which in 1:length(drop.par)){
-		drop.locs <- which(rate.mat.index == drop.par[drop.which],arr.ind=TRUE)
-		rate.mat.index[drop.locs] <- NA
-	}
-	max <- max - length(drop.par)
-	exclude <- which(is.na(rate.mat.index))
-	rate.mat.index[-exclude] <- 1:max
-	
-	return(rate.mat.index)
+    if(is.null(rate.mat.index)){
+        stop("Rate matrix needed.  See mat.maker to create one.\n")
+    }
+    if(is.null(drop.par)){
+        cat("No parameters indicated to drop.  Original matrix returned.\n")
+        return(rate.mat.index)
+    }
+    if(max(rate.mat.index,na.rm=TRUE) < max(drop.par,na.rm=TRUE)){
+        cat("Some parameters selected for dropping were not in the original matrix.\n")
+    }
+    drop.par <- unique(drop.par) # in case parameters listed more than once in drop vector
+    drop.par <- drop.par[order(drop.par)]
+    max <- max(rate.mat.index,na.rm=TRUE)
+    for(drop.which in 1:length(drop.par)){
+        drop.locs <- which(rate.mat.index == drop.par[drop.which],arr.ind=TRUE)
+        rate.mat.index[drop.locs] <- NA
+    }
+    max <- max - length(drop.par)
+    exclude <- which(is.na(rate.mat.index))
+    rate.mat.index[-exclude] <- 1:max
+    
+    return(rate.mat.index)
 }
 
 rate.par.eq <- function(rate.mat.index=NULL,eq.par=NULL){
-	if(is.null(rate.mat.index)){
-		stop("Rate matrix needed.  See mat.maker to create one.\n")
-	}
-	if(is.null(drop) || length(eq.par) < 2){
-		cat("Fewer than two parameters indicated to equalize.  Original matrix returned.\n")
-		return(rate.mat.index)
-	}
-	too.big <- which(eq.par > max(rate.mat.index,na.rm=TRUE))
-	if(length(too.big) > 0){
-		cat("Some parameters selected for equalizing were not in the original matrix:\n")
-		cat("Not in original rate.mat.index:",eq.par[too.big],"\n")
-		cat("Original matrix returned.\n")
-		return(rate.mat.index)
-	}
-	eq.par <- unique(eq.par)
-	eq.par <- eq.par[order(eq.par)]	
-	min <- min(eq.par) # rm.na unnecessary?
+    if(is.null(rate.mat.index)){
+        stop("Rate matrix needed.  See mat.maker to create one.\n")
+    }
+    if(is.null(drop) || length(eq.par) < 2){
+        cat("Fewer than two parameters indicated to equalize.  Original matrix returned.\n")
+        return(rate.mat.index)
+    }
+    too.big <- which(eq.par > max(rate.mat.index,na.rm=TRUE))
+    if(length(too.big) > 0){
+        cat("Some parameters selected for equalizing were not in the original matrix:\n")
+        cat("Not in original rate.mat.index:",eq.par[too.big],"\n")
+        cat("Original matrix returned.\n")
+        return(rate.mat.index)
+    }
+    eq.par <- unique(eq.par)
+    eq.par <- eq.par[order(eq.par)]
+    min <- min(eq.par) # rm.na unnecessary?
 
-	# the decrement index will hold counters to decrement rate index
-	dec.index <- matrix(0,length(rate.mat.index[,1]),length(rate.mat.index[1,]))
-	for(eq.which in 2:length(eq.par)){
-		to.eq <- which(rate.mat.index == eq.par[eq.which],arr.ind=TRUE)
-		rate.mat.index[to.eq] <- min
-	}
-	# the decrement index will hold counters to decrement rate index
-	dec.index <- matrix(0,length(rate.mat.index[,1]),length(rate.mat.index[1,]))
-	for(eq.which in 2:length(eq.par)){
-		to.dec <- which(rate.mat.index > eq.par[eq.which],arr.ind=TRUE) #greater than current decrementer
-		dec.index[to.dec] <- dec.index[to.dec] + 1
-	}
-	rate.mat.index <- rate.mat.index - dec.index
-		
-	return(rate.mat.index)
+    # the decrement index will hold counters to decrement rate index
+    dec.index <- matrix(0,length(rate.mat.index[,1]),length(rate.mat.index[1,]))
+    for(eq.which in 2:length(eq.par)){
+        to.eq <- which(rate.mat.index == eq.par[eq.which],arr.ind=TRUE)
+        rate.mat.index[to.eq] <- min
+    }
+    # the decrement index will hold counters to decrement rate index
+    dec.index <- matrix(0,length(rate.mat.index[,1]),length(rate.mat.index[1,]))
+    for(eq.which in 2:length(eq.par)){
+        to.dec <- which(rate.mat.index > eq.par[eq.which],arr.ind=TRUE) #greater than current decrementer
+        dec.index[to.dec] <- dec.index[to.dec] + 1
+    }
+    rate.mat.index <- rate.mat.index - dec.index
+        
+    return(rate.mat.index)
 }
 
 # JDB modifications - alternative index matrix construction. instructions below.
@@ -258,6 +258,15 @@ getStateMat <- function(nState){
   diag(StateMat) <- 0
   StateMat[StateMat>0] <- 1:length(StateMat[StateMat>0])
   return(StateMat)
+}
+
+getRateCatMat <- function(rate.cats){
+  RateCatMat <- matrix(1:(rate.cats^2),rate.cats,rate.cats)
+  diag(RateCatMat) <- 0
+  RateCatMat[RateCatMat>0] <- 1:length(RateCatMat[RateCatMat>0])
+  StateNames <- paste("R", 1:dim(RateCatMat)[1], sep = "")
+  colnames(RateCatMat) <- rownames(RateCatMat) <- StateNames
+  return(RateCatMat)
 }
 
 dropStateMatPars <- function(StateMat, Pars){
@@ -303,7 +312,7 @@ equateStateMatPars <- function(StateMat, ParsList){
 }
 
 updateStateMats <- function(StateMats){
-  tmp <- unlist(lapply(StateMats, max)) 
+  tmp <- unlist(lapply(StateMats, max))
   newIndMax <- sapply(1:length(tmp), function(x) sum(tmp[1:x]))
   for(i in 2:length(StateMats)){
     StateMats[[i]][StateMats[[i]] > 0] <- ((newIndMax[i-1]+1):newIndMax[i])[(StateMats[[i]])]
@@ -324,7 +333,7 @@ getFullMat <- function(StateMats, RateClassMat = NULL){
     FullMat <- FullMat + tmpIndMat %x% StateMats[[i]]
   }
   StartingHiddenInd <- max(FullMat)
-  NonDiagonal <- c(which(lower.tri(RateClassMat) & RateClassMat > 0), 
+  NonDiagonal <- c(which(lower.tri(RateClassMat) & RateClassMat > 0),
                    which(upper.tri(RateClassMat) & RateClassMat > 0))
   # a matrix for determining where in the full mat we're going
   IndMat <- matrix(0, dim(RateClassMat)[1], dim(RateClassMat)[2])
@@ -353,7 +362,7 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
     }
     if(model == "SYM"){
       FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
-      FullMat <- t(FullMat) 
+      FullMat <- t(FullMat)
       FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
     }
     FullMat[FullMat == 0] <- NA
@@ -377,14 +386,14 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
     if(model == "SYM"){
       FullMat <- getStateMat(ntraits)
       FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
-      FullMat <- t(FullMat) 
+      FullMat <- t(FullMat)
       FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
       StateMats[[i]] <- FullMat
     }
   }
   
   RateClassMat <- getStateMat(rate.cat)
-  StateMats <- updateStateMats(StateMats) 
+  StateMats <- updateStateMats(StateMats)
   FullMat <- getFullMat(StateMats, RateClassMat)
   
   StateNames <- paste("(", rep(1:ntraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
@@ -394,7 +403,7 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
   return(FullMat)
 }
 
-getRateMat4Dat <- function(data, model = "ARD"){
+getStateMat4Dat <- function(data, model = "ARD"){
   
   data.legend <- input.data <- data
   nCol <- dim(data)[2]
@@ -441,7 +450,7 @@ getRateMat4Dat <- function(data, model = "ARD"){
   
   if(model == "SYM"){
     rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
-    rate.mat <- t(rate.mat) 
+    rate.mat <- t(rate.mat)
     rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
   }
   
@@ -465,22 +474,22 @@ getRateMat4Dat <- function(data, model = "ARD"){
 # StateMatB <- getStateMat(nState = 3)
 # StateMatC <- getStateMat(nState = 3)
 # StateMatD <- getStateMat(nState = 3)
-# 
+#
 # StateMats <- list(StateMatA, StateMatB, StateMatC, StateMatD)
-# 
+#
 # # step 2: determine how those processes are related to one another
 # RateClassMat <- getStateMat(4)
-# 
+#
 # # this updates all of the matricies to have estimated paramaters
-# 
-# #StateMats <- updateStateMats(StateMats) 
-# 
+#
+# #StateMats <- updateStateMats(StateMats)
+#
 # # step 3: combine the processes and their relations into a single matrix
 # FullMat <- getFullMat(StateMats, RateClassMat)
-# 
+#
 # require(hisse)
 # trans.rate <- TransMatMakerMuHiSSE(hidden.traits=3, include.diagonals = TRUE)
-# 
+#
 # # hardcoded beacuse lazy 3 state
 # hiMat <- rbind(cbind(FullMat, 0, 0, 0, 0),0,0,0,0)
 # nObsStates <- dim(StateMats[[1]])[1]
@@ -488,10 +497,10 @@ getRateMat4Dat <- function(data, model = "ARD"){
 # nObsParams <- nHiStates*nObsStates
 # IndMat <- matrix(1:nObsParams, nObsStates, nHiStates)
 # IndVec <- as.vector(rbind(IndMat, (nObsParams+1):(nObsParams+dim(IndMat)[2])))
-# 
+#
 # hiMat <- hiMat[IndVec,]
 # hiMat <- hiMat[,IndVec]
-# 
+#
 # trans.rate[1:dim(trans.rate)[1], 1:dim(trans.rate)[2]] <- hiMat
 
 

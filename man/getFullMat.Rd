@@ -1,6 +1,6 @@
 \name{getFullMat}
 \alias{getFullMat}
-\alias{getStateMat}
+\alias{getRateCatMat}
 \alias{equateStateMatPars}
 \alias{dropStateMatPars}
 \title{Combines several rate class index matrices}

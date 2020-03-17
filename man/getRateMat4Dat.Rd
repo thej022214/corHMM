@@ -1,9 +1,9 @@
-\name{getRateMat4Dat}
-\alias{getRateMat4Dat}
+\name{getStateMat4Dat}
+\alias{getStateMat4Dat}
 \title{Produce an index matrix and legend from a dataset}
 \description{Takes a dataset to produce an index matrix that corresponds to a single rate category and a legend which matches input data to the rows and columns of the index matrix and corHMM solution.}
 \usage{
-getRateMat4Dat(data, model = "ARD")
+getStateMat4Dat(data, model = "ARD")
 }       
 \arguments{
 \item{data}{a data matrix containing species information.}
@@ -25,7 +25,7 @@ phy <- primates[[1]]
 phy <- multi2di(phy)
 data <- primates[[2]]
 # create a legend and rate mat from a multi-character dataset.
-LegendAndRateMat <- getRateMat4Dat(data)
+LegendAndRateMat <- getStateMat4Dat(data)
 rate.mat <- LegendAndRateMat$rate.mat
 # if I wanted to create a hidden Markov model 
 rate.mat.HMM <- getFullMat(list(rate.mat, rate.mat))
