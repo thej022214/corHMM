@@ -144,9 +144,9 @@ You should notice that the state legend was printed to the screen when running `
 head(MK_3state$data.legend)
 ```
 
-Alternatively, a user can supply their dataset to getRateMat4Dat which as one of its output provides a legend consistent with the `corHMM()` function. The other output is an index matrix (or rate matrix) which describes which rates are to be estimated in `corHMM` (we'll talk more of the index matrix later):
+Alternatively, a user can supply their dataset to getStateMat4Dat which as one of its output provides a legend consistent with the `corHMM()` function. The other output is an index matrix (or rate matrix) which describes which rates are to be estimated in `corHMM` (we'll talk more of the index matrix later):
 ```{r}
-getRateMat4Dat(data)
+getStateMat4Dat(data)
 ```
 
 Finally, interpreting a Markov matrix can be difficult, especially when you're just starting out. This problem is compounded when users begin to apply the more complex Hidden Markov models (which is done by setting rate.cat > 1) to their data. To help users we have implemented a new plotting function:
@@ -181,7 +181,7 @@ plotMKmodel(HMM_3state)
 
 A custom rate matrix allows you to specify explicit hypotheses. For example, suppose you want to testwhether traits evolve in a certain order, testing for different rates of character evolution in different clades, or testing for the presence of hidden precursors before a state can evolve, then a custom model is the best way approach. 
 
-At its core, the purpose of a rate matrix (i.e., `rate.mat`) is to indicate to corHMM which parameters are being estimated. It specifies to `corHMM()` which rates in the matrix are being estimated and if any of them are expected to be identical. Let's start by using the `getRateMat4Dat()` function to get a generic `rate.mat` object:
+At its core, the purpose of a rate matrix (i.e., `rate.mat`) is to indicate to corHMM which parameters are being estimated. It specifies to `corHMM()` which rates in the matrix are being estimated and if any of them are expected to be identical. Let's start by using the `getStateMat4Dat()` function to get a generic `rate.mat` object:
 ```{r}
 LegendAndRateMat <- getStateMat4Dat(data)
 RateMat <- LegendAndRateMat$rate.mat
@@ -277,7 +277,7 @@ head(Precur_Dat)
 Let's get a starting rate matrix based on our dataset. 
 
 ```{r}
-Precur_LegendAndMat <- getRateMat4Dat(Precur_Dat)
+Precur_LegendAndMat <- getStateMat4Dat(Precur_Dat)
 Precur_LegendAndMat
 ```
 
@@ -291,7 +291,7 @@ Precur_R1 <- dropStateMatPars(Precur_R1, 2)
 Precur_R1
 ```
 
-Next, we'll create a rate class consistent with the idea of a precursor. In this rate class we expect that species can either gain or lose EFNs. This is the same as the matrix produced by getRateMat4Dat.
+Next, we'll create a rate class consistent with the idea of a precursor. In this rate class we expect that species can either gain or lose EFNs. This is the same as the matrix produced by getStateMat4Dat.
 
 ```{r}
 Precur_R2 <- Precur_LegendAndMat$rate.mat
@@ -352,7 +352,7 @@ summary(as.factor(MFT_dat[,2])) # how many of each state do we have?
 Start off by getting a legend and rate matrix consistent with this dataset.
 
 ```{r}
-MFT_LegendAndRate <- getRateMat4Dat(MFT_dat)
+MFT_LegendAndRate <- getStateMat4Dat(MFT_dat)
 MFT_LegendAndRate
 ```
 
@@ -372,7 +372,7 @@ MFT_R2 <- dropStateMatPars(MFT_LegendAndRate$rate.mat, c(4,6))
 MFT_R2
 ```
 
-The free-moving matrix is already provided to us by getRateMat4Dat.
+The free-moving matrix is already provided to us by getStateMat4Dat.
 
 ```{r}
 MFT_R3 <- MFT_LegendAndRate$rate.mat
@@ -431,7 +431,7 @@ head(Ont_Dat)
 Previously, the user would have had to convert this dataset into something corHMM could use. This would mean taking all possible unique combinations and creating a corHMM specific dataset. Now, corHMM will internally convert this dataset and provide users with a legend in the results section for aiding the interpretation of the results. In addition, corHMM will remove any double transitions.
 
 ```{r}
-Ont_LegendAndMat <- getRateMat4Dat(Ont_Dat)
+Ont_LegendAndMat <- getStateMat4Dat(Ont_Dat)
 Ont_LegendAndMat
 ```
 

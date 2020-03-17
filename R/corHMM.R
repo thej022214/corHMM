@@ -553,11 +553,11 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
 	nb.node <- phy$Nnode
 	obj$rate.cat<-rate.cat
   
-  rate <- getRateMat4Dat(data, model)$rate.mat
+  rate <- getStateMat4Dat(data, model)$rate.mat
 	if(rate.cat > 1){
 	  StateMats <- vector("list", rate.cat)
 	  for(i in 1:rate.cat){
-	    StateMats[[i]] <- getRateMat4Dat(data, model)$rate.mat
+	    StateMats[[i]] <- getStateMat4Dat(data, model)$rate.mat
 	  }
 	  rate <- getFullMat(StateMats)
 	}
