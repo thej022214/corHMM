@@ -23,19 +23,6 @@ Returns an index matrix.
 \seealso{
 \code{getRateMat4Dat}
 }
-\examples{
-#Generate 2 matrices for 3 traits:
-StateMatA <- getStateMat(3)
-StateMatB <- getStateMat(3)
-#Modify StateMatA such that allowed transitions are 1 to 2, 2 to 3, and 3 to 1
-StateMatA_constrained <- dropStateMatPars(StateMatA, c(5, 1, 4))
-#Modify StateMatB to be identical to the "SYM" model
-StateMatB_constrained <- equateStateMatPars(StateMatB, list(c(1,3),c(2,5),c(4,6)))
-#Make a list of our state matrices (each representing its own rate class)
-StateMats <- list(StateMatA_constrained, StateMatB_constrained)
-#Combine into a single index matrix
-rate.mat <- getFullMat(StateMats)
-}
 \references{
 Tarasov, S. 2019. Integration of Anatomy Ontologies and Evo-Devo Using Structured Markov Models Suggests a New Framework for Modeling Discrete Phenotypic Traits. Systematic Biology.
 }

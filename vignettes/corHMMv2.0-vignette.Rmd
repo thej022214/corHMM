@@ -218,7 +218,7 @@ RateCat2
 
 By default, `corHMM()` will assume that all transitions between R1 and R2 occur independently. If you do decide to specify how the rate categories relate to one another, your RateClassMat will have as many states as there are rate categories. I.e. the RateClassMat doesn't care about how many observed states you have. R1 and R2 describe how our three observed states change, but the RateClassMat describes how species change between R1 and R2. R1 and R2 could temporate or tropical, island or mainland, presence or absence of a necessary mutation. It is everything and anything that can influence the evolution of your observed characters. 
 
-In this case, we'll specify that transitions from R1 to R2 is the same as R2 to R1. This also introduces a new function, getStateMat. This simple function will create an index matrix of size nState by nState specified by the user.
+In this case, we'll specify that transitions from R1 to R2 is the same as R2 to R1. This also introduces a new function, `getRateCatMat()`. This simple function will create an index matrix of size nState by nState specified by the user.
 
 ```{r}
 RateClassMat <- getRateCatMat(2) #
@@ -388,7 +388,7 @@ MFT_ObsStateClasses
 Since we only have 100 species let's constrain our parameters a bit further and say transitions between rate classes occur at the same rate.
 
 ```{r}
-MFT_RateClassMat <- getStateMat(3) # we have 3 rate classes
+MFT_RateClassMat <- getRateCatMat(3) # we have 3 rate classes
 MFT_RateClassMat <- equateStateMatPars(MFT_RateClassMat, 1:6)
 ```
 

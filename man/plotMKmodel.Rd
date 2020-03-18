@@ -3,8 +3,8 @@
 \title{Plot a Markov model}
 \description{Plots a diagram of a Markov model from the output of corHMM or a custom index matrix}
 \usage{
-plotMKmodel(pp, rate.cat = NULL, display = "column", color = c("blue", "red"), arrow.scale = 1, 
-text.scale = 1, vertex.scale = 1)
+plotMKmodel(pp, rate.cat = NULL, display = "column", color = c("blue", "red"), 
+arrow.scale = 1, text.scale = 1, vertex.scale = 1)
 }
 \arguments{
 \item{pp}{an object of class corHMM or matrix.}
