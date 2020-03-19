@@ -72,12 +72,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         drop.states <- col.sums[which(col.sums == row.sums)]
         rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
     }
-    if((max(na.omit(as.vector(rate)))-1) < length(p)){
-        return(cat("You have given a vector of transition rates greater than the number of parameters in the model."))
-    }
-    if((max(na.omit(as.vector(rate)))-1) > length(p)){
-        return(cat("You have given a vector of transition rates less than the number of parameters in the model."))
-    }
+    
+    #if((max(na.omit(as.vector(rate)))-1) < length(p)){
+    #    return(cat("You have given a vector of transition rates greater than the number of parameters in the model."))
+    #}
+    #if((max(na.omit(as.vector(rate)))-1) > length(p)){
+    #    return(cat("You have given a vector of transition rates less than the number of parameters in the model."))
+    #}
+    
     #Makes a matrix of tip states and empty cells corresponding
     #to ancestral nodes during the optimization process.
     x <- data.sort[,1]
