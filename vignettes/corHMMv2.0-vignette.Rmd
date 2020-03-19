@@ -216,10 +216,9 @@ RateCat2 <- dropStateMatPars(RateCat2, 3)
 RateCat2
 ```
 
-By default, `corHMM()` will assume that all transitions between R1 and R2 occur independently. If you do decide to specify how the rate categories relate to one another, your RateClassMat will have as many states as there are rate categories. I.e. the RateClassMat doesn't care about how many observed states you have. R1 and R2 describe how our three observed states change, but the RateClassMat describes how species change between R1 and R2. R1 and R2 could temporate or tropical, island or mainland, presence or absence of a necessary mutation. It is everything and anything that can influence the evolution of your observed characters. 
+With respect to transitions *among* the different rate classes, we have implemented a separate matrix generator, `getRateCatMat()`. By default, this function will assume that all transitions among the specified number of rate classes occur independently. In our example, we will generate a matrix that specifies how transitions between R1 and R2 occur. Note that R1 and R2 could represent a biologically-relevant, but unmeasured factor, such as, say, temperate or tropical environments, island or mainland, presence or absence of a third trait. Basically, it is everything and anything that can influence the evolution of your observed characters. 
 
-In this case, we'll specify that transitions from R1 to R2 is the same as R2 to R1. This also introduces a new function, `getRateCatMat()`. This simple function will create an index matrix of size nState by nState specified by the user.
-
+For illustrative purposes, we will specify that the transition rate from R1 to R2 is the same as the rate from R2 to R1:
 ```{r}
 RateClassMat <- getRateCatMat(2) #
 RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
@@ -227,35 +226,29 @@ RateClassMat
 ```
 
 We now group all of our rate classes together in a list. The first element of the list corresponds to R1, the second to R2, etc.
-
 ```{r}
 StateMats <- list(RateCat1, RateCat2)
+StateMats
 ```
 
-With that, we have all components necessary to create our model. We put it all together with getFullMat. getFullmat requires that the first input be a list of the rate class matrices and the second argument be how they are related to one another.
-
+With that, we have all components necessary to create the full model using another function, `getFullMat()`, which requires that the first input be a list of the *within* rate class matrices and the second argument be the *among* rate class matrices.
 ```{r}
 FullMat <- getFullMat(StateMats, RateClassMat)
 FullMat
 ```
 
-Even though we created this larger index matrix from its individuals components we may not be sure it's exactly what we want. We can use plotMKmodel to also plot an index matrix. This makes it easy to make sure the custom you model you created is the one you want. 
-
+Even though we created this larger index matrix from individuals components we may not be sure it's exactly what we want. Like with visually the inferred model, we can use `plotMKmodel()` to take a look at the model setup *before* running the analysis:
 ```{r, fig.align = "center", fig.width=10, fig.height=3}
 plotMKmodel(pp = FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
 ```
 
-The first two plots are transitions between our observed states 1,2,3. If we focus just on those we can see the same general model structure that was present in section 1.1. As we intended, the dynamics of R1 differ from R2. R1 is an equal rates model, whereas R2 disallows transitions from State 3. The 3rd plot (Rate Category Transition matrix) describes how species transition between R1 and R2. 
-
-Since this is the model we intended on making, we can run corHMM with our custom matrix.
-
+Since this is the model we intended on making, we can run `corHMM()` with our custom matrix,
 ```{r}
 HMM_3state_custom <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")
-round(HMM_3state_custom$solution, 3)
+HMM_3state_custom
 ```
 
-And now we can plot the HMM with rates instead of indices. 
-
+and then plot the resulting parameter estimates as before: 
 ```{r, fig.width=10, fig.height=3}
 plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
 ```
@@ -264,30 +257,28 @@ plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
 
 ### 2.2.1: The precursor model
 
-The precursor from Marazzi et al. (2012) is a good example to start with. They were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). There are 2 states, absence (0) and presence (1) of extrafloral nectaries. However, they proposed that only species with a precursor could gain EFNs. Unfortunately, this precursor is not observed. Here is how we could code this model in corHMM using custom rate matrices.
+The precursor model of Marazzi et al. (2012) is a good example to start with, because that study marks the beginning of HMMs being used in a comparative context. In that study, they were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). Specifically, there were 2 states, presence (1) or absence (0) of EFNs, but that only species with an unobserved, hidden "precursor" trait could gain EFNs. Here we show how you could design the canonical precursor model in `corHMM` using custom rate matrices.
 
-We'll start by loading a simulated dataset consistent with the presence and absence of extrafloral nectaries.
-
+We will start by loading a simulated dataset consistent with the presence and absence of extrafloral nectaries.
 ```{r}
 phy <- read.tree("randomBD.tree")
 load("simulatedData.Rsave")
 head(Precur_Dat)
 ```
 
-Let's get a starting rate matrix based on our dataset. 
-
+The first step is to generate a states only matrix using the input dataset. Here we have a single binary trait:
 ```{r}
 Precur_LegendAndMat <- getStateMat4Dat(Precur_Dat)
 Precur_LegendAndMat
 ```
 
-This legend tells us that the absence of EFNs will be State 1 in corHMM and the presence of EFNs will be State 2. The rate matrix tells us how these observed states are allowed to transition between one another. As of now, the rate of gain and rate of loss will differ. However, what if we wanted to model an unobserved state that influences our observed character? We can code this hidden state using different rate classes. The precursor is expected to be an unobserved character without which it is impossible to gain an EFN. Once we have the precursor however, transitions from absence to presence of EFN will be allowed. Now that we know how the hidden state influences our observed character we can make this using different rate classes.
+This legend tells us that the absence of EFNs will be State 1 and the presence of EFNs will be State 2. Again, the states  only matrix tells us how these observed states are allowed to transition between one another within a rate class. As of now, the rate of gain and rate of loss will differ. However, what if we wanted to model an unobserved state that influences our observed character? We can code this hidden state using different rate classes. The precursor is expected to be an unobserved character without which it is impossible to gain an EFN. Once we have the precursor however, transitions from absence to presence of EFN will be allowed. Now that we know how the hidden state influences our observed character we can make this using different rate classes.
 
 The first rate class will represent how our observed character changes in the absence of the precursor. In this rate class, it will be impossible to gain an EFN.
 
 ```{r}
 Precur_R1 <- Precur_LegendAndMat$rate.mat
-Precur_R1 <- dropStateMatPars(Precur_R1, 2)
+Precur_R1 <- dropStateMatPars(Precur_R1, c(1,2))
 Precur_R1
 ```
 
@@ -295,18 +286,30 @@ Next, we'll create a rate class consistent with the idea of a precursor. In this
 
 ```{r}
 Precur_R2 <- Precur_LegendAndMat$rate.mat
+Precur_R2 <- equateStateMatPars(Precur_R2, c(1,2))
 Precur_R2
 ```
 
-Put the rate classes together.
 
 ```{r}
-Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2))
+RateClassMat <- getRateCatMat(2) #
+RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
+RateClassMat
+```
+
+Put the rate classes together.
+```{r}
+Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2), RateClassMat)
 Precur_FullMat
 ```
 
-If you're unsure that the model is correct, you can plot the index matrix.
+A little extra massaging.
+```{r}
+Precur_FullMat[c(4,2), c(2,4)] <- 0
+```
 
+
+If you're unsure that the model is correct, you can plot the index matrix.
 ```{r, fig.align="center", fig.width=10, fig.height=4}
 plotMKmodel(Precur_FullMat, 2, display = "row", text.scale = 0.7)
 ```
