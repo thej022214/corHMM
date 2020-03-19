@@ -554,10 +554,18 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
 	obj$rate.cat<-rate.cat
   
   rate <- getStateMat4Dat(data, model)$rate.mat
+  if(model == "ER"){
+    rate[rate > 0] <- 1
+  }
+  if(model == "SYM"){
+    rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
+    rate <- t(rate)
+    rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
+  }
 	if(rate.cat > 1){
 	  StateMats <- vector("list", rate.cat)
 	  for(i in 1:rate.cat){
-	    StateMats[[i]] <- getStateMat4Dat(data, model)$rate.mat
+	    StateMats[[i]] <- rate
 	  }
 	  rate <- getFullMat(StateMats)
 	}

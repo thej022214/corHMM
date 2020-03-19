@@ -4,7 +4,6 @@
 
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE){
     
-    print(p)
     #Ensures that weird root state probabilities that do not sum to 1 are input:
     if(!is.null(root.p)){
         if(!is.character(root.p)){
