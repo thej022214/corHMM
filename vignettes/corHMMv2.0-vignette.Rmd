@@ -257,65 +257,57 @@ plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
 
 ### 2.2.1: The precursor model
 
-The precursor model of Marazzi et al. (2012) is a good example to start with, because that study marks the beginning of HMMs being used in a comparative context. In that study, they were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). Specifically, there were 2 states, presence (1) or absence (0) of EFNs, but that only species with an unobserved, hidden "precursor" trait could gain EFNs. Here we show how you could design the canonical precursor model in `corHMM` using custom rate matrices.
+The precursor model of Marazzi et al. (2012) is a good example to start with, because it marks the beginning of HMMs being used in a comparative context. In that study, they were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). Specifically, there were 2 states, presence (1) or absence (0) of EFNs, but that only species with an unobserved, hidden "precursor" trait could gain EFNs. Here we show how you could design the canonical precursor model in `corHMM` using custom rate matrices.
 
-We will start by loading a simulated dataset consistent with the presence and absence of extrafloral nectaries.
+We will start by loading a simulated dataset of presence and absence of extrafloral nectaries a randomly generated birth-death tree:
 ```{r}
 phy <- read.tree("randomBD.tree")
 load("simulatedData.Rsave")
 head(Precur_Dat)
 ```
 
-The first step is to generate a states only matrix using the input dataset. Here we have a single binary trait:
+We will first generate a states only matrix using the input single binary trait data set:
 ```{r}
 Precur_LegendAndMat <- getStateMat4Dat(Precur_Dat)
 Precur_LegendAndMat
 ```
 
-This legend tells us that the absence of EFNs will be State 1 and the presence of EFNs will be State 2. Again, the states  only matrix tells us how these observed states are allowed to transition between one another within a rate class. As of now, the rate of gain and rate of loss will differ. However, what if we wanted to model an unobserved state that influences our observed character? We can code this hidden state using different rate classes. The precursor is expected to be an unobserved character without which it is impossible to gain an EFN. Once we have the precursor however, transitions from absence to presence of EFN will be allowed. Now that we know how the hidden state influences our observed character we can make this using different rate classes.
+Based on the legend, the absence of EFNs will be State 1 and the presence of EFNs will be State 2. The default states only matrix sets the rate of gain and rate of loss will differ. However, for a precursor model the transitions between the two observed states, 1 and 2, are modulated by a third, hidden trait, which we will call a precursor, but will be a state 1 in a different rate class. In other words, with the observation that a species lacking EFN's we do not know if they also have the precursor (i.e., 1, R2) or not (i.e., 1,R2). We do know, however, that under a precursor model that if we observe EFN, they must always also have the precursor trait, and so the presence of EFNs are always (2,R2). So, we will use rate class R2 as a means of transitioning between presence and absence of EFNs.
 
-The first rate class will represent how our observed character changes in the absence of the precursor. In this rate class, it will be impossible to gain an EFN.
-
+The first rate class, R1, will represent character changes in the presence of the precursor, which is not impossible without first gaining the "precursor". So, we will generate the default matrix, then drop all possible transitions from this matrix:
 ```{r}
 Precur_R1 <- Precur_LegendAndMat$rate.mat
 Precur_R1 <- dropStateMatPars(Precur_R1, c(1,2))
 Precur_R1
 ```
 
-Next, we'll create a rate class consistent with the idea of a precursor. In this rate class we expect that species can either gain or lose EFNs. This is the same as the matrix produced by getStateMat4Dat.
-
+The second rate class, R2, will represent how our character changes in the presence of the precursor. In this rate class, we expect that species can either gain or lose EFNs at the same rate, but with State 1 representing no EFN but with precursor present:
 ```{r}
 Precur_R2 <- Precur_LegendAndMat$rate.mat
 Precur_R2 <- equateStateMatPars(Precur_R2, c(1,2))
 Precur_R2
 ```
 
-
+Finally, we set up a matrix for that governs the transitions *among* the rate classes:
 ```{r}
 RateClassMat <- getRateCatMat(2) #
 RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
 RateClassMat
 ```
 
-Put the rate classes together.
+Putting them rate classes together we almost get the right model, but we need to remove one extra transition rate between that connects rate class R1 and R2 in the presence of EFNs, because, again, the precursor model assumes that EFNs can *only* be gained in rate class 1
 ```{r}
 Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2), RateClassMat)
+Precur_FullMat[c(4,2), c(2,4)] <- 0
 Precur_FullMat
 ```
 
-A little extra massaging.
-```{r}
-Precur_FullMat[c(4,2), c(2,4)] <- 0
-```
-
-
-If you're unsure that the model is correct, you can plot the index matrix.
+If you're unsure that the model is correct, you can plot the index matrix:
 ```{r, fig.align="center", fig.width=10, fig.height=4}
 plotMKmodel(Precur_FullMat, 2, display = "row", text.scale = 0.7)
 ```
 
-Since, it looks good we can now run corHMM making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
-
+Since, it looks good we can now run `corHMM()` making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
 ```{r}
 Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat)
 Precur_res.corHMM
@@ -325,71 +317,50 @@ Precur_res.corHMM
 plotMKmodel(Precur_res.corHMM, display = "row", text.scale = 0.7)
 ```
 
-In addition to plotting this model, let's look at each entry (row #, col #) and interpret the biological meaning.
-
-```{r}
-round(Precur_res.corHMM$solution, 3)
-```
-
-* Entry (2,1) is the rate of loss of extrafloral nectaries when the precursor is absent.
-* Entries (3,1) and (4,1) are the rates at which the precursor is lost.
-* Entries (1,3) and (1,4) are the rates at which the precursor is gained (remember we constrained that the rate of gain and loss were the same, hence the parameter estimates being the same).
-* Entry (3,4) is the rate of gain of extrafloral nectaries when the precursor is present.
-* Entry (4,3) is the rate of loss of extrafloral nectaries when the precursor is present.
 
 ### 2.2.2: Ordered habitat change
 
-I'm working on a project concerned with the ancestral habitat during primary endosymbiosis. The possible habitats are marine, freshwater, and terrestrial. The phylogeny contains many species with a diverse range of life histories. Cyanobacteria can move freely between all of these states. But, some species may move between terrestrial and marine through freshwater. Finally, some species may move freely between aquatic states, but once they become terrestrial they are stuck there. In this section I will demonstrate how to create a custom hidden Markov model which satisfies all of these requirements. First I'm going to need 3 state matrices.
+A lot of these new capabilities in `corHMM` were inspired by our current project examining the ancestral habitat during primary endosymbiosis. In our model, we have three possible habitats are marine, freshwater, and terrestrial. Our very large phylogeny of green plants contains many species with a diverse range of life histories. For example, cyanobacteria can move freely between all of these states, whereas some species may move between terrestrial and marine through freshwater. Some species may even move freely between aquatic states, but once they become terrestrial they are stuck there. In this section we will demonstrate how to create a custom hidden Markov model which satisfies all of these requirements.
 
-Start by simulating a dataset consistent with 3 states.
-
+To do this we will use a simulated a dataset that contains these 3 states:
 ```{r}
-Q <- matrix(abs(rnorm(9)), 3, 3)
-diag(Q) <- 0
-diag(Q) <- -rowSums(Q)
 load("simulatedData.Rsave")
 head(MFT_dat)
 summary(as.factor(MFT_dat[,2])) # how many of each state do we have?
 ```
 
-Start off by getting a legend and rate matrix consistent with this dataset.
-
+As before, start off by getting a legend and rate matrix from this dataset:
 ```{r}
 MFT_LegendAndRate <- getStateMat4Dat(MFT_dat)
 MFT_LegendAndRate
 ```
 
-In corHMM, freshwater habitat will be State 1, marine habitat will be State 2,and terrestrial habitat will be State 3. Now, we need to create 3 different rate classes that are consistent with our hypotheses of how habitat changes occurs. We'll say that Rate Class 1 is one in which linneages cannot leave a terrestrial habitat, Rate Class 2 will allow linneages to transition between marine & terrestrial only through freshwater, and Rate Class 3 will be unrestricted movement between the habitats.
+Here, freshwater habitat will be State 1, marine habitat will be State 2,and terrestrial habitat will be State 3. Now, we need to create 3 different rate classes that are consistent with our hypotheses of how habitat changes occurs. We'll say that rate class R1 is one in which lineages cannot leave a terrestrial habitat, rate class R2 will allow linneages to transition between marine and terrestrial *only* through freshwater, and rate class R3 will be unrestricted movement between the habitats.
 
-For Rate Class 1 we need terrestrial to be a sink state. That means disallowing transitions out of terrestrial. Since 1 = Fresh, 2 = Marine, and 3 = Terra, that means removing from (3) to (1) and from (3) to (2). 
-
+For R1 we need terrestrial to be an absorbing state, meaning once terrestriality evolves it is not lost. Since 1 = Freshwater, 2 = Marine, and 3 = Terrestrial, that means removing from (3) to (1) and from (3) to (2). 
 ```{r}
 MFT_R1 <- dropStateMatPars(MFT_LegendAndRate$rate.mat, c(2,4))
 MFT_R1
 ```
 
-For Rate Class 2, we need to disallow transitions between terrestrial and marine. We disallow the positions (1,3) and (3,1) in the rate matrix. In this case any linneage can move into freshwater and move out of freshwater, but they are not allowed to transition directly between terrestrial and marine habitats.
-
+For R2, we need to disallow transitions between terrestrial and marine. We disallow the positions (1,3) and (3,1) in the rate matrix. In this case any lineage can move into freshwater and move out of freshwater, but they are not allowed to transition directly between terrestrial and marine habitats:
 ```{r}
 MFT_R2 <- dropStateMatPars(MFT_LegendAndRate$rate.mat, c(4,6))
 MFT_R2
 ```
 
-The free-moving matrix is already provided to us by getStateMat4Dat.
-
+For R3, this is our free-moving matrix, which is simply the default matrix provided by getStateMat4Dat:
 ```{r}
 MFT_R3 <- MFT_LegendAndRate$rate.mat
+MFT_R3
 ```
 
-Let's put all these matrices in a list.
-
+Let's put all these matrices in a list,
 ```{r}
 MFT_ObsStateClasses <- list(MFT_R1, MFT_R2, MFT_R3)
-MFT_ObsStateClasses
 ```
 
-Since we only have 100 species let's constrain our parameters a bit further and say transitions between rate classes occur at the same rate.
-
+and since we only have 100 species let's constrain our parameters a bit further and say transitions between rate classes occur at the same rate:
 ```{r}
 MFT_RateClassMat <- getRateCatMat(3) # we have 3 rate classes
 MFT_RateClassMat <- equateStateMatPars(MFT_RateClassMat, 1:6)
@@ -402,14 +373,12 @@ MFT_FullMat <- getFullMat(MFT_ObsStateClasses, MFT_RateClassMat)
 MFT_FullMat
 ```
 
-That's kind of difficult to interpret, so let's plot it out and see if it's what we wanted.
-
+That's kind of difficult to interpret, so let's plot it out and see if it's what we wanted:
 ```{r, fig.align = "center", fig.height=8, fig.width=8}
 plotMKmodel(pp = MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
 ```
 
-And it is. To run this model, we would only need to specify the data, the phylogeny, this matrix, and that this matrix has 3 rate categories.
-
+To run this model, we would only need to specify the data, the phylogeny, this matrix, and that this matrix has 3 rate categories.
 ```{r}
 MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none")
 MFT_res.corHMM
@@ -417,9 +386,9 @@ MFT_res.corHMM
 
 ### 2.2.3: Ontological relationship of multiple characters
 
-Lets say we had a dataset with multiple characters: presence or absence of limbs, presence or absence of fingers, corporeal or incorporeal form. It could look something like this...
-
+Lets say we had a dataset with multiple characters: presence or absence of limbs, presence or absence of fingers, corporeal or incorporeal form. It could look something like this:
 ```{r}
+data(primates)
 phy <- primates[[1]]
 phy <- multi2di(phy)
 data <- primates[[2]]
@@ -431,22 +400,23 @@ Ont_Dat <- data.frame(sp = phy$tip.label, limbs = Limbs, fings = Fings, corp = C
 head(Ont_Dat)
 ```
 
-Previously, the user would have had to convert this dataset into something corHMM could use. This would mean taking all possible unique combinations and creating a corHMM specific dataset. Now, corHMM will internally convert this dataset and provide users with a legend in the results section for aiding the interpretation of the results. In addition, corHMM will remove any double transitions.
-
+Previously, the user would have had to convert this dataset into something `rayDISC()` could use, such as taking all possible unique combinations and creating a multistate character. Again, `corHMM()` will internally do this for you:
 ```{r}
 Ont_LegendAndMat <- getStateMat4Dat(Ont_Dat)
 Ont_LegendAndMat
 ```
 
-Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually found. This is because all of the organisms were corporeal and thus that state didn't factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. Finally, dual transitions have been removed. The transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed. 
-
+Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually observed. This is because all of the species were corporeal and thus that state didn't factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. Finally, dual transitions have been removed. The transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed. 
 ```{r}
 Ont_res.corHMM <- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")
 ```
 
+Plotting the results:
 ```{r, fig.align="center", fig.width=6, fig.height=4}
 plotMKmodel(Ont_res.corHMM)
 ```
+
+Note that hidden states can be added to this model rather easily by following the examples above. 
 
 ## 2.3: Estimating models when node states are fixed
 
