@@ -11,7 +11,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         }
     }
     
-    if (!is.null(rate.cat)){
+    if (is.null(rate.cat)){
         rate.cat <- 1
     }
     
