@@ -1,30 +1,21 @@
-\name{getFullMat}
-\alias{getFullMat}
-\alias{getRateCatMat}
-\alias{equateStateMatPars}
-\alias{dropStateMatPars}
-\title{Combines several rate class index matrices}
-\description{Combines several index matrices which describe transitions between observed states into output a single index matrix for use in corHMM}
+\name{simCharacterHistory}
+\title{Simulate a Markov model}
+\description{Simulates a Markov or Hidden Markov model given a phylogeny, a rate matrix, and intial root frequency.}
 \usage{
-getFullMat(StateMats, RateClassMat = NULL)
+simCharacterHistory(phy, Q, root.freqs, Q2 = NA, NoI = NA)
 }       
 \arguments{
-\item{StateMats}{A list of index matrices describing transitions between observed states. Each unique number from 1 to n, will be independently estimated. Values of 0 are not estimated. Matrix entries of the same value are estimated to be the same rate.}
-\item{RateClassMat}{An optional index matrix which describes how StateMats are related to one another. This will be a matrix of size: length(StateMats) by length(StateMats). By default, all transitions between StateMats are allowed and independently estimated.}
+\item{phy}{A phylogeny of class phylo.}
+\item{Q}{A rate matrix.}
+\item{root.freqs}{Starting frequencies of the states at the root.}
+\item{Q2}{An optional rate matrix which will be applied at NoI.}
+\item{NoI}{The "node of interest". If you have given a Q2 that is different from Q1, starting at NoI Q2 will be applied at that node and every descendent branch.}
 }
 \details{
-This function is the final step in creating a custom hidden Markov model. It takes a list of index matrices (StateMats) which describe different ways that the observed states are related to one another and creates a single matrix to describe the model. The matrices are combined following equation 3 of Tarasov (2019). getFullMat is part of several functions which help the user efficiently create custom index matrices. Often, it will be more practical to begin constructing a custom model with \code{getRateMat4Dat}. 
-
-getStateMat will generate an index matrix of size n by n in which all transitions between the n states are allowed and independently estimated. That index matrix can then be manipulated by dropStateMatPars and equateStateMatPars. dropStateMatPars will drop specific rates from an index matrix. dropStateMatPars requires an index matrix and a vector of which rates should be dropped. equateStateMatPars will equates rates within an index matrix. equateStateMatPars requires an index matrix and a list of vectors each element of which should correspond to two or more rates to be equated.
+This function will simulate a dataset according to a given rate matrix. It will return a list of states at the tips and states at the nodes. This is a stochastic process so it will return different tip and node states each time it is run, even if the model specified is the same.
 }
 \value{
-Returns an index matrix.
+Returns a list of tip states and node states.
 }
-\seealso{
-\code{getRateMat4Dat}
-}
-\references{
-Tarasov, S. 2019. Integration of Anatomy Ontologies and Evo-Devo Using Structured Markov Models Suggests a New Framework for Modeling Discrete Phenotypic Traits. Systematic Biology.
-}
-\author{James D. Boyko}
+\author{James D. Boyko and Jeremy Beaulieu}
 \keyword{models}
