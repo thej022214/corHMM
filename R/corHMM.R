@@ -662,6 +662,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
                 fixer = numeric(dim(Q)[2])
                 fixer[phy$node.label[focal - nb.tip]] = 1
                 v <- v * fixer
+                print(v)
             }
         }
 
