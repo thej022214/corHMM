@@ -658,8 +658,8 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
         
         ##Allows for fixed nodes based on user input tree.
         if(!is.null(phy$node.label)){
-            print("here")
             if(!is.na(phy$node.label[focal - nb.tip])){
+                print("here")
                 fixer = numeric(dim(Q)[2])
                 fixer[phy$node.label[focal - nb.tip]] = 1
                 v <- v * fixer
