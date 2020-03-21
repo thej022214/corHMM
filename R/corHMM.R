@@ -286,6 +286,8 @@ print.corhmm<-function(x,...){
     }
 }
 
+
+
 #Generalized ace() function that allows analysis to be carried out when there are polytomies:
 dev.corhmm.ORIGINAL <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
     p = exp(p)
@@ -658,7 +660,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
         if(!is.null(phy$node.label)){
             if(!is.na(phy$node.label[focal - nb.tip])){
                 fixer = numeric(dim(Q)[2])
-                fixer[phy$node.label[focal]] = 1
+                fixer[phy$node.label[focal - nb.tip]] = 1
                 v <- v * fixer
             }
         }
