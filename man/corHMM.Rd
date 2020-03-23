@@ -4,7 +4,7 @@
 \description{Estimates hidden rates underlying the evolution of a binary character}
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
-p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, 
+fixed.nodes=FALSE, p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, 
 get.tip.states = FALSE)
 }
 \arguments{
@@ -14,6 +14,7 @@ get.tip.states = FALSE)
 \item{rate.mat}{a user-supplied index of parameters to be optimized.}
 \item{model}{One of "ARD", "SYM", or "ER". ARD: all rates differ. SYM: rates between any two states do not differ. ER: all rates are equal.} 
 \item{node.states}{method used to calculate ancestral states at internal nodes (see Details).}
+\item{fixed.nodes}{specifies that states for nodes in the phylogeny are assumed fixed. These are supplied as node labels in the \dQuote{phylo} object.}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood.}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}

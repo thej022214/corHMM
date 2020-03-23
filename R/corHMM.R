@@ -1,8 +1,12 @@
-#HIDDEN RATES MODEL OF BINARY TRAIT EVOLUTION
 
-#written by Jeremy M. Beaulieu
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", p=NULL, root.p=NULL, ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE){
+######################################################################################################################################
+######################################################################################################################################
+### corHMM -- Generalized hidden Markov Models
+######################################################################################################################################
+######################################################################################################################################
+
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE){
     
     # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
     if(is.null(node.states)){
@@ -21,6 +25,13 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         if(length(node.states) > 1){ # User did not enter a value, so just pick marginal.
             node.states <- "marginal"
             cat("No model selected for \'node.states\'. Will perform marginal ancestral state estimation.\n")
+        }
+    }
+    
+    if(fixed.nodes == FALSE){
+        if(!is.null(phy$node.label)){
+            phy$node.label <- NULL
+            cat("You specified \'fixed.nodes=FALSE\' but included a phy object with node labels. These node labels have been removed.\n")
         }
     }
     
@@ -259,7 +270,12 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     return(obj)
 }
 
-#Print function
+######################################################################################################################################
+######################################################################################################################################
+### Print a corHMM object:
+######################################################################################################################################
+######################################################################################################################################
+
 print.corhmm<-function(x,...){
     
     ntips=Ntip(x$phy)
@@ -287,6 +303,226 @@ print.corhmm<-function(x,...){
 }
 
 
+######################################################################################################################################
+######################################################################################################################################
+### The function used to optimize parameters:
+######################################################################################################################################
+######################################################################################################################################
+
+dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
+    
+    p = exp(p)
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    TIPS <- 1:nb.tip
+    comp <- numeric(nb.tip + nb.node)
+    #Obtain an object of all the unique ancestors
+    anc <- unique(phy$edge[,1])
+    k.rates <- dim(Q)[2] / 2
+    if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
+    
+    Q[] <- c(p, 0)[rate]
+    diag(Q) <- -rowSums(Q)
+    
+    if(order.test == TRUE){
+        # ensure that the rate classes have mean rates in a consistent order (A > B > C > n)
+        StateOrderMat <- matrix(1, (dim(Q)/rate.cat)[1], (dim(Q)/rate.cat)[2])
+        RateClassOrderMat <- matrix(0, rate.cat, rate.cat)
+        diag(RateClassOrderMat) <- 1:rate.cat
+        OrderMat <- RateClassOrderMat %x% StateOrderMat
+        Rate01 <- vector("numeric", rate.cat)
+        for(i in 1:rate.cat){
+            tmp <- Q[OrderMat == i]
+            Rate01[i] <- tmp[tmp>=0][1]
+        }
+        OrderTest <- all.equal(Rate01, sort(Rate01, decreasing = TRUE))
+        if(OrderTest != TRUE){
+            return(1000000)
+        }
+    }
+    
+    for (i  in seq(from = 1, length.out = nb.node)) {
+        #the ancestral node at row i is called focal
+        focal <- anc[i]
+        #Get descendant information of focal
+        desRows <- which(phy$edge[,1]==focal)
+        desNodes <- phy$edge[desRows,2]
+        v <- 1
+        #Loops through all descendants of focal (how we deal with polytomies):
+        for (desIndex in sequence(length(desRows))){
+            v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+        }
+        
+        ##Allows for fixed nodes based on user input tree.
+        if(!is.null(phy$node.label)){
+            if(!is.na(phy$node.label[focal - nb.tip])){
+                fixer.tmp = numeric(dim(Q)[2])
+                fixer.tmp[phy$node.label[focal - nb.tip]] = 1
+                fixer = rep(fixer.tmp, rate.cat)
+                v <- v * fixer
+                print(v)
+            }
+        }
+        
+        #Sum the likelihoods:
+        comp[focal] <- sum(v)
+        #Divide each likelihood by the sum to obtain probabilities:
+        liks[focal, ] <- v/comp[focal]
+    }
+    
+    #Specifies the root:
+    root <- nb.tip + 1L
+    #If any of the logs have NAs restart search:
+    if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
+    equil.root <- NULL
+    for(i in 1:ncol(Q)){
+        posrows <- which(Q[,i] >= 0)
+        rowsum <- sum(Q[posrows,i])
+        poscols <- which(Q[i,] >= 0)
+        colsum <- sum(Q[i,poscols])
+        equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+    }
+    if (is.null(root.p)){
+        flat.root = equil.root
+        k.rates <- 1/length(which(!is.na(equil.root)))
+        flat.root[!is.na(flat.root)] = k.rates
+        flat.root[is.na(flat.root)] = 0
+        loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
+    }
+    if(is.character(root.p)){
+        # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
+        if(root.p == "yang"){
+            root.p <- Null(Q)
+            root.p <- c(root.p/sum(root.p))
+            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+            if(is.infinite(loglik)){
+                return(1000000)
+            }
+        }else{
+            # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+            root.p = liks[root,] / sum(liks[root,])
+            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+        }
+    }
+    # root.p!==NULL will fix root probabilities based on user supplied vector:
+    if(is.numeric(root.p[1])){
+        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+        if(is.infinite(loglik)){
+            return(1000000)
+        }
+    }
+    return(loglik)
+}
+
+
+######################################################################################################################################
+######################################################################################################################################
+### The various utility functions used
+######################################################################################################################################
+######################################################################################################################################
+
+# JDB modified functions
+rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
+    
+    obj <- NULL
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    obj$rate.cat<-rate.cat
+    
+    rate <- getStateMat4Dat(data, model)$rate.mat
+    if(model == "ER"){
+        rate[rate > 0] <- 1
+    }
+    if(model == "SYM"){
+        rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
+        rate <- t(rate)
+        rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
+    }
+    if(rate.cat > 1){
+        StateMats <- vector("list", rate.cat)
+        for(i in 1:rate.cat){
+            StateMats[[i]] <- rate
+        }
+        rate <- getFullMat(StateMats)
+    }
+    nTraits <- dim(rate)[1]
+    rate[rate == 0] <- NA
+    index.matrix<-rate
+    rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
+    
+    data <- corProcessData(data)
+    data[,2] <- as.numeric(data[,2])
+    matching <- match.tree.data(phy,data)
+    data <- matching$data
+    data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
+    data.sort <- data.sort[phy$tip.label,]
+    
+    #Makes a matrix of tip states and empty cells corresponding
+    #to ancestral nodes during the optimization process.
+    x <- data.sort[,1]
+    TIPS <- 1:nb.tip
+    if(min(x) !=0){
+        x <- x - min(x)
+    }
+    # this is being removed temporarily - this handles NA tip states
+    # for(i in 1:nb.tip){
+    #     if(is.na(x[i])){x[i]=2}
+    # }
+    
+    tmp <- matrix(0, nb.tip + nb.node, ntraits)
+    for(i in 1:nb.tip){
+        tmp[i, x[i]+1] <- 1
+    }
+    liks <- matrix(rep(tmp, rate.cat), nb.tip + nb.node, ntraits*rate.cat)
+    
+    Q <- matrix(0, dim(rate)[1], dim(rate)[1])
+    
+    obj$np<-max(rate)-1
+    obj$rate<-rate
+    obj$index.matrix<-index.matrix
+    obj$liks<-liks
+    obj$Q<-Q
+    
+    return(obj)
+}
+
+
+corProcessData <- function(data){
+    nCol <- dim(data)[2]
+    LevelList <- StateMats <- vector("list", nCol-1)
+    # convert data to numeric
+    for(i in 2:nCol){
+        data[,i] <- as.factor(data[,i])
+        StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
+        LevelList[[i-1]] <- levels(as.factor(data[,i]))
+    }
+    
+    # will automatically detect if the input data has multiple columns and convert it to corHMM format.
+    if(nCol > 2){
+        combined.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
+        TraitList <- expand.grid(LevelList)
+        Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x, collapse = "_"))))
+        nTraits <- length(Traits)
+        nObs <- length(unique(combined.data))
+        data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
+        ObservedTraits <- which(1:nTraits %in% data[,2])
+        data[,2] <- match(data[,2], ObservedTraits)
+    }else{
+        # if multiple columns are found we still will sort it through levels for consistency
+        Traits <- levels(as.factor(unique(data[,2])))
+        nTraits <- length(Traits)
+        data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
+    }
+    return(data)
+}
+
+
+
+######################################################################################################################################
+######################################################################################################################################
+### ORIGINAL CODE THAT IS NOW OBSOLETE
+######################################################################################################################################
+######################################################################################################################################
 
 #Generalized ace() function that allows analysis to be carried out when there are polytomies:
 dev.corhmm.ORIGINAL <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
@@ -547,203 +783,8 @@ rate.cat.set.corHMM <- function (phy, data.sort, rate.cat) {
     obj
 }
 
-# JDB modified functions
-rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
-    
-    obj <- NULL
-    nb.tip <- length(phy$tip.label)
-    nb.node <- phy$Nnode
-    obj$rate.cat<-rate.cat
-    
-    rate <- getStateMat4Dat(data, model)$rate.mat
-    if(model == "ER"){
-        rate[rate > 0] <- 1
-    }
-    if(model == "SYM"){
-        rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
-        rate <- t(rate)
-        rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
-    }
-    if(rate.cat > 1){
-        StateMats <- vector("list", rate.cat)
-        for(i in 1:rate.cat){
-            StateMats[[i]] <- rate
-        }
-        rate <- getFullMat(StateMats)
-    }
-    nTraits <- dim(rate)[1]
-    rate[rate == 0] <- NA
-    index.matrix<-rate
-    rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
-    
-    data <- corProcessData(data)
-    data[,2] <- as.numeric(data[,2])
-    matching <- match.tree.data(phy,data)
-    data <- matching$data
-    data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
-    data.sort <- data.sort[phy$tip.label,]
-    
-    #Makes a matrix of tip states and empty cells corresponding
-    #to ancestral nodes during the optimization process.
-    x <- data.sort[,1]
-    TIPS <- 1:nb.tip
-    if(min(x) !=0){
-        x <- x - min(x)
-    }
-    # this is being removed temporarily - this handles NA tip states
-    # for(i in 1:nb.tip){
-    #     if(is.na(x[i])){x[i]=2}
-    # }
-    
-    tmp <- matrix(0, nb.tip + nb.node, ntraits)
-    for(i in 1:nb.tip){
-        tmp[i, x[i]+1] <- 1
-    }
-    liks <- matrix(rep(tmp, rate.cat), nb.tip + nb.node, ntraits*rate.cat)
-    
-    Q <- matrix(0, dim(rate)[1], dim(rate)[1])
-    
-    obj$np<-max(rate)-1
-    obj$rate<-rate
-    obj$index.matrix<-index.matrix
-    obj$liks<-liks
-    obj$Q<-Q
-    
-    return(obj)
-}
 
-
-dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
-
-    p = exp(p)
-    nb.tip <- length(phy$tip.label)
-    nb.node <- phy$Nnode
-    TIPS <- 1:nb.tip
-    comp <- numeric(nb.tip + nb.node)
-    #Obtain an object of all the unique ancestors
-    anc <- unique(phy$edge[,1])
-    k.rates <- dim(Q)[2] / 2
-    if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
-    
-    Q[] <- c(p, 0)[rate]
-    diag(Q) <- -rowSums(Q)
-    
-    if(order.test == TRUE){
-        # ensure that the rate classes have mean rates in a consistent order (A > B > C > n)
-        StateOrderMat <- matrix(1, (dim(Q)/rate.cat)[1], (dim(Q)/rate.cat)[2])
-        RateClassOrderMat <- matrix(0, rate.cat, rate.cat)
-        diag(RateClassOrderMat) <- 1:rate.cat
-        OrderMat <- RateClassOrderMat %x% StateOrderMat
-        Rate01 <- vector("numeric", rate.cat)
-        for(i in 1:rate.cat){
-            tmp <- Q[OrderMat == i]
-            Rate01[i] <- tmp[tmp>=0][1]
-        }
-        OrderTest <- all.equal(Rate01, sort(Rate01, decreasing = TRUE))
-        if(OrderTest != TRUE){
-            return(1000000)
-        }
-    }
-    
-    for (i  in seq(from = 1, length.out = nb.node)) {
-        #the ancestral node at row i is called focal
-        focal <- anc[i]
-        #Get descendant information of focal
-        desRows <- which(phy$edge[,1]==focal)
-        desNodes <- phy$edge[desRows,2]
-        v <- 1
-        #Loops through all descendants of focal (how we deal with polytomies):
-        for (desIndex in sequence(length(desRows))){
-            v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
-        }
-        
-        ##Allows for fixed nodes based on user input tree.
-        if(!is.null(phy$node.label)){
-            if(!is.na(phy$node.label[focal - nb.tip])){
-                fixer.tmp = numeric(dim(Q)[2])
-                fixer.tmp[phy$node.label[focal - nb.tip]] = 1
-                fixer = rep(fixer.tmp, rate.cat)
-                v <- v * fixer
-                print(v)
-            }
-        }
-
-        #Sum the likelihoods:
-        comp[focal] <- sum(v)
-        #Divide each likelihood by the sum to obtain probabilities:
-        liks[focal, ] <- v/comp[focal]
-    }
-    
-    #Specifies the root:
-    root <- nb.tip + 1L
-    #If any of the logs have NAs restart search:
-    if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
-    equil.root <- NULL
-    for(i in 1:ncol(Q)){
-        posrows <- which(Q[,i] >= 0)
-        rowsum <- sum(Q[posrows,i])
-        poscols <- which(Q[i,] >= 0)
-        colsum <- sum(Q[i,poscols])
-        equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-    }
-    if (is.null(root.p)){
-        flat.root = equil.root
-        k.rates <- 1/length(which(!is.na(equil.root)))
-        flat.root[!is.na(flat.root)] = k.rates
-        flat.root[is.na(flat.root)] = 0
-        loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
-    }
-    if(is.character(root.p)){
-        # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
-        if(root.p == "yang"){
-            root.p <- Null(Q)
-            root.p <- c(root.p/sum(root.p))
-            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-            if(is.infinite(loglik)){
-                return(1000000)
-            }
-        }else{
-            # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-            root.p = liks[root,] / sum(liks[root,])
-            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-        }
-    }
-    # root.p!==NULL will fix root probabilities based on user supplied vector:
-    if(is.numeric(root.p[1])){
-        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
-        if(is.infinite(loglik)){
-            return(1000000)
-        }
-    }
-    return(loglik)
-}
-
-corProcessData <- function(data){
-    nCol <- dim(data)[2]
-    LevelList <- StateMats <- vector("list", nCol-1)
-    # convert data to numeric
-    for(i in 2:nCol){
-        data[,i] <- as.factor(data[,i])
-        StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
-        LevelList[[i-1]] <- levels(as.factor(data[,i]))
-    }
-    
-    # will automatically detect if the input data has multiple columns and convert it to corHMM format.
-    if(nCol > 2){
-        combined.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-        TraitList <- expand.grid(LevelList)
-        Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x, collapse = "_"))))
-        nTraits <- length(Traits)
-        nObs <- length(unique(combined.data))
-        data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
-        ObservedTraits <- which(1:nTraits %in% data[,2])
-        data[,2] <- match(data[,2], ObservedTraits)
-    }else{
-        # if multiple columns are found we still will sort it through levels for consistency
-        Traits <- levels(as.factor(unique(data[,2])))
-        nTraits <- length(Traits)
-        data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
-    }
-    return(data)
-}
-
+######################################################################################################################################
+######################################################################################################################################
+######################################################################################################################################
+######################################################################################################################################
