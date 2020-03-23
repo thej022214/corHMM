@@ -97,7 +97,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     phy <- reorder(phy, "pruningwise")
     TIPS <- 1:nb.tip
     anc <- unique(phy$edge[,1])
-    print(Q)
     
     if(method=="joint"){
         if(!is.null(phy$node.label)){
