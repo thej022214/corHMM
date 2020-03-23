@@ -491,11 +491,17 @@ Next input the tree into `corHMM()` and obtain a rate estimate for this reconstr
 fixed.parsimony.recon <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
 ```
 
-Interestingly, the parsimony reconstruction suggests a lot more change than if we estimated the states from the model itself.
+Interestingly, the parsimony reconstruction suggests a lot more change than if we estimated the states from the model itself and, therefore, provides a worse fit.
 
+Finally, if the model contains hidden states the user simply needs to fix the node of 
 
-
-
+```{r, eval=TRUE}
+label.vector <- rep(NA, Ntip(phy) + Nnode(phy))
+homo_gorilla <- getMRCA(phy,tip=c("Homo_sapiens", "Gorilla_gorilla"))
+label.vector[homo_gorilla] <- 1
+phy$node.label <- label.vector[-c(1:Ntip(phy))]
+fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ARD", rate.cat=2, fixed.nodes=FALSE)
+```
 
 ## References
 

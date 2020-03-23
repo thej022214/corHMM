@@ -313,6 +313,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             comp[focal] <- sum(v)
             liks.down[focal, ] <- v/comp[focal]
         }
+        print("liks down")
+        print(liks.down)
         root <- nb.tip + 1L
         #Enter the root defined root probabilities if they are supplied by the user:
         equil.root <- NULL
@@ -367,14 +369,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 sisterRows <- which(phy$edge[,2]%in%sisterNodes==TRUE)
                 #If the mother is not the root then you are calculating the probability of being in either state.
                 #But note we are assessing the reverse transition, j to i, rather than i to j, so we transpose Q to carry out this calculation:
-                if(motherNode!=root){
+                if(motherNode != root){
                     v <- expm(tranQ * phy$edge.length[which(phy$edge[,2]==motherNode)], method=c("Ward77")) %*% liks.up[motherNode,]
-                    ##Allows for fixed nodes based on user input tree.
+                    ## Allows for fixed nodes based on user input tree.
                     if(!is.null(phy$node.label)){
                         if(!is.na(phy$node.label[motherNode - nb.tip])){
-                            fixer.tmp = numeric(dim(Q)[2]/rate.cat)
-                            fixer.tmp[phy$node.label[focal - nb.tip]] = 1
-                            fixer = rep(fixer.tmp, rate.cat)
+                            fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
+                            fixer.tmp[phy$node.label[focal - nb.tip]] <- 1
+                            fixer <- rep(fixer.tmp, rate.cat)
                             v <- v * fixer
                         }
                     }
@@ -386,13 +388,15 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 #Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
                 #This is essentially calculating the product of the mothers probability and the sisters probability:
                 for (sisterIndex in sequence(length(sisterRows))){
-                    v <- v*expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
+                    v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
                 }
                 
                 comp[focal] <- sum(v)
                 liks.up[focal,] <- v/comp[focal]
             }
         }
+        print("liks up")
+        print(liks.up)
         #The final pass
         liks.final <- liks
         comp <- numeric(nb.tip + nb.node)
@@ -407,7 +411,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             comp[focal] <- sum(v)
             liks.final[focal, ] <- v/comp[focal]
         }
-        
+        print("liks final")
+        print(liks.final)
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
             liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=nObs, model=model, root.p=root.p)
