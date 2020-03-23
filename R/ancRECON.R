@@ -372,14 +372,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 if(motherNode != root){
                     v <- expm(tranQ * phy$edge.length[which(phy$edge[,2]==motherNode)], method=c("Ward77")) %*% liks.up[motherNode,]
                     ## Allows for fixed nodes based on user input tree.
-                    if(!is.null(phy$node.label)){
-                        if(!is.na(phy$node.label[motherNode - nb.tip])){
-                            fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
-                            fixer.tmp[phy$node.label[focal - nb.tip]] <- 1
-                            fixer <- rep(fixer.tmp, rate.cat)
-                            v <- v * fixer
-                        }
-                    }
                 }else{
                     #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
                     #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
@@ -390,8 +382,16 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 for (sisterIndex in sequence(length(sisterRows))){
                     v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
                 }
-                print("V")
-                print(v)
+                
+                if(!is.null(phy$node.label)){
+                    if(!is.na(phy$node.label[motherNode - nb.tip])){
+                        fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
+                        fixer.tmp[phy$node.label[focal - nb.tip]] <- 1
+                        fixer <- rep(fixer.tmp, rate.cat)
+                        v <- v * fixer
+                    }
+                }
+
                 comp[focal] <- sum(v)
                 liks.up[focal,] <- v/comp[focal]
             }
