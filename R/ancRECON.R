@@ -390,17 +390,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 for (sisterIndex in sequence(length(sisterRows))){
                     v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
                 }
-                
-                #Allows for fixed nodes based on user input tree.
-                if(!is.null(phy$node.label)){
-                    if(!is.na(phy$node.label[motherNode - nb.tip])){
-                        fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
-                        fixer.tmp[phy$node.label[motherNode - nb.tip]] <- 1
-                        fixer <- rep(fixer.tmp, rate.cat)
-                        v <- v * fixer
-                    }
-                }
-                
+                                
                 comp[focal] <- sum(v)
                 liks.up[focal,] <- v/comp[focal]
             }
