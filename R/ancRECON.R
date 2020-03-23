@@ -383,15 +383,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                     v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
                 }
                 
-                if(!is.null(phy$node.label)){
-                    if(!is.na(phy$node.label[motherNode - nb.tip])){
-                        fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
-                        fixer.tmp[phy$node.label[focal - nb.tip]] <- 1
-                        fixer <- rep(fixer.tmp, rate.cat)
-                        v <- v * fixer
-                    }
-                }
-
                 comp[focal] <- sum(v)
                 liks.up[focal,] <- v/comp[focal]
             }
