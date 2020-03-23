@@ -433,7 +433,6 @@ getStateMat4Dat(data[,c(1,2)])
 ```
 
 So, here the index 2 represents the presence of estrus advertisement in the model. The next step is create a vector of node states. We start by generating a string of `NA` of length equal to the number of nodes plus the number of tips in the tree. The `NA` simply tells `corHMM()` to ignore as these are nodes that are not fixed. We then have to determine which node is the MRCA of *Gorilla gorilla* and *Homo sapiens*:
-
 ```{r, eval=TRUE}
 label.vector <- rep(NA, Ntip(phy) + Nnode(phy))
 homo_gorilla <- getMRCA(phy,tip=c("Homo_sapiens", "Gorilla_gorilla"))
@@ -491,10 +490,9 @@ Next input the tree into `corHMM()` and obtain a rate estimate for this reconstr
 fixed.parsimony.recon <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
 ```
 
-Interestingly, the parsimony reconstruction suggests a lot more change than if we estimated the states from the model itself and, therefore, provides a worse fit.
+Interestingly, the parsimony reconstruction suggests a lot more change than if we estimated the states from the model itself.
 
-Finally, if the model contains hidden states the user simply needs to fix the node of 
-
+Finally, if the model contains hidden states the user simply needs to fix state of the node based on the observed state *only*. Remember, we cannot actually observe hidden states, so we must treat the state of the node as ambiguous across all possible rate classes like we would a tip. Let's run a quick example where we fix the MRCA of *Gorilla gorilla* and *Homo sapiens* as lacking estrus advertisement: 
 ```{r, eval=TRUE}
 label.vector <- rep(NA, Ntip(phy) + Nnode(phy))
 homo_gorilla <- getMRCA(phy,tip=c("Homo_sapiens", "Gorilla_gorilla"))
@@ -503,11 +501,24 @@ phy$node.label <- label.vector[-c(1:Ntip(phy))]
 fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ARD", rate.cat=2, fixed.nodes=FALSE)
 ```
 
+Now, if we print out the line corresponding to our fixed node,
+```{r, eval=TRUE}
+fix.node64.noestrus[homo_gorilla-Ntip(phy),] 
+```
+
+there should be some uncertainty as to whether the absence of estrus advertisement is in R1 or R2. The total probability, however, of the node being in observed state 1 should sum to 1.
+
+
 ## References
+
+Beaulieu J.M., B.C. O'Meara, and M.J. Donoghue. 2013. Identifying hidden rate changes in the evolution of a binary morphologicalcharacter: the evolution of plant habit in campanulid angiosperms. Systematic Biology 62:725-737.
+
+Pagel, M. 1994. Detecting correlated evolution on phylogenies: a general method for the comparative analysis of discrete characters. Proceedings of the Royal Society, B. 255:37-45.
 
 Pupko, T., I. Pe'er, R. Shamir, and D. Graur. 2000. A fast algorithm for joint reconstruction of ancestral amino-acid sequences. Molecular Biology and Evolution 17:890-896.
 
 Sackton, T.B., P. Grayson, A. Cloutier, Z. Hu, J.S. Liu, N.E. Wheeler, P.P. Gardner, J.A. Clarke, A.J. Baker, M. Clamp, and S.V. Edwards. 2019. Convergent regulatory evolution and loss of flight in paleognathous birds. Science 364:74-78.
+
 
 
 
