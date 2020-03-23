@@ -390,6 +390,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                         fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
                         fixer.tmp[phy$node.label[focal - nb.tip]] <- 1
                         fixer <- rep(fixer.tmp, rate.cat)
+                        print("the fixer")
+                        print(fixer)
                         v <- v * fixer
                         print("after fixing")
                         print(v)
