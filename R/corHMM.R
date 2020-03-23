@@ -230,7 +230,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         row.names(tip.states) <- phy$tip.label
     }
     if (node.states == "joint"){
-        lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL,root.p=root.p)
+        lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states)
         phy$node.label <- lik.anc$lik.anc.states
         tip.states <- lik.anc$lik.tip.states
     }
