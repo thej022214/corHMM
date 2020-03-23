@@ -360,7 +360,6 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
                 fixer.tmp[phy$node.label[focal - nb.tip]] = 1
                 fixer = rep(fixer.tmp, rate.cat)
                 v <- v * fixer
-                print(v)
             }
         }
         
