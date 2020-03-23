@@ -390,7 +390,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 for (sisterIndex in sequence(length(sisterRows))){
                     v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
                 }
-                
+                print("V")
+                print(v)
                 comp[focal] <- sum(v)
                 liks.up[focal,] <- v/comp[focal]
             }
