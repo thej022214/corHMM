@@ -26,7 +26,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     LevelList <- StateMats <- vector("list", nCol - 1)
     for (i in 2:nCol) {
         data[, i] <- as.factor(data[, i])
-        StateMats[[i - 1]] <- corHMM:::getStateMat(length(levels(data[, i])))
+        StateMats[[i - 1]] <- getStateMat(length(levels(data[, i])))
         LevelList[[i - 1]] <- levels(as.factor(data[, i]))
     }
     if (nCol > 2) {
@@ -46,7 +46,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     }
     
     data[,2] <- as.numeric(data[,2])
-    matching <- corHMM:::match.tree.data(phy,data)
+    matching <- match.tree.data(phy,data)
     data <- matching$data
     phy <- matching$phy
     
@@ -65,11 +65,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     ntraits <- length(levels)
     drop.states = NULL
     if(is.null(rate.mat)){
-        model.set.final <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = nObs, model = model)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = nObs, model = model)
         rate.mat <- model.set.final$index.matrix
         rate <- model.set.final$rate
     }else{
-        model.set.final <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = nObs, model = model)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = nObs, model = model)
         rate <- rate.mat
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)

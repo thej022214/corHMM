@@ -9,7 +9,7 @@
 ##Does brute force reconstruction -- at node i, fix in state i, then fix in state j, summing over all other states at all other nodes
 BruteConditionalProbability <- function(phy, data, p=c(0.005,0.005), root.p=NULL, focal.to.fix=NULL, focal.state=NULL, get.conditional=NULL){
     
-    rate <- corHMM:::rate.mat.maker(hrm=FALSE, ntraits=1, nstates=2, model="ARD")
+    rate <- rate.mat.maker(hrm=FALSE, ntraits=1, nstates=2, model="ARD")
     index.matrix <- rate
     rate[is.na(rate)] <- max(rate,na.rm=T) + 1
     p.new <- p
