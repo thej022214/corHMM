@@ -313,8 +313,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             comp[focal] <- sum(v)
             liks.down[focal, ] <- v/comp[focal]
         }
-        print("liks down")
-        print(liks.down)
         root <- nb.tip + 1L
         #Enter the root defined root probabilities if they are supplied by the user:
         equil.root <- NULL
@@ -395,8 +393,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                 liks.up[focal,] <- v/comp[focal]
             }
         }
-        print("liks up")
-        print(liks.up)
         #The final pass
         liks.final <- liks
         comp <- numeric(nb.tip + nb.node)
@@ -411,8 +407,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             comp[focal] <- sum(v)
             liks.final[focal, ] <- v/comp[focal]
         }
-        print("liks final")
-        print(liks.final)
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
             liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=nObs, model=model, root.p=root.p)
