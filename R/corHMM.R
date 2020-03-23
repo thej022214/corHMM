@@ -270,38 +270,6 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     return(obj)
 }
 
-######################################################################################################################################
-######################################################################################################################################
-### Print a corHMM object:
-######################################################################################################################################
-######################################################################################################################################
-
-print.corhmm<-function(x,...){
-    
-    ntips=Ntip(x$phy)
-    output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
-    names(output)<-c("-lnL","AIC","AICc","Rate.cat","ntax")
-    cat("\nFit\n")
-    print(output)
-    cat("\n")
-    
-    param.est<- x$solution
-    cat("Rates\n")
-    print(param.est)
-    cat("\n")
-    
-    if(any(x$eigval<0)){
-        index.matrix <- x$index.mat
-        #If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
-        if (any(x$eigval<0)) {
-            cat("The objective function may be at a saddle point", "\n")
-        }
-    }
-    else{
-        cat("Arrived at a reliable solution","\n")
-    }
-}
-
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -356,7 +324,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
         ##Allows for fixed nodes based on user input tree.
         if(!is.null(phy$node.label)){
             if(!is.na(phy$node.label[focal - nb.tip])){
-                fixer.tmp = numeric(dim(Q)[2])
+                fixer.tmp = numeric(dim(Q)[2]/rate.cat)
                 fixer.tmp[phy$node.label[focal - nb.tip]] = 1
                 fixer = rep(fixer.tmp, rate.cat)
                 v <- v * fixer
@@ -412,6 +380,8 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
     }
     return(loglik)
 }
+
+
 
 
 ######################################################################################################################################
@@ -515,6 +485,32 @@ corProcessData <- function(data){
     return(data)
 }
 
+
+print.corhmm<-function(x,...){
+    
+    ntips=Ntip(x$phy)
+    output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
+    names(output)<-c("-lnL","AIC","AICc","Rate.cat","ntax")
+    cat("\nFit\n")
+    print(output)
+    cat("\n")
+    
+    param.est<- x$solution
+    cat("Rates\n")
+    print(param.est)
+    cat("\n")
+    
+    if(any(x$eigval<0)){
+        index.matrix <- x$index.mat
+        #If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
+        if (any(x$eigval<0)) {
+            cat("The objective function may be at a saddle point", "\n")
+        }
+    }
+    else{
+        cat("Arrived at a reliable solution","\n")
+    }
+}
 
 
 ######################################################################################################################################

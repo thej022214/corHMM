@@ -1,4 +1,9 @@
-#RECONSTRUCTION OF ANCESTRAL STATES
+
+######################################################################################################################################
+######################################################################################################################################
+### Standalone ancestral state reconstruction
+######################################################################################################################################
+######################################################################################################################################
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
@@ -298,8 +303,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             ##Allows for fixed nodes based on user input tree.
             if(!is.null(phy$node.label)){
                 if(!is.na(phy$node.label[focal - nb.tip])){
-                    fixer = numeric(dim(Q)[2])
-                    fixer[phy$node.label[focal - nb.tip]] = 1
+                    fixer.tmp = numeric(dim(Q)[2]/rate.cat)
+                    fixer.tmp[phy$node.label[focal - nb.tip]] = 1
+                    fixer = rep(fixer.tmp, rate.cat)
                     v <- v * fixer
                 }
             }
@@ -366,8 +372,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
                     ##Allows for fixed nodes based on user input tree.
                     if(!is.null(phy$node.label)){
                         if(!is.na(phy$node.label[motherNode - nb.tip])){
-                            fixer = numeric(dim(Q)[2])
-                            fixer[phy$node.label[motherNode - nb.tip]] = 1
+                            fixer.tmp = numeric(dim(Q)[2]/rate.cat)
+                            fixer.tmp[phy$node.label[focal - nb.tip]] = 1
+                            fixer = rep(fixer.tmp, rate.cat)
                             v <- v * fixer
                         }
                     }
@@ -488,7 +495,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 }
 
 
-#New brute force algorithm for estimating tip states.
+######################################################################################################################################
+######################################################################################################################################
+### Utility functions
+######################################################################################################################################
+######################################################################################################################################
+
 GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p){
     
     nb.tip <- length(phy$tip.label)
@@ -528,7 +540,6 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
         marginal.probs.rescaled = marginal.probs.tmp[nstates] - best.probs
         marginal.probs[taxon.index,nstates] = exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
     }
-    
     tip.states <- marginal.probs[1:nb.tip,]
     rownames(tip.states) <- phy$tip.label
     return(tip.states)

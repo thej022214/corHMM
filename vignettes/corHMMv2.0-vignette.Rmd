@@ -425,157 +425,83 @@ We added the ability to fix any or all nodes in the input phylogeny while estima
 In this updated version of `corHMM` a user can fix anywhere from a single node in a tree to an entire reconstruction from, say parsimony, and estimate the transitions rate. One can even obtain the likelihood of a reconstruction based on a fixed set of rates. To demonstrate, let's start by running a simple analysis of a binary character, but fixing the state of a single node in the the primate tree. Specifically, we are going to fix the most recent common ancestor of *Gorilla gorilla* and *Homo sapiens* as exhibiting estrus advertisement (i.e., state 1). The first step is to determine the the indices for each state:
 
 ```{r, eval=TRUE}
-getStateMat4Dat(trait[,c(1,2)])
+data(primates)
+phy <- primates[[1]]
+phy <- multi2di(phy)
+data <- primates[[2]]
+getStateMat4Dat(data[,c(1,2)])
 ```
 
 So, here the index 2 represents the presence of estrus advertisement in the model. The next step is create a vector of node states. We start by generating a string of `NA` of length equal to the number of nodes plus the number of tips in the tree. The `NA` simply tells `corHMM()` to ignore as these are nodes that are not fixed. We then have to determine which node is the MRCA of *Gorilla gorilla* and *Homo sapiens*:
 
 ```{r, eval=TRUE}
-label.vector <- rep(NA, Ntip(tree) + Nnode(tree))
-homo_gorilla <- getMRCA(tree,tip=c("Homo_sapiens", "Gorilla_gorilla"))
+label.vector <- rep(NA, Ntip(phy) + Nnode(phy))
+homo_gorilla <- getMRCA(phy,tip=c("Homo_sapiens", "Gorilla_gorilla"))
 homo_gorilla
 ```
 
 The node number should be 64. To set the state of the node, simply replace the `NA` with the state of interest in the `label.vector`, in this case with a `2`, in the 64th element. To set the node labels, we will clip off the first 60 elements, as these represent the states of the tips, which we set differently:
 ```{r, eval=TRUE}
 label.vector[homo_gorilla] <- 2
-tree$node.label <- label.vector[-c(1:Ntip(tree))]
+phy$node.label <- label.vector[-c(1:Ntip(phy))]
 ```
 
 Plotting the tree can help to double-check whether the right node was fixed:
 ```{r, echo=FALSE}
-plot(tree)
-nodelabels(tree$node.label)
+plot(phy)
+nodelabels(phy$node.label)
 ```
 
 From here simply input the `tree` object in `corHMM()` as normal, but the option fix.nodes needs to be set to `TRUE`:
 
 ```{r, echo=FALSE}
-fix.node.test <- corHMM(tree, trait[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
+fix.node64.estrus <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
 ```
 
+We can then compare the fit of this model, with one where the same node is fixed to lacking estrus advertisement:
+```{r, eval=TRUE}
+label.vector[homo_gorilla] <- 1
+phy$node.label <- label.vector[-c(1:Ntip(phy))]
+fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
+```
 
-with a user-provided tree that has states coded at nodes under a maximum parsimony reconstruction. However, with **phangorn**, there is the burden of dealing with their unique `phyDat` format. To deal with this, we implemented a function that will convert the `phyDat` formatted output into something we can modify and input into `corHMM`. For example, we can take the `mpr.recon` object from **phangorn** and convert the output as a vector and add them as node states in the phylogeny: 
+A model where the MRCA of *Gorilla gorilla* and *Homo sapiens* is assumed to have exhibited estrus advertisement requires higher rates, and produces a substantially worse likelihood, than if we assume the MRCA lacked estrus advertisement.
 
-
-
-
+It is also possible to estimate transition rates where all nodes are fixed in the tree. For example, what if one wanted to examine the fit of a model where all nodes are fixed to according to a maximum parsimony reconstruction. Here we will use `phangorn` for these purposes. However, with `phangorn` there is the burden of dealing with their unique `phyDat` format. To deal with this, we implemented a function, `ConvertPhangornReconstructions()` that will convert the `phyDat` formatted output into something we can modify and input into `corHMM()`. We can take the `mpr.recon` object from `phangorn` and convert the output as a vector and add them as node states in the phylogeny: 
 ```{r, eval=TRUE, message=FALSE}
 library(phangorn)
-data.sort <- data.frame(trait[,2], row.names=trait[,1])
-data.sort <- data.sort[tree$tip.label,]
+data.sort <- data.frame(data[,2], row.names=data[,1])
+data.sort <- data.sort[phy$tip.label,]
 dat<-as.matrix(data.sort)
-rownames(dat) <- tree$tip.label
+rownames(dat) <- phy$tip.label
 dat<-phyDat(dat,type="USER", levels=c("0","1"))
-mpr.recon <- ancestral.pars(tree, dat, type = c("MPR"))
+mpr.recon <- ancestral.pars(phy, dat, type = c("MPR"))
 mpr.recon.converted <- ConvertPhangornReconstructions(mpr.recon)
-tree$node.label <- mpr.recon.converted[(Ntip(tree)+1):length(mpr.recon.converted)]
+phy$node.label <- mpr.recon.converted[(Ntip(phy)+1):length(mpr.recon.converted)]
 ```
 
+Plotting the tree shows the parsimony reconstruction:
 ```{r, echo=FALSE}
-plot(tree)
-nodelabels(tree$node.label)
+plot(phy)
+nodelabels(phy$node.label)
 ```
 
-Note that node labels are not the same as the tip states. This is because they are meant to be indicators for the order of the states. As you see in the tree above the 1's and 2's at nodes, where a 1 is an indicator for state 0 and a 2 is an indicator for state 1. At first glance this might seem silly, but the reason it is implemented this way is so that the input data does not necessarily have to be a vector of numerics, and could be names, etc. -- though life is a lot easier if it is in the same format as the primates example. In any event, in general, the indicators at the nodes point to the order of the input names as if they were factors:
-
-```{r, eval=FALSE}
-names.vector <- c("beta", "alpha", "alpha", "beta", "beta")
-names.factor <- as.factor(names.vector)
-as.numeric(names.factor)
-```
-
-Now that we have our reconstructions, we can obtain the likelihood of this reconstruction *given* a set of rates. To do this we rely on the joint reconstruction algorithm of Pupko et al (2000), which represents the maximum likelihood estimates of the states on nodes. To obtain the reconstruction likelihood we've added a new argument to the rayDISC function called `state.recon`. The default is `state.recon='subsequently'`, which performs the usual `rayDISC` call -- that is, it first estimates the rates, then uses those rate estimates to obtain the likeliest states. However, if you set `state.recon= 'same'`, it will provide the likelihood that is based on the input reconstruction and the rates. For example, for a fixed set of rates we can obtain the likelihood of our parsimony reconstruction:
-
+Next input the tree into `corHMM()` and obtain a rate estimate for this reconstruction:
 ```{r, eval=TRUE}
-recon.likelihood <- rayDISC(tree, trait,model="ER", p=c(0.008), 
-                            node.states="joint", state.recon="given", root.p=NULL)
-recon.likelihood
+fixed.parsimony.recon <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
 ```
 
-Here the likelihood is based on a fixed set of rates being 0.008, which is provided in the `p` argument. If we wanted to actually *estimate* the likeliest rate given the parsimony reconstruction, all we have to do is omit the `p` argument entirely:
-
-```{r, eval=TRUE}
-recon.rate.best.likelihood <- rayDISC(tree, trait,model="ER", 
-                                      node.states="joint", state.recon="given", root.p=NULL)
-recon.rate.best.likelihood
-```
-
-As shown in this example, the estimated rates are nearly order of magnitude greater than our input value. 
-
-If a user wanted to estimate both the rates and states all in one function call, simply provide a tree that has no internal node labels:
-
-```{r, eval=TRUE}
-tree.no.labels <- tree
-tree.no.labels$node.label <- NULL
-recon.rate.state.best.likelihood <- rayDISC(tree.no.labels, trait,model="ER", 
-                                            node.states="joint", state.recon="estimate", root.p=NULL)
-recon.rate.state.best.likelihood
-```
-
-Here is a plot of the likeliest states at nodes:
-
-```{r, echo=FALSE}
-plot(recon.rate.state.best.likelihood$phy)
-nodelabels(recon.rate.state.best.likelihood$phy$node.label)
-```
-
-We also allow for partial knowledge of states to be included. Perhaps we want to estimate both rates and states, but with a particular node state fixed. For example, say we wanted to determine the likeliest rates and states with the MRCA of *Homo sapiens* and *Pan paniscus* to be in state 1 :
-
-```{r, eval=TRUE}
-tree.no.labels <- tree
-label.vector <- rep(NA, Ntip(tree) + Nnode(tree))
-#get MRCA of H. sapiens and P. paniscus:
-homo_pan <- getMRCA(tree,tip=c("Homo_sapiens", "Pan_paniscus"))
-label.vector[homo_pan] <- 2
-tree.no.labels$node.label <- label.vector[(Ntip(tree.no.labels)+1):(Ntip(tree)+Nnode(tree))]
-recon.rate.state.best.likelihood <- corHMM(tree.no.labels, trait[,c(1,2)], model="ER", rate.cat=1)
+Interestingly, the parsimony reconstruction suggests a lot more change than if we estimated the states from the model itself.
 
 
-recon.rate.state.best.likelihood <- rayDISC(tree.no.labels, trait, model="ER", 
-                                            node.states="joint", state.recon="estimate", root.p=NULL)
-recon.rate.state.best.likelihood
-```
 
-
-## Q2: How biased a character’s evolution has to be in order to make a less parsimonious reconstruction more likely than a parsimonious one. 
-
-Incidentally, **corHMM** already has this capability. As part of the function call is the `p` argument that supplies fixed rates. Going back to our primate example above we can show how we can modify rates and examine how this impacts the reconstructions.
-
-```{r, eval=TRUE}
-library(corHMM)
-data(primates)
-tree <- primates$tree
-trait <- primates$trait
-MLE.est <- rayDISC(tree.no.labels, trait,model="ER", p=c(0.008522092), 
-                   node.states="joint", root.p=NULL)
-```
-
-The likeliest states at each node under the MLE of the equal rates model is as follows:
-
-```{r, echo=FALSE}
-plot(tree)
-nodelabels(MLE.est$states)
-```
-
-Now let's see what the reconstruction looks like when the rate is 1000x that of the MLE
-
-```{r, eval=TRUE}
-crazy.train <- rayDISC(tree.no.labels, trait,model="ER", p=c(0.008522092)*1000, 
-                       node.states="joint", root.p=NULL)
-```
-
-```{r, echo=FALSE}
-plot(tree)
-nodelabels(crazy.train$states)
-```
-
-Under this scenario, the reconstructions are much more complicated than what is inferred under the MLE.
 
 
 ## References
+
 Pupko, T., I. Pe'er, R. Shamir, and D. Graur. 2000. A fast algorithm for joint reconstruction of ancestral amino-acid sequences. Molecular Biology and Evolution 17:890-896.
 
+Sackton, T.B., P. Grayson, A. Cloutier, Z. Hu, J.S. Liu, N.E. Wheeler, P.P. Gardner, J.A. Clarke, A.J. Baker, M. Clamp, and S.V. Edwards. 2019. Convergent regulatory evolution and loss of flight in paleognathous birds. Science 364:74-78.
 
 
 
@@ -588,90 +514,3 @@ Pupko, T., I. Pe'er, R. Shamir, and D. Graur. 2000. A fast algorithm for joint r
 
 
 
-<!-- #Section 3: Unit tests of corHMM -->
-<!-- ##3.1: rayDISC-_like_ models in corHMM -->
-
-<!-- rayDISC is a function that runs Markov models where all states are observed. I have implemented this functionality within corHMM so that users only need to use one function when working with corHMM. Let's simulate a fresh 3-state dataset. -->
-
-<!-- ```{r} -->
-<!-- phy <- sim.bdtree(b = 1, d = 0.8, n = 100, stop = "taxa", extinct = FALSE) -->
-<!-- phy <- drop.extinct(phy) -->
-<!-- mean.change <- 1/sum(phy$edge.length)*20 -->
-
-<!-- Q <- matrix(abs(rnorm(9, mean.change, mean.change/2)), 3, 3) -->
-<!-- diag(Q) <- 0 -->
-<!-- diag(Q) <- -rowSums(Q) -->
-
-<!-- dat <- sim.char(phy, Q, 1, "discrete") -->
-<!-- dat <- dat[,,1] -->
-<!-- data <- data.frame(sp = names(dat), dat = dat) -->
-<!-- ``` -->
-
-<!-- We can run rayDISC easily.  -->
-
-<!-- ```{r} -->
-<!-- rayRes <- rayDISC(phy = phy, data = data, model = "ARD", root.p = "flat") -->
-<!-- ``` -->
-
-<!-- I will take the parameters from rayDISC and use corHMM to evaluate their likelihood. If all goes well the likelihood for these parameters will be the same in rayDISC and corHMM. -->
-
-<!-- ```{r} -->
-<!-- data.sort <- data.frame(data[,2], data[,2],row.names=data[,1]) -->
-<!-- data.sort <- data.sort[phy$tip.label,] -->
-<!-- model.set.final <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=1,ntraits=3, model = "ARD") -->
-<!-- p = c(na.omit(as.vector(rayRes$solution))) -->
-<!-- corRes <- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = model.set.final$rate, p = p, root.p = "flat") -->
-<!-- c(rayRes$loglik, corRes$loglik) -->
-<!-- rayRes$loglik == corRes$loglik -->
-<!-- ``` -->
-
-<!-- ##3.2: corHMM works for n States -->
-
-<!-- To test that corHMM is working for multiple states and hidden rates we need to construct a pseudo-hidden rate model. This pseudo hidden rate model will be evaluated as any rate.cat > 1 model is, but it will have the same likelihood as a model that could be run in rayDISC. The key is distributing those parameters within corHMM such that we don't expect a different likelihood.  -->
-
-<!-- ```{r} -->
-<!-- data.sort <- data.frame(data[,2], data[,2],row.names=data[,1]) -->
-<!-- data.sort <- data.sort[phy$tip.label,] -->
-<!-- model.set.final<- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=2,ntraits=3,model ="ARD") -->
-<!-- model.set.final$index.matrix -->
-<!-- ``` -->
-
-<!-- This is our 2 rate class model. However, we will assign the same parameters to R1 and R2. There should be no difference in likelihood between this model and rayDISC - *we can use the rayDISC result from section 3.1.*. -->
-
-<!-- ```{r} -->
-<!-- p = c(na.omit(as.vector(rayRes$solution)), na.omit(as.vector(rayRes$solution)), 1,1,0) -->
-<!-- corRes_2rate <- corHMM(phy = phy, data = data, rate.cat = 2, mV = TRUE, rate.mat = model.set.final$rate, p = p, root.p = "flat") -->
-<!-- c(corRes_2rate$loglik, rayRes$loglik) -->
-<!-- ``` -->
-
-<!-- ##3.3: corHMMv2.0 is the same as previous versions -->
-
-<!-- For this section I've run some models in the previous version of corHMM. I am going to use those corhmm objects to demonstrate that new corHMM and old corHMM exist in harmony. -->
-
-<!-- Is old rayDISC the same as new rayDISC? -->
-
-<!-- ```{r} -->
-<!-- load("~/Desktop/oldCorRes.Rsave") -->
-<!-- p <- na.omit(as.vector(obj$def.rayDISC$solution)) -->
-<!-- newRay <- rayDISC(phy = obj$def.rayDISC$phy, data = obj$def.rayDISC$data, model = "ARD", ntraits = 1, p = p, rate.mat = obj$def.rayDISC$index.mat, root.p = "flat") -->
-<!-- newRay$loglik == obj$def.rayDISC$loglik -->
-<!-- ``` -->
-
-<!-- Is old corHMM the same as new corHMM? -->
-
-<!-- ```{r} -->
-<!-- p <- na.omit(as.vector(obj$def.corHMM$solution)) -->
-<!-- data <- data.frame(sp = rownames(obj$def.corHMM$data), dat = obj$def.corHMM$data[,1]) -->
-<!-- newCor <- corHMM(phy = obj$def.corHMM$phy, data = data, rate.cat = 2, rate.mat = obj$def.corHMM$index.mat, p = p) -->
-<!-- obj$def.corHMM$loglik == newCor$loglik -->
-<!-- ``` -->
-
-<!-- Is old corHMM the same as new corHMM when the model is constrained? -->
-
-<!-- ```{r} -->
-<!-- p <- na.omit(as.vector(obj$const.corHMM$solution)) -->
-<!-- p <- p[c(-4, -7)] -->
-<!-- data <- data.frame(sp = rownames(obj$const.corHMM$data), dat = obj$const.corHMM$data[,1]) -->
-<!-- newCor <- corHMM(phy = obj$const.corHMM$phy, data = data, rate.cat = 2, rate.mat = obj$const.corHMM$index.mat, p = p) -->
-<!-- obj$const.corHMM$loglik == newCor$loglik -->
-<!-- ``` -->
