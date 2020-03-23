@@ -95,11 +95,6 @@ Here we have modified `corHMM()` to transform any character or set of characters
         * 2.2.3: Ontological relationship of multiple characters
     * 2.3: Estimating models when node states are fixed
 
-* __Section 3 Unit tests of corHMM__
-    * 3.1: rayDISC-_like_ models in corHMM
-    * 3.2: corHMM works for n States
-    * 3.3: corHMMv2.0 is the same as previous versions
-
 # Section 1: Default use of corHMM
 
 ## 1.1: No hidden rate categories
@@ -309,7 +304,7 @@ plotMKmodel(Precur_FullMat, 2, display = "row", text.scale = 0.7)
 
 Since, it looks good we can now run `corHMM()` making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
 ```{r}
-Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat)
+Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat, root.p=NULL)
 Precur_res.corHMM
 ```
 
@@ -498,15 +493,18 @@ label.vector <- rep(NA, Ntip(phy) + Nnode(phy))
 homo_gorilla <- getMRCA(phy,tip=c("Homo_sapiens", "Gorilla_gorilla"))
 label.vector[homo_gorilla] <- 1
 phy$node.label <- label.vector[-c(1:Ntip(phy))]
-fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ARD", rate.cat=2, fixed.nodes=FALSE)
+fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ARD", rate.cat=2, fixed.nodes=TRUE)
 ```
 
 Now, if we print out the line corresponding to our fixed node,
 ```{r, eval=TRUE}
-fix.node64.noestrus[homo_gorilla-Ntip(phy),] 
+fix.node64.noestrus$states[homo_gorilla-Ntip(phy),] 
 ```
 
-there should be some uncertainty as to whether the absence of estrus advertisement is in R1 or R2. The total probability, however, of the node being in observed state 1 should sum to 1.
+there should be some uncertainty as to whether the absence of estrus advertisement is in R1 or R2. The total probability, however, of the node being in observed state 1 should sum to 1:
+```{r, eval=TRUE}
+sum(fix.node64.noestrus$states[homo_gorilla-Ntip(phy),])
+```
 
 
 ## References
