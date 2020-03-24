@@ -342,11 +342,16 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
     #If any of the logs have NAs restart search:
     if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
     equil.root <- NULL
-    for(i in 1:ncol(Q)){
-        posrows <- which(Q[,i] >= 0)
-        rowsum <- sum(Q[posrows,i])
-        poscols <- which(Q[i,] >= 0)
-        colsum <- sum(Q[i,poscols])
+    # if the q matrix has columns not estimated, remove them
+    row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
+    col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
+    Q.root <- Q[!row2rm, !col2rm]
+
+    for(i in 1:ncol(Q.root)){
+        posrows <- which(Q.root[,i] >= 0)
+        rowsum <- sum(Q.root[posrows,i])
+        poscols <- which(Q.root[i,] >= 0)
+        colsum <- sum(Q.root[i,poscols])
         equil.root <- c(equil.root,rowsum/(rowsum+colsum))
     }
     if (is.null(root.p)){
@@ -354,26 +359,26 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
         k.rates <- 1/length(which(!is.na(equil.root)))
         flat.root[!is.na(flat.root)] = k.rates
         flat.root[is.na(flat.root)] = 0
-        loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
+        loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,!col2rm])))
     }
     if(is.character(root.p)){
         # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
         if(root.p == "yang"){
-            root.p <- Null(Q)
+            root.p <- Null(Q.root)
             root.p <- c(root.p/sum(root.p))
-            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
             if(is.infinite(loglik)){
                 return(1000000)
             }
         }else{
             # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-            root.p = liks[root,] / sum(liks[root,])
-            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+            root.p = liks[root,!col2rm] / sum(liks[root,!col2rm])
+            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
         }
     }
     # root.p!==NULL will fix root probabilities based on user supplied vector:
     if(is.numeric(root.p[1])){
-        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
         if(is.infinite(loglik)){
             return(1000000)
         }
