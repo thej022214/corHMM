@@ -139,6 +139,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         rate[is.na(rate)]=max(rate, na.rm=TRUE)+1
         model.set.final$rate <- rate
         model.set.final$index.matrix <- rate.mat
+        model.set.final$Q <- matrix(0, dim(rate.mat)[1], dim(rate.mat)[2])
         ## for precursor type models ##
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)

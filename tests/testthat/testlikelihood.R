@@ -103,9 +103,49 @@ test_that("All rates different, one node fixed",{
 ######################################################################################################################################
 ######################################################################################################################################
 
+# the old corHMM results
 
-#HERE
+# require(devtools)
+# install.packages("~/corHMM_1.22.tar.gz", repos = NULL)
+# require(corHMM)
+# 
+# data(primates)
+# phy <- primates[[1]]
+# phy <- multi2di(phy)
+# data <- primates[[2]]
+# 
+# # old corhmm
+# pp<-corHMM(phy,data[,c(1,2)],rate.cat=2,node.states="marginal")
+# res_old.corhmm <- pp
+# 
+# # old rayDISC
+# pp<-rayDISC(phy,data[,c(1,2)],model="ARD", node.states="marginal")
+# res_old.raydisc <- pp
+# 
+# # old corDISC
+# rate.mat <- rate.mat.maker(rate.cat = 1, hrm = FALSE, ntraits = 2, nstates = 2, model = "ARD")
+# rate.mat <- rate.par.drop(rate.mat, c(2,5,8,6))
+# pp<-corDISC(phy,data,ntraits=2,model="ARD", node.states="marginal", diagn=FALSE, rate.mat = rate.mat)
+# res_old.cordisc <- pp
+# 
+# res <- list(old.corhmm = res_old.corhmm, old.cordisc = res_old.cordisc, old.raydisc = res_old.raydisc)
+# save(res, file = "~/corHMM/tests/testthat/res_old.corhmm.Rsave")
 
+
+test_that("Simple tests of Old corHMM vs. New corHMM",{
+
+  require(corHMM)
+  load("res_old.corhmm.Rsave")
+  phy <- res$old.corhmm$phy
+  data <- data.frame(rownames(res$old.corhmm$data), res$old.corhmm$data[,1])
+  p <- c(na.omit(as.vector(res$old.corhmm$solution)))
+  rate.mat <- res$old.corhmm$index.mat
+
+  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=2, rate.mat = rate.mat, p = p, root.p = NULL)
+
+  comparison <- identical(corHMM.new$loglik - res$old.corhmm$loglik, 0)
+  expect_true(comparison)
+})
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -113,9 +153,21 @@ test_that("All rates different, one node fixed",{
 ######################################################################################################################################
 ######################################################################################################################################
 
+test_that("Simple tests of corDISC vs. new corHMM",{
 
+  require(corHMM)
+  load("res_old.corhmm.Rsave")
+  phy <- res$old.cordisc$phy
+  
+  data <- data.frame(sp = rownames(res$old.cordisc$data), d1 = res$old.cordisc$data[,1], d2 = res$old.cordisc$data[,2])
+  p <- c(na.omit(as.vector(res$old.cordisc$solution)))
+  rate.mat <- getStateMat4Dat(data, "ARD")$rate.mat
 
-##HERE
+  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=1, rate.mat = rate.mat, p = p, root.p = NULL)
+  
+  comparison <- identical(corHMM.new$loglik - res$old.cordisc$loglik, 0)
+  expect_true(comparison)
+})
 
 
 ######################################################################################################################################
@@ -124,90 +176,18 @@ test_that("All rates different, one node fixed",{
 ######################################################################################################################################
 ######################################################################################################################################
 
-#<!-- #Section 3: Unit tests of corHMM -->
-#<!-- ##3.1: rayDISC-_like_ models in corHMM -->
+test_that("Simple tests of rayDISC vs. new corHMM",{
 
-#<!-- rayDISC is a function that runs Markov models where all states are observed. I have implemented this functionality within corHMM so that users only need to use one function when working with corHMM. Let's simulate a fresh 3-state dataset. -->
-
-#<!-- ```{r} -->
-#<!-- phy <- sim.bdtree(b = 1, d = 0.8, n = 100, stop = "taxa", extinct = FALSE) -->
-#<!-- phy <- drop.extinct(phy) -->
-#<!-- mean.change <- 1/sum(phy$edge.length)*20 -->
-
-#<!-- Q <- matrix(abs(rnorm(9, mean.change, mean.change/2)), 3, 3) -->
-#<!-- diag(Q) <- 0 -->
-#<!-- diag(Q) <- -rowSums(Q) -->
-
-#<!-- dat <- sim.char(phy, Q, 1, "discrete") -->
-#<!-- dat <- dat[,,1] -->
-#<!-- data <- data.frame(sp = names(dat), dat = dat) -->
-#<!-- ``` -->
-
-#<!-- We can run rayDISC easily.  -->
-
-#<!-- ```{r} -->
-#<!-- rayRes <- rayDISC(phy = phy, data = data, model = "ARD", root.p = "flat") -->
-#<!-- ``` -->
-
-#<!-- I will take the parameters from rayDISC and use corHMM to evaluate their likelihood. If all goes well the likelihood for these parameters will be the same in rayDISC and corHMM. -->
-
-#<!-- ```{r} -->
-#<!-- data.sort <- data.frame(data[,2], data[,2],row.names=data[,1]) -->
-#<!-- data.sort <- data.sort[phy$tip.label,] -->
-#<!-- model.set.final <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=1,ntraits=3, model = "ARD") -->
-#<!-- p = c(na.omit(as.vector(rayRes$solution))) -->
-#<!-- corRes <- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = model.set.final$rate, p = p, root.p = "flat") -->
-#<!-- c(rayRes$loglik, corRes$loglik) -->
-#<!-- rayRes$loglik == corRes$loglik -->
-#<!-- ``` -->
-
-#<!-- ##3.2: corHMM works for n States -->
-
-#<!-- To test that corHMM is working for multiple states and hidden rates we need to construct a pseudo-hidden rate model. This pseudo hidden rate model will be evaluated as any rate.cat > 1 model is, but it will have the same likelihood as a model that could be run in rayDISC. The key is distributing those parameters within corHMM such that we don't expect a different likelihood.  -->
-
-#<!-- ```{r} -->
-#<!-- data.sort <- data.frame(data[,2], data[,2],row.names=data[,1]) -->
-#<!-- data.sort <- data.sort[phy$tip.label,] -->
-#<!-- model.set.final<- corHMM:::rate.cat.set.corHMM.JDB(phy=phy,data.sort=data.sort,rate.cat=2,ntraits=3,model ="ARD") -->
-#<!-- model.set.final$index.matrix -->
-#<!-- ``` -->
-
-#<!-- This is our 2 rate class model. However, we will assign the same parameters to R1 and R2. There should be no difference in likelihood between this model and rayDISC - *we can use the rayDISC result from section 3.1.*. -->
-
-#<!-- ```{r} -->
-#<!-- p = c(na.omit(as.vector(rayRes$solution)), na.omit(as.vector(rayRes$solution)), 1,1,0) -->
-#<!-- corRes_2rate <- corHMM(phy = phy, data = data, rate.cat = 2, mV = TRUE, rate.mat = model.set.final$rate, p = p, root.p = "flat") -->
-#<!-- c(corRes_2rate$loglik, rayRes$loglik) -->
-#<!-- ``` -->
-
-#<!-- ##3.3: corHMMv2.0 is the same as previous versions -->
-
-#<!-- For this section I've run some models in the previous version of corHMM. I am going to use those corhmm objects to demonstrate that new corHMM and old corHMM exist in harmony. -->
-
-#<!-- Is old rayDISC the same as new rayDISC? -->
-
-#<!-- ```{r} -->
-#<!-- load("~/Desktop/oldCorRes.Rsave") -->
-#<!-- p <- na.omit(as.vector(obj$def.rayDISC$solution)) -->
-#<!-- newRay <- rayDISC(phy = obj$def.rayDISC$phy, data = obj$def.rayDISC$data, model = "ARD", ntraits = 1, p = p, rate.mat = obj$def.rayDISC$index.mat, root.p = "flat") -->
-#<!-- newRay$loglik == obj$def.rayDISC$loglik -->
-#<!-- ``` -->
-
-#<!-- Is old corHMM the same as new corHMM? -->
-
-#<!-- ```{r} -->
-#<!-- p <- na.omit(as.vector(obj$def.corHMM$solution)) -->
-#<!-- data <- data.frame(sp = rownames(obj$def.corHMM$data), dat = obj$def.corHMM$data[,1]) -->
-#<!-- newCor <- corHMM(phy = obj$def.corHMM$phy, data = data, rate.cat = 2, rate.mat = obj$def.corHMM$index.mat, p = p) -->
-#<!-- obj$def.corHMM$loglik == newCor$loglik -->
-#<!-- ``` -->
-
-#<!-- Is old corHMM the same as new corHMM when the model is constrained? -->
-
-#<!-- ```{r} -->
-#<!-- p <- na.omit(as.vector(obj$const.corHMM$solution)) -->
-#<!-- p <- p[c(-4, -7)] -->
-#<!-- data <- data.frame(sp = rownames(obj$const.corHMM$data), dat = obj$const.corHMM$data[,1]) -->
-#<!-- newCor <- corHMM(phy = obj$const.corHMM$phy, data = data, rate.cat = 2, rate.mat = obj$const.corHMM$index.mat, p = p) -->
-#<!-- obj$const.corHMM$loglik == newCor$loglik -->
-#<!-- ``` -->
+  require(corHMM)
+  load("res_old.corhmm.Rsave")
+  phy <- res$old.raydisc$phy
+  
+  data <- res$old.raydisc$data
+  p <- c(na.omit(as.vector(res$old.raydisc$solution)))
+  rate.mat <- getStateMat4Dat(data, "ARD")$rate.mat
+  
+  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=1, rate.mat = rate.mat, p = p, root.p = NULL)
+  
+  comparison <- identical(corHMM.new$loglik - res$old.raydisc$loglik, 0)
+  expect_true(comparison)
+})
