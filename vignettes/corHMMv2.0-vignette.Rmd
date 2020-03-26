@@ -1,13 +1,12 @@
 ---
 title: "Using corHMM 2.0"
 author: "James D. Boyko and Jeremy M. Beaulieu"
-output: 
+output:
+  word_document: default
   pdf_document:
     fig_caption: yes
-vignette: >
-   %\VignetteEngine{knitr::rmarkdown}
-   %\VignetteIndexEntry{Running MuHiSSE}
-   \usepackage[utf8]{inputenc}
+vignette: |
+  %\VignetteEngine{knitr::rmarkdown} %\VignetteIndexEntry{Running MuHiSSE} \usepackage[utf8]{inputenc}
 ---
 
 
@@ -79,7 +78,7 @@ $$
 
 Again, exactly the same. 
 
-Here we have modified `corHMM()` to transform any character or set of characters into a *single* multistate character. This means that two characters need not have the same number of characters states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, `corHMM()` is completely flexible and naturally contains `rayDISC()` and `corDISC()` capabilities that were standalone functions in previous versions `corHMM`, which gave the impression that they were different "methods." As the vignette will show, they are indeed nested l within a broader class of HMMs. 
+Here we have modified `corHMM()` to transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, `corHMM()` is completely flexible and naturally contains `rayDISC()` and `corDISC()` capabilities that were standalone functions in previous versions `corHMM`, which gave the impression that they were different "methods." As the vignette will show, they are indeed nested within a broader class of HMMs. 
 
 The vignette is comprised of three sections, where we demonstrate all new extensions as well as other new and useful features: 
 
@@ -139,7 +138,7 @@ When you run your corHMM object you are greeted with a summary of the model. You
 
 The *Rates* section of the output describes transition rates between states and are organized as a matrix. Again, the *transition rate matrix* is read as the transition rate **from** ROW **to** COLUMN. For example, if you were interested in the transition rate from State 1 (i.e., absence of estrus advertisement in a single male mating system) to State 2 (i.e., absence of estrus advertisement in a multimale mating system) you would be looking at the Row 1, Column 2, entry. For a time calibrated ultrametric tree, these rates will depend on the age of your phylogeny. 
 
-You should notice that the state legend was printed to the screen when running `corHMM()`. But if you can also obtain the exact coding for each species using the `corHMM()` results object itself. This will provide an augmented dataframe. It takes the initial user data and adds a column that corresponds to how corHMM treated each species:
+You should notice that the state legend was printed to the screen when running `corHMM()`. You can obtain the exact coding for each species using the `corHMM()` results object itself. This will provide an augmented dataframe. It takes the initial user data and adds a column that corresponds to how corHMM treated each species:
 ```{r}
 head(MK_3state$data.legend)
 ```
@@ -167,7 +166,7 @@ HMM_3state
 
 Models with more states take longer to estimate because of the expansion of the state space and the number of transition rates connecting them. Hidden rate models further expand the state space. For example, adding a second rate category went from 4 transition rates to 14. In section 1.1 we left our parameters unconstrained. We estimated all transisions as independent and allowed for transitions from all states to any other state. However, we can constrain a model in corHMM in two different ways. The easiest way is to set the model to either "SYM" or "ER". This is what we've done for the HMM_3state model above. By setting model = "SYM", we have said that the transition rates between any two states are equal. If we set model = "ER", then we would have constrained all transition rates between states to be the same. Finally, if model = "ARD" (the default), then all transition rates are independently estimated. Although "ER" and "SYM are common restrictions, it is often more useful to manually restrict your model to match a biological hypothesis (which is described in the next section).
 
-Interpreting the estimated rate matrix for this hidden Markov model is intimidating. But, the same principles of interpreting the transition rate matrices apply -- that is, you still read rates from row to column. However, there is the added complexity of transitions among the different rate categories (as represented by R1 and R2). We have added a new plotting function called `plotMKmodel()` that will take the `corHMM` output and plot the underlying structure of model in discrete parts. In the following example, the first 2 panels show how observed states transition within each rate category, and the last panel shows transitions among the different rate classes:
+Interpreting the estimated rate matrix for this hidden Markov model is intimidating. But, the same principles of interpreting the transition rate matrices apply -- that is, you still read rates from row to column. However, there is the added complexity of transitions among the different rate categories (as represented by R1 and R2). `plotMKmodel()` will plot the underlying structure of model in discrete parts. In the following example, the first 2 panels show how observed states transition within each rate category, and the last panel shows transitions among the different rate classes:
 ```{r}
 plotMKmodel(HMM_3state)
 ```
@@ -196,7 +195,7 @@ StateMatA_constrained <- equateStateMatPars(RateMat, pars2equal)
 StateMatA_constrained
 ```
 
-Here we used `equateStateMatPars()` for these purposes, where the first argument is *the rate matrix being modified* (i.e., `rate.mat` object) and second argument is *list of the parameters to be equated* to recreate the "SYM" model (i.e., `pars2equal` list). One thing to note is that you must have the appropriate number of rate categories. A user rate matrix will not be duplicated or changed by `corHMM()`. This custom model can only be used if we set rate.cat=1 since that is the appropriate number of rate categories. We can now provide this customized `rate.mat` to `corHMM()`:
+We use the function `equateStateMatPars()`: the first argument is *the rate matrix being modified* (i.e., `rate.mat` object) and second argument is *list of the parameters to be equated* to recreate the "SYM" model (i.e., `pars2equal` list). One thing to note is that you must have the appropriate number of rate categories. A user rate matrix will not be duplicated or changed by `corHMM()`. This custom model can only be used if we set rate.cat=1 since that is the appropriate number of rate categories. We can now provide this customized `rate.mat` to `corHMM()`:
 ```{r}
 MK_3state_customSYM <- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = StateMatA_constrained)
 MK_3state_customSYM
@@ -295,7 +294,7 @@ RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
 RateClassMat
 ```
 
-Putting them rate classes together we almost get the right model, but we need to remove one extra transition rate between that connects rate class R1 and R2 in the presence of EFNs, because, again, the precursor model assumes that EFNs can *only* be gained in rate class 1
+Putting them rate classes together we almost get the right model, but we need to remove one extra transition rate between that connects rate class R1 and R2 in the presence of EFNs, because, again, the precursor model assumes that EFNs can *only* be gained in rate class 1.
 ```{r}
 Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2), RateClassMat)
 Precur_FullMat[c(4,2), c(2,4)] <- 0
@@ -464,6 +463,7 @@ We can then compare the fit of this model, with one where the same node is fixed
 label.vector[homo_gorilla] <- 1
 phy$node.label <- label.vector[-c(1:Ntip(phy))]
 fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
+fix.node64.noestrus
 ```
 
 A model where the MRCA of *Gorilla gorilla* and *Homo sapiens* is assumed to have exhibited estrus advertisement requires higher rates, and produces a substantially worse likelihood, than if we assume the MRCA lacked estrus advertisement.
@@ -492,6 +492,7 @@ nodelabels(phy$node.label)
 Next input the tree into `corHMM()` and obtain a rate estimate for this reconstruction:
 ```{r, eval=TRUE}
 fixed.parsimony.recon <- corHMM(phy, data[,c(1,2)], model="ER", rate.cat=1, fixed.nodes=TRUE)
+fixed.parsimony.recon
 ```
 
 Interestingly, the parsimony reconstruction suggests a lot more change than if we estimated the states from the model itself.
