@@ -2,8 +2,7 @@
 title: "Using corHMM 2.0"
 author: "James D. Boyko and Jeremy M. Beaulieu"
 output:
-  word_document: default
-  pdf_document:
+  pdf_document: 
     fig_caption: yes
 vignette: |
   %\VignetteEngine{knitr::rmarkdown} %\VignetteIndexEntry{Running MuHiSSE} \usepackage[utf8]{inputenc}
