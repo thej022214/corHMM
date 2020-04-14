@@ -39,7 +39,7 @@ q_{11 \rightarrow 00} & q_{11 \rightarrow 01} & q_{11 \rightarrow 10} & -\\
 \end{bmatrix}
 $$
 
-This model is also considerably more complex, as the number of transitions in this rate matrix now goes from 2 to 12. However, with these models we often make a simplifying assumption that we do not allow for transitions in two states to occur at the same time. In other words, if a lineage is in state *00* it cannot immediately transition to state *11*, rather, it must first transition either to state *01* or *10* before finally transitioning to state *11*. Therefore, we can simplify the matrix by removing these "dual" transitions from the model completely,
+This model is considerably more complex, as the number of transitions in this rate matrix now goes from 2 to 12. However, with these models we often make a simplifying assumption that we do not allow for transitions in two states to occur at the same time. In other words, if a lineage is in state *00* it cannot immediately transition to state *11*, rather, it must first transition either to state *01* or *10* before finally transitioning to state *11*. Therefore, we can simplify the matrix by removing these "dual" transitions from the model completely,
 
 $$
 Q =
@@ -77,7 +77,7 @@ $$
 
 Again, exactly the same. 
 
-The updated version of corHMM() now lets users transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, corHMM() is completely flexible and naturally contains rayDISC() and corDISC() capabilities – standalone functions in previous versions of corHMM that may have been mistaken as different “methods.” As the vignette will show, they are indeed nested within a broader class of HMMs. 
+The updated version of corHMM() now lets users transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, corHMM() is completely flexible and naturally contains rayDISC() and corDISC() capabilities – standalone functions in previous versions of corHMM that may have been mistaken as different “methods.” As this vignette will show, they are indeed nested within a broader class of HMMs. 
 
 The vignette is comprised of three sections, where we demonstrate all new extensions as well as other new and useful features: 
 
@@ -90,8 +90,8 @@ The vignette is comprised of three sections, where we demonstrate all new extens
         * 2.1.1: One rate category
         * 2.1.2: Any number of rate categories
     * 2.2: Some examples of "biologically informed" models
-        * 2.2.1: Precursor model
-        * 2.2.2: Ordered habitat change
+        * 2.2.1: Ordered habitat change
+        * 2.2.2: Precursor model
         * 2.2.3: Ontological relationship of multiple characters
         
 * __Section 3 Estimating models when node states are fixed__
@@ -202,7 +202,7 @@ MK_3state_customSYM
 
 ### 2.1.2: Any number of rate categories
 
-If you wanted to add hidden rate categories, you need to know (1) you need to know the dynamics *within* each rate category, and (2) transitions *among* the different rate classes. We begin by constructing two *within* rate category `rate.mat` objects. In the first category, R1, we assume all rates are equal. In the second rate categoy, R2, we suspect that for some species once they both estrus advertisement in a multimale mating system is an absorbing state -- that is, the combination of estrus advertisement and multimale mating systems are never lost once they evolve:
+If you wanted to add hidden rate categories, you need to know (1) you need to know the dynamics *within* each rate category, and (2) transitions *among* the different rate classes. We begin by constructing two *within* rate category `rate.mat` objects (R1 and R2). In R1, we assume a drift-like hypothesis where all transition rates are equal. In R2, we assume that the combination of estrus advertisement and multimale mating systems are not lost once they evolve:
 
 ```{r}
 RateCat1 <- getStateMat4Dat(data)$rate.mat # R1
@@ -228,13 +228,13 @@ StateMats <- list(RateCat1, RateCat2)
 StateMats
 ```
 
-We now have all the components necessary to create the full model using the getFullMat()function. This functoin requires that the first input be a list of the within rate class matrices and the second argument be the among rate class matrices:
+We now have all the components necessary to create the full model using the getFullMat()function. This function requires that the first input be a list of the within rate class matrices and the second argument be the among rate class matrices:
 ```{r}
 FullMat <- getFullMat(StateMats, RateClassMat)
 FullMat
 ```
 
-Even though we created this larger index matrix from individuals components, we may not be sure it's exactly what we want. Like with visually the inferred model, we can use `plotMKmodel()` to take a look at the model setup *before* running the analysis:
+Even though we created this larger index matrix from individuals components, we may not be sure it's exactly what we want. We can use `plotMKmodel()` to take a look at the model setup *before* running the analysis:
 ```{r, fig.align = "center", fig.width=10, fig.height=3}
 plotMKmodel(pp = FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
 ```
@@ -252,70 +252,7 @@ plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
 
 ## 2.2: Biological examples
 
-### 2.2.1: The precursor model
-
-The precursor model of Marazzi et al. (2012) is a good example to start with, because it marks the beginning of HMMs being used in a comparative context. In that study, they were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). Specifically, there were 2 states, presence (1) or absence (0) of EFNs, but that only species with an unobserved, hidden "precursor" trait could gain EFNs. Here we show how you could design the canonical precursor model in `corHMM` using custom rate matrices.
-
-We will start by loading a simulated dataset of presence and absence of extrafloral nectaries a randomly generated birth-death tree:
-```{r}
-phy <- read.tree("randomBD.tree")
-load("simulatedData.Rsave")
-head(Precur_Dat)
-```
-
-Next, generate an observed states only matrix using the input single binary trait data set:
-```{r}
-Precur_LegendAndMat <- getStateMat4Dat(Precur_Dat)
-Precur_LegendAndMat
-```
-
-Based on the legend, the absence of EFNs will be State 1 and the presence of EFNs will be State 2. For a precursor model the transitions between the two observed states, 1 and 2, are modulated by a third, hidden trait, which we will call a precursor. However, the precursor will be a State 1 in a different rate class. In other words, with the observation that a species lacking EFN's we do not know if they also have the precursor (i.e., 1, R2) or not (i.e., 1,R2). We do know, however, that under a precursor model that if we observe EFN, they must always also have the precursor trait, and so the presence of EFNs are always (2,R2). So, we will use rate class R2 as a direct measurement of transitioning between presence and absence of EFNs.
-
-The first rate class, R1, will represent character changes in the presence of the precursor, which is not impossible without first gaining the "precursor". So, we will generate the default matrix, then drop all possible transitions from this matrix:
-```{r}
-Precur_R1 <- Precur_LegendAndMat$rate.mat
-Precur_R1 <- dropStateMatPars(Precur_R1, c(1,2))
-Precur_R1
-```
-
-The second rate class, R2, will represent how our character changes in the presence of the precursor. In this rate class, we expect that species can either gain or lose EFNs at the same rate, but with State 1 representing no EFN but with precursor present:
-```{r}
-Precur_R2 <- Precur_LegendAndMat$rate.mat
-Precur_R2 <- equateStateMatPars(Precur_R2, c(1,2))
-Precur_R2
-```
-
-Finally, we set up a matrix for that governs the transitions *among* the rate classes:
-```{r}
-RateClassMat <- getRateCatMat(2) #
-RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
-RateClassMat
-```
-
-Putting them rate classes together we almost get the right model, but we need to remove one extra transition rate between that connects rate class R1 and R2 in the presence of EFNs, because, again, the precursor model assumes that EFNs can *only* be gained in rate class 1.
-```{r}
-Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2), RateClassMat)
-Precur_FullMat[c(4,2), c(2,4)] <- 0
-Precur_FullMat
-```
-
-If you're unsure that the model is correct, you can plot the index matrix:
-```{r, fig.align="center", fig.width=10, fig.height=4}
-plotMKmodel(Precur_FullMat, 2, display = "row", text.scale = 0.7)
-```
-
-Since the model looks correct, we can run `corHMM()` making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
-```{r}
-Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat)
-Precur_res.corHMM
-```
-
-```{r, fig.align="center", fig.width=10, fig.height=4}
-plotMKmodel(Precur_res.corHMM, display = "row", text.scale = 0.7)
-```
-
-
-### 2.2.2: Ordered habitat change
+### 2.2.1: Ordered habitat change
 
 A lot of these new capabilities in `corHMM` were inspired by our current project examining the ancestral habitat during primary endosymbiosis. In our model, we have three possible habitats: marine, freshwater, and terrestrial. Our very large phylogeny of green plants contains many species with a diverse range of life histories. For example, cyanobacteria can move freely between all of these states, whereas some species may move between terrestrial and marine through freshwater. Some species may even move freely between aquatic states, but once they become terrestrial they are stuck there. In this section we will demonstrate how to create a custom hidden Markov model which satisfies all of these requirements.
 
@@ -378,6 +315,68 @@ To run this model, we would only need to specify 1) the data, 2) the phylogeny, 
 ```{r}
 MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none")
 MFT_res.corHMM
+```
+
+### 2.2.2: The precursor model
+
+The precursor model of Marazzi et al. (2012) marks the beginning of HMMs being used in a phylogenetic comparative context. Marazzi et al. (2012) were interested in locating putative evolutionary precursors of plant extrafloral nectaries (EFNs). Specifically, there were 2 states, presence (1) or absence (0) of EFNs, but that only species with an unobserved, hidden "precursor" trait could gain EFNs. Here we show how you could design the canonical precursor model in `corHMM` using custom rate matrices.
+
+We will start by loading a simulated dataset of presence and absence of extrafloral nectaries a randomly generated birth-death tree:
+```{r}
+phy <- read.tree("randomBD.tree")
+load("simulatedData.Rsave")
+head(Precur_Dat)
+```
+
+Next, generate an observed states only matrix using the input single binary trait data set:
+```{r}
+Precur_LegendAndMat <- getStateMat4Dat(Precur_Dat)
+Precur_LegendAndMat
+```
+
+Based on the legend, the absence of EFNs will be State 1 and the presence of EFNs will be State 2. For a precursor model the transitions between the two observed states, 1 and 2, are modulated by a third, hidden trait, which we will call a precursor. The precursor is represented by being in State 1 (lacking EFNs), but being in the "precursor rate class" (R2 in this case). In other words, if we observe that a species lacks EFN's, we do not know if they also have the precursor (i.e., 1, R2) or not (i.e., 1,R1). We do know, however, that under a precursor model that if we observe EFN, they must always also have the precursor trait, and so the presence of EFNs is always (2,R2). So, we will use rate class R2 as a direct measurement of transitioning between presence and absence of EFNs.
+
+The first rate class, R1, will represent character changes in the absence of the precursor, which is not possible without first gaining the "precursor". So, we will generate the default matrix, then drop all possible transitions from this matrix:
+```{r}
+Precur_R1 <- Precur_LegendAndMat$rate.mat
+Precur_R1 <- dropStateMatPars(Precur_R1, c(1,2))
+Precur_R1
+```
+
+The second rate class, R2, will represent how our character changes in the presence of the precursor. In this rate class, we expect that species can either gain or lose EFNs at the same rate:
+```{r}
+Precur_R2 <- Precur_LegendAndMat$rate.mat
+Precur_R2 <- equateStateMatPars(Precur_R2, c(1,2))
+Precur_R2
+```
+
+Finally, we set up a matrix for that governs the transitions *among* the rate classes:
+```{r}
+RateClassMat <- getRateCatMat(2) #
+RateClassMat <- equateStateMatPars(RateClassMat, c(1,2))
+RateClassMat
+```
+
+Putting them rate classes together we almost get the right model, but we need to remove one extra transition rate between that connects rate class R1 and R2 in the presence of EFNs, because, again, the precursor model assumes that EFNs can *only* be gained in rate class 1.
+```{r}
+Precur_FullMat <- getFullMat(list(Precur_R1, Precur_R2), RateClassMat)
+Precur_FullMat[c(4,2), c(2,4)] <- 0
+Precur_FullMat
+```
+
+If you're unsure that the model is correct, you can plot the index matrix:
+```{r, fig.align="center", fig.width=10, fig.height=4}
+plotMKmodel(Precur_FullMat, 2, display = "row", text.scale = 0.7)
+```
+
+Since the model looks correct, we can run `corHMM()` making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
+```{r}
+Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat)
+Precur_res.corHMM
+```
+
+```{r, fig.align="center", fig.width=10, fig.height=4}
+plotMKmodel(Precur_res.corHMM, display = "row", text.scale = 0.7)
 ```
 
 ### 2.2.3: Ontological relationship of multiple characters
