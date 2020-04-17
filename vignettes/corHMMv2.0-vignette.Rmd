@@ -63,7 +63,7 @@ q_{4 \rightarrow 1} & q_{4 \rightarrow 2} & q_{4 \rightarrow 3} & -\\
 \end{bmatrix}
 $$
 
-Notice it is the same as before, but the states are transformed from binary combinations to a multistate character. As before, we may assume that transitions in two states cannot occur at the same time and remove the “dual” transitions.
+Notice it is the same as before, but the states are transformed from binary combinations to a multistate character. As before, we may assume that transitions in two states cannot occur at the same time and remove the "dual" transitions.
 
 $$
 Q =
@@ -77,7 +77,7 @@ $$
 
 Again, exactly the same. 
 
-The updated version of corHMM() now lets users transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, corHMM() is completely flexible and naturally contains rayDISC() and corDISC() capabilities – standalone functions in previous versions of corHMM that may have been mistaken as different “methods.” As this vignette will show, they are indeed nested within a broader class of HMMs. 
+The updated version of corHMM() now lets users transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, corHMM() is completely flexible and naturally contains rayDISC() and corDISC() capabilities - standalone functions in previous versions of corHMM that may have been mistaken as different "methods." As this vignette will show, they are indeed nested within a broader class of HMMs. 
 
 The vignette is comprised of three sections, where we demonstrate all new extensions as well as other new and useful features: 
 
@@ -294,7 +294,7 @@ Let's put all these matrices in a list,
 MFT_ObsStateClasses <- list(MFT_R1, MFT_R2, MFT_R3)
 ```
 
-Since we only have 100 species in this example, let’s constrain our parameters a bit further and state that transitions between rate classes occur at the same rate:
+Since we only have 100 species in this example, let's constrain our parameters a bit further and state that transitions between rate classes occur at the same rate:
 ```{r}
 MFT_RateClassMat <- getRateCatMat(3) # we have 3 rate classes
 MFT_RateClassMat <- equateStateMatPars(MFT_RateClassMat, 1:6)
@@ -401,7 +401,7 @@ Ont_LegendAndMat <- getStateMat4Dat(Ont_Dat)
 Ont_LegendAndMat
 ```
 
-Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually observed. This is because all of the species were corporeal and thus the incorporeal form didn’t factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. In addition, the transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed because it is impossible to have fingers without having limbs. Finally, all dual transitions have been removed.
+Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually observed. This is because all of the species were corporeal and thus the incorporeal form didn't factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. In addition, the transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed because it is impossible to have fingers without having limbs. Finally, all dual transitions have been removed.
 ```{r}
 Ont_res.corHMM <- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")
 ```
@@ -419,7 +419,7 @@ Note that hidden states can be added to this model easily by following the examp
 
 We also added the ability to fix any or all nodes in the input phylogeny while estimating a model. This new feature was inspired by a request from Scott Edwards, who was interested in whether the range of rates of flight gain and loss will result in the highest probability of a volant ancestor to flightless lineages. He ran a series of ancestral state reconstructions under a range of rates of gain and loss of flight. These ancestral state reconstructions focused on a single ancestor at a time (since each ancestor will have a slightly different set of parameters) and recorded the probability of a volant ancestor. These analyses are included in the supplemental of Sackton et al. (2019).
 
-In this updated version of `corHMM`, a user can fix anywhere from a single node in a tree to an entire reconstruction from, say parsimony, and estimate the transitions rate. One can even obtain the likelihood of a reconstruction based on a fixed set of rates. To demonstrate, let’s start by running a simple analysis of a binary character, but fixing the state of a single node in the the primate tree. Specifically, we are going to fix the most recent common ancestor (MRCA) of Gorilla gorilla and Homo sapiens as exhibiting estrus advertisement (i.e., State 1). The first step is to determine the the indices for each state:
+In this updated version of `corHMM`, a user can fix anywhere from a single node in a tree to an entire reconstruction from, say parsimony, and estimate the transitions rate. One can even obtain the likelihood of a reconstruction based on a fixed set of rates. To demonstrate, let's start by running a simple analysis of a binary character, but fixing the state of a single node in the the primate tree. Specifically, we are going to fix the most recent common ancestor (MRCA) of Gorilla gorilla and Homo sapiens as exhibiting estrus advertisement (i.e., State 1). The first step is to determine the the indices for each state:
 
 ```{r, eval=TRUE}
 data(primates)

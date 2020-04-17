@@ -6,7 +6,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE, lewis.asc.bias = FALSE){
     
     # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
     if(is.null(node.states)){
@@ -159,7 +159,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         cat("Calculating likelihood from a set of fixed parameters", "\n")
         out<-NULL
         est.pars<-log(p)
-        out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
+        out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias)
         loglik <- -out$objective
         est.pars <- exp(est.pars)
     }else{
@@ -194,7 +194,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                 }
                 starts[starts < exp(lb)] = exp(lb)
                 starts[starts > exp(ub)] = exp(lb)
-                out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
+                out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias)
                 tmp[,1] = out$objective
                 tmp[,2:(model.set.final$np+1)] = out$solution
                 tmp
@@ -212,7 +212,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
             # the user has specified initial params
             cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
             ip=ip
-            out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test)
+            out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias)
             loglik <- -out$objective
             est.pars <- exp(out$solution)
         }
@@ -278,9 +278,10 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 ######################################################################################################################################
 ######################################################################################################################################
 
-dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
+dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias) {
     
     p = exp(p)
+    cp_root.p <- root.p
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     TIPS <- 1:nb.tip
@@ -384,6 +385,11 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
             return(1000000)
         }
     }
+    if(lewis.asc.bias == TRUE){
+      p <- log(p)
+      dummy.liks.vec <- getLewisLikelihood(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = cp_root.p, rate.cat = rate.cat)
+      loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
+    }
     return(loglik)
 }
 
@@ -395,6 +401,21 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test) {
 ### The various utility functions used
 ######################################################################################################################################
 ######################################################################################################################################
+
+getLewisLikelihood <- function(p, phy, liks, Q, rate, root.p, rate.cat){
+  nTips <- length(phy$tip.label)
+  nNodes <- length(unique(phy$edge[,1]))
+  nStates <- dim(Q)[1]/rate.cat
+  states_structure <- seq(from = 1, by = nStates, length.out = rate.cat)
+  dummy.liks.vec <- vector("numeric", nStates)
+  for(state_i in 1:nStates){
+    lik_structure_i <- states_structure + (state_i - 1) 
+    liks[] <- 0
+    liks[1:nTips, lik_structure_i] <- 1
+    dummy.liks.vec[state_i] <- -dev.corhmm(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
+  }
+  return(dummy.liks.vec)
+}
 
 # JDB modified functions
 rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
