@@ -455,7 +455,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
     
     #Makes a matrix of tip states and empty cells corresponding
     #to ancestral nodes during the optimization process.
-    x <- data.sort[,1]
+    x <- as.numeric(data.sort[,1])
     TIPS <- 1:nb.tip
     if(min(x) !=0){
         x <- x - min(x)
