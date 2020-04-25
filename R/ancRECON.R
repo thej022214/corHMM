@@ -107,7 +107,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     # if the q matrix has columns not estimated, remove them
     row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
     col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
-    Q.root <- Q[!row2rm, !col2rm]
+    Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
     
     if(method=="joint"){
         if(!is.null(phy$node.label)){

@@ -279,118 +279,118 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 ######################################################################################################################################
 
 dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias) {
-    
-    p = exp(p)
-    cp_root.p <- root.p
-    nb.tip <- length(phy$tip.label)
-    nb.node <- phy$Nnode
-    TIPS <- 1:nb.tip
-    comp <- numeric(nb.tip + nb.node)
-    #Obtain an object of all the unique ancestors
-    anc <- unique(phy$edge[,1])
-    k.rates <- dim(Q)[2] / 2
-    if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
-    
-    Q[] <- c(p, 0)[rate]
-    diag(Q) <- -rowSums(Q)
-    
-    if(order.test == TRUE){
-        # ensure that the rate classes have mean rates in a consistent order (A > B > C > n)
-        StateOrderMat <- matrix(1, (dim(Q)/rate.cat)[1], (dim(Q)/rate.cat)[2])
-        RateClassOrderMat <- matrix(0, rate.cat, rate.cat)
-        diag(RateClassOrderMat) <- 1:rate.cat
-        OrderMat <- RateClassOrderMat %x% StateOrderMat
-        Rate01 <- vector("numeric", rate.cat)
-        for(i in 1:rate.cat){
-            tmp <- Q[OrderMat == i]
-            Rate01[i] <- tmp[tmp>=0][1]
-        }
-        OrderTest <- all.equal(Rate01, sort(Rate01, decreasing = TRUE))
-        if(OrderTest != TRUE){
-            return(1000000)
-        }
-    }
-    
-    for (i  in seq(from = 1, length.out = nb.node)) {
-        #the ancestral node at row i is called focal
-        focal <- anc[i]
-        #Get descendant information of focal
-        desRows <- which(phy$edge[,1]==focal)
-        desNodes <- phy$edge[desRows,2]
-        v <- 1
-        #Loops through all descendants of focal (how we deal with polytomies):
-        for (desIndex in sequence(length(desRows))){
-            v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
-        }
-        
-        ##Allows for fixed nodes based on user input tree.
-        if(!is.null(phy$node.label)){
-            if(!is.na(phy$node.label[focal - nb.tip])){
-                fixer.tmp = numeric(dim(Q)[2]/rate.cat)
-                fixer.tmp[phy$node.label[focal - nb.tip]] = 1
-                fixer = rep(fixer.tmp, rate.cat)
-                v <- v * fixer
-            }
-        }
-        
-        #Sum the likelihoods:
-        comp[focal] <- sum(v)
-        #Divide each likelihood by the sum to obtain probabilities:
-        liks[focal, ] <- v/comp[focal]
-    }
-    
-    #Specifies the root:
-    root <- nb.tip + 1L
-    #If any of the logs have NAs restart search:
-    if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
-    equil.root <- NULL
-    # if the q matrix has columns not estimated, remove them
-    row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
-    col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
-    Q.root <- Q[!row2rm, !col2rm]
+  
+  p = exp(p)
+  cp_root.p <- root.p
+  nb.tip <- length(phy$tip.label)
+  nb.node <- phy$Nnode
+  TIPS <- 1:nb.tip
+  comp <- numeric(nb.tip + nb.node)
+  #Obtain an object of all the unique ancestors
+  anc <- unique(phy$edge[,1])
+  k.rates <- dim(Q)[2] / 2
+  if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
+  
+  Q[] <- c(p, 0)[rate]
+  diag(Q) <- -rowSums(Q)
+  
+  if(order.test == TRUE){
+      # ensure that the rate classes have mean rates in a consistent order (A > B > C > n)
+      StateOrderMat <- matrix(1, (dim(Q)/rate.cat)[1], (dim(Q)/rate.cat)[2])
+      RateClassOrderMat <- matrix(0, rate.cat, rate.cat)
+      diag(RateClassOrderMat) <- 1:rate.cat
+      OrderMat <- RateClassOrderMat %x% StateOrderMat
+      Rate01 <- vector("numeric", rate.cat)
+      for(i in 1:rate.cat){
+          tmp <- Q[OrderMat == i]
+          Rate01[i] <- tmp[tmp>=0][1]
+      }
+      OrderTest <- all.equal(Rate01, sort(Rate01, decreasing = TRUE))
+      if(OrderTest != TRUE){
+          return(1000000)
+      }
+  }
+  
+  for (i  in seq(from = 1, length.out = nb.node)) {
+      #the ancestral node at row i is called focal
+      focal <- anc[i]
+      #Get descendant information of focal
+      desRows <- which(phy$edge[,1]==focal)
+      desNodes <- phy$edge[desRows,2]
+      v <- 1
+      #Loops through all descendants of focal (how we deal with polytomies):
+      for (desIndex in sequence(length(desRows))){
+          v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+      }
+      
+      ##Allows for fixed nodes based on user input tree.
+      if(!is.null(phy$node.label)){
+          if(!is.na(phy$node.label[focal - nb.tip])){
+              fixer.tmp = numeric(dim(Q)[2]/rate.cat)
+              fixer.tmp[phy$node.label[focal - nb.tip]] = 1
+              fixer = rep(fixer.tmp, rate.cat)
+              v <- v * fixer
+          }
+      }
+      
+      #Sum the likelihoods:
+      comp[focal] <- sum(v)
+      #Divide each likelihood by the sum to obtain probabilities:
+      liks[focal, ] <- v/comp[focal]
+  }
+  
+  #Specifies the root:
+  root <- nb.tip + 1L
+  #If any of the logs have NAs restart search:
+  if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
+  equil.root <- NULL
+  # if the q matrix has columns not estimated, remove them
+  row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
+  col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
+  Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
 
-    for(i in 1:ncol(Q.root)){
-        posrows <- which(Q.root[,i] >= 0)
-        rowsum <- sum(Q.root[posrows,i])
-        poscols <- which(Q.root[i,] >= 0)
-        colsum <- sum(Q.root[i,poscols])
-        equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-    }
-    if (is.null(root.p)){
-        flat.root = equil.root
-        k.rates <- 1/length(which(!is.na(equil.root)))
-        flat.root[!is.na(flat.root)] = k.rates
-        flat.root[is.na(flat.root)] = 0
-        loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,!col2rm])))
-    }
-    if(is.character(root.p)){
-        # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
-        if(root.p == "yang"){
-            root.p <- Null(Q.root)
-            root.p <- c(root.p/sum(root.p))
-            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
-            if(is.infinite(loglik)){
-                return(1000000)
-            }
-        }else{
-            # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-            root.p = liks[root,!col2rm] / sum(liks[root,!col2rm])
-            loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
-        }
-    }
-    # root.p!==NULL will fix root probabilities based on user supplied vector:
-    if(is.numeric(root.p[1])){
-        loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
-        if(is.infinite(loglik)){
-            return(1000000)
-        }
-    }
-    if(lewis.asc.bias == TRUE){
-      p <- log(p)
-      dummy.liks.vec <- getLewisLikelihood(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = cp_root.p, rate.cat = rate.cat)
-      loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
-    }
-    return(loglik)
+  for(i in 1:ncol(Q.root)){
+      posrows <- which(Q.root[,i] >= 0)
+      rowsum <- sum(Q.root[posrows,i])
+      poscols <- which(Q.root[i,] >= 0)
+      colsum <- sum(Q.root[i,poscols])
+      equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+  }
+  if (is.null(root.p)){
+      flat.root = equil.root
+      k.rates <- 1/length(which(!is.na(equil.root)))
+      flat.root[!is.na(flat.root)] = k.rates
+      flat.root[is.na(flat.root)] = 0
+      loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,!col2rm])))
+  }
+  if(is.character(root.p)){
+      # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
+      if(root.p == "yang"){
+          root.p <- Null(Q.root)
+          root.p <- c(root.p/sum(root.p))
+          loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,!col2rm])))
+          if(is.infinite(loglik)){
+              return(1000000)
+          }
+      }else{
+          # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+          root.p = liks[root,!col2rm] / sum(liks[root,!col2rm])
+          loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
+      }
+  }
+  # root.p!==NULL will fix root probabilities based on user supplied vector:
+  if(is.numeric(root.p[1])){
+      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
+      if(is.infinite(loglik)){
+          return(1000000)
+      }
+  }
+  if(lewis.asc.bias == TRUE){
+    p <- log(p)
+    dummy.liks.vec <- getLewisLikelihood(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = cp_root.p, rate.cat = rate.cat)
+    loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
+  }
+  return(loglik)
 }
 
 
