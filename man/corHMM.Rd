@@ -5,7 +5,7 @@
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
 fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, sann.its=5000, 
-get.tip.states = FALSE)
+get.tip.states = FALSE, lewis.asc.bias = FALSE)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -21,7 +21,8 @@ get.tip.states = FALSE)
 \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
 \item{n.cores}{the number of processor cores to spread out the random restarts.}
 \item{sann.its}{a numeric indicating the number of times the simulated annealing algorithm should call the objective function.}
-\item{get.tip.states}{a logical indicating whether tip reconstructions should be output. The default is \code{FALSE}.}
+\item{get.tip.states}{a boolean indicating whether tip reconstructions should be output. The default is \code{FALSE}.}
+\item{lewis.asc.bias}{a boolean indicating whether to correct for observing a dataset that is not univariate. The default is \code{FALSE}}.
 }
 \details{
 The function takes a tree and a trait file and estimates transition rates and ancestral states for any number of discrete characters using a Markov model. These models describe evolution as discrete transitions between observed states. If rate.class > 1, then the model is a hidden Markov model (HMM; also known as a hidden rates model (HRM)). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states. Essentially a hidden Markov model allows for multiple processes to describe the evolution of your observed character. This could be another (hidden) state or a large group of them. Regardless of the reason, an HMM is saying that not all observed characters are expected to act the same way. 
@@ -48,6 +49,7 @@ Ancestral states can be estimated using marginal, joint, scaled, or none approac
 \item{$phy}{User-supplied tree.}
 \item{$states}{The likeliest states at each internal node. The state and rates reconstructed at internal nodes are in the order of the column headings of the rates matrix.}
 \item{$tip.states}{The likeliest state at each tip. The state and rates reconstructed at the tips are in the order of the column headings of the rates matrix.}
+\item{info.states}{a vector containing the amount of information (in bits) that the tip states and model gives to each node.}
 \item{$iterations}{The number of iterations used by the optimization routine.}
 \item{$root.p}{The root prior used in model estimation.}
 }

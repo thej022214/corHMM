@@ -30,7 +30,7 @@ The user can fix the root state probabilities by supplying a vector to \code{roo
 Setting get.likelihood=TRUE will provide the user the joint likelihood of the rates and states.
 }
 \value{
-For the \code{joint}, a vector of likeliest states at internal nodes and tips. For either \code{marginal} or \code{scaled}, a matrix of the probabilities of each state for each internal node are returned. 
+For the \code{joint}, a vector of likeliest states at internal nodes and tips. For either \code{marginal} or \code{scaled}, a matrix of the probabilities of each state for each internal node are returned. \code{info.anc.states}, a vector containing the amount of information (in bits) that the tip states and model gives to each node.
 }
 \examples{
 # Not run
