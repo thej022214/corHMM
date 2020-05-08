@@ -281,6 +281,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             obj$lik.tip.states <- lik.states[TIPS]
             #Outputs likeliest node states
             obj$lik.anc.states <- lik.states[-TIPS]
+            #Outputs the information gained (in bits) per node
+            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states)
             return(obj)
         }
     }
@@ -437,6 +439,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             obj$lik.tip.states <- liks.final[TIPS,]
             #Outputs likeliest node states
             obj$lik.anc.states <- liks.final[-TIPS,]
+            #Outputs the information gained (in bits) per node
+            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states)
             return(obj)
         }
     }
@@ -498,6 +502,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         obj$lik.tip.states <- liks[TIPS,]
         #Outputs likeliest node states
         obj$lik.anc.states <- liks[-TIPS,]
+        #Outputs the information gained (in bits) per node
+        obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states)
         return(obj)
     }
 }
@@ -508,6 +514,14 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 ### Utility functions
 ######################################################################################################################################
 ######################################################################################################################################
+
+getInfoPerNode <- function(lik.anc.states){
+  nStates <- dim(lik.anc.states)[2]
+  H_uncond <- sum(1/nStates * -log2(rep(1/nStates, nStates)))
+  H_cond <- rowSums(lik.anc.states * -log2(lik.anc.states))
+  Info <- H_uncond - H_cond
+  return(Info)
+}
 
 GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p){
     

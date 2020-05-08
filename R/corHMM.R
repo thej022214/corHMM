@@ -236,7 +236,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         tip.states <- lik.anc$lik.tip.states
     }
     if (node.states == "none") {
-        lik.anc <- list(lik.tip.states=NA, lik.anc.states=NA)
+        lik.anc <- list(lik.tip.states=NA, lik.anc.states=NA, info.anc.states=NA)
         phy$node.label <- NA
         tip.states <- NA
     }
@@ -265,6 +265,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     phy=phy,
     states=lik.anc$lik.anc.states,
     tip.states=tip.states,
+    states.info = lik.anc$info.anc.states,
     iterations=out$iterations,
     root.p=root.p)
     class(obj)<-"corhmm"
