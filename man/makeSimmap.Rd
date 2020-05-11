@@ -36,7 +36,7 @@ model  = MK$solution
 model[is.na(model)] <- 0
 diag(model) <- -rowSums(model)
 states = MK$states
-tip.states = MK2tip.states
+tip.states = MK$tip.states
 
 # run get simmap (can be plotted using phytools)
 simmap <- makeSimmap(phy, tip.states, states, model, 1, 1)
