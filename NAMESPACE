@@ -1,4 +1,4 @@
-export(corHMM,corDISC,corPAINT,ancRECON,rayDISC,plotRECON, dev.raydisc, lewisMkv, readNexusMorph, ConvertPhangornReconstructions, plotMKmodel, getRateCatMat, dropStateMatPars, equateStateMatPars, getFullMat, getStateMat4Dat)
+export(corHMM,corDISC,corPAINT,ancRECON,rayDISC,plotRECON, dev.raydisc, lewisMkv, readNexusMorph, ConvertPhangornReconstructions, plotMKmodel, getRateCatMat, dropStateMatPars, equateStateMatPars, getFullMat, getStateMat4Dat, makeSimmap)
 import(ape, nloptr, corpcor, GenSA)
 importFrom(igraph, graph_from_adjacency_matrix, layout_in_circle, vertex.attributes, plot.igraph)
 importFrom(viridis, plasma, viridis, magma)

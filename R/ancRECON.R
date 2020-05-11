@@ -555,7 +555,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
         for(state.index in setdiff(1:dim(data.for.likelihood.function$Q)[2], drop.states)){
             data.for.likelihood.function$liks[taxon.index,] = 0
             data.for.likelihood.function$liks[taxon.index,state.index] = 1
-            marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE)
+            marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
         }
         data.for.likelihood.function$liks[taxon.index,] = states.keep
         best.probs = max(marginal.probs.tmp[nstates])
