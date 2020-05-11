@@ -79,7 +79,7 @@ simBranchSubstHistory <- function(init, final, total.bl, model){
   return(current.bl)
 }
 
-simSingleSubstHistory <- function(cladewise.index, CharHistory, phy){
+simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model){
   SubstHistory <- vector("list", length(cladewise.index))
   for(i in cladewise.index){
     anc.index <- phy$edge[i,1]
@@ -99,7 +99,7 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim=1, nCores=1){
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # simulate a character history
   CharHistories <- simCharHistory(phy=phy, tip.states=tip.states, states=states, model=model, nSim=nSim, nCores=nCores)
-  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy), mc.cores = nCores)
+  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model), mc.cores = nCores)
   return(obj)
 }
 
