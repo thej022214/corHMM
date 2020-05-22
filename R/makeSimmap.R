@@ -20,7 +20,7 @@ simSingleCharHistory<- function(phy, model, cladewise.index, state.probability, 
 }
 
 
-simCharHistory <- function(phy, tip.states, states, model, nSim = 1, nCores = 1, vector.form = FALSE){
+simCharHistory <- function(phy, tip.states, states, model, vector.form = FALSE){
   # warnings
   if(!all(round(rowSums(tip.states)) == 1)){
     return(cat("\nWarning: Tip states must be reconstructed to run Simmap.\n"))
@@ -34,9 +34,9 @@ simCharHistory <- function(phy, tip.states, states, model, nSim = 1, nCores = 1,
   state.sample <- matrix(0, dim(state.probability)[1], dim(state.probability)[2])
   
   # single sim function
-  state.samples <- mclapply(1:nSim, function(x) simSingleCharHistory(phy, model, cladewise.index, state.probability, state.sample), mc.cores = nCores)
+  state.samples <- simSingleCharHistory(phy, model, cladewise.index, state.probability, state.sample)
   if(vector.form == FALSE){
-    state.samples <- lapply(state.samples, function(x) apply(x, 1, function(y) which(y == 1)))
+    state.samples <- apply(state.samples, 1, function(y) which(y == 1))
   }
   return(state.samples)
 }
@@ -94,12 +94,12 @@ simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model){
 }
 
 # simulate a substitution history given the simulations of ancestral states
-simSubstHistory <- function(phy, tip.states, states, model, nSim=1, nCores=1){
+simSubstHistory <- function(phy, tip.states, states, model){
   # set-up
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # simulate a character history
-  CharHistories <- simCharHistory(phy=phy, tip.states=tip.states, states=states, model=model, nSim=nSim, nCores=nCores)
-  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model), mc.cores = nCores)
+  CharHistories <- simCharHistory(phy=phy, tip.states=tip.states, states=states, model=model)
+  obj <- simSingleSubstHistory(cladewise.index, CharHistories, phy, model)
   return(obj)
 }
 
@@ -114,8 +114,8 @@ convertSubHistoryToEdge <- function(phy, map){
 
 # exported function for use
 makeSimmap <- function(tree, tip.states, states, model, nSim=1, nCores=1){
-  maps <- simSubstHistory(tree, tip.states, states, model, nSim, nCores)
-  mapped.edge <- mclapply(maps, function(x) convertSubHistoryToEdge(tree, x))
+  maps <- mclapply(1:nSim, function(x) simSubstHistory(tree, tip.states, states, model), mc.cores = nCores)
+  mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
   for(i in 1:nSim){
     tree.simmap <- tree
@@ -129,6 +129,4 @@ makeSimmap <- function(tree, tip.states, states, model, nSim=1, nCores=1){
   }
   return(obj)
 }
-
-
 
