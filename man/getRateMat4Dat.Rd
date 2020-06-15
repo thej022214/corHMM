@@ -1,12 +1,12 @@
 \name{getStateMat4Dat}
 \alias{getStateMat4Dat}
 \title{Produce an index matrix and legend from a dataset}
-\description{Takes a dataset to produce an index matrix that corresponds to a single rate category and a legend which matches input data to the rows and columns of the index matrix and corHMM solution.}
+\description{Takes a dataset to produce an index matrix that corresponds to a single state-dependent process (i.e. a single rate category) and a legend which matches input data to the rows and columns of the index matrix and corHMM solution.}
 \usage{
 getStateMat4Dat(data, model = "ARD")
 }       
 \arguments{
-\item{data}{a data matrix containing species information.}
+\item{data}{a data matrix containing species information in the same format as the main \code{corHMM} function: column[,1] is species names, column[,2:n] are the discrete states.}
 \item{model}{One of "ARD", "SYM", or "ER". ARD: all rates differ. SYM: rates between any two states do not differ. ER: all rates are equal.}
 }
 \details{
@@ -27,12 +27,7 @@ data <- primates[[2]]
 # create a legend and rate mat from a multi-character dataset.
 LegendAndRateMat <- getStateMat4Dat(data)
 rate.mat <- LegendAndRateMat$rate.mat
-# if I wanted to create a hidden Markov model 
-rate.mat.HMM <- getFullMat(list(rate.mat, rate.mat))
-# if I wanted an HMM where the first rate class was "ER" and the second was "SYM"
-rate.mat.ER <- equateStateMatPars(rate.mat, c(1:4))
-rate.mat.SYM <- equateStateMatPars(rate.mat, list(c(1,2), c(3,4)))
-rate.mat.HMM2 <- getFullMat(list(rate.mat.ER, rate.mat.SYM))
+legend <- LegendAndRateMat$legend
 }
 \references{
 Pagel, M. 1994. Detecting correlated evolution on phylogenies: a gneeral method for the comparative analysis of discrete characters. Proc. R. Soc. Lond. B 255:37-45.

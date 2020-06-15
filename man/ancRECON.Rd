@@ -13,9 +13,9 @@ model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE)
 \item{p}{a vector of transition rates to be used to estimate ancestral states.}
 \item{method}{method used to calculate ancestral states at internal nodes. Can be one of: "joint", "marginal", or "scaled" (see Details).}
 \item{rate.cat}{specifies the number of rate categories in the HRM.} 
-\item{ntraits}{specifies the number of traits in the data file if the underlying model is not the HRM.}
+\item{ntraits}{currently, this is automaticall detected and can always be set to NULL.}
 \item{rate.mat}{a user-supplied rate matrix index of parameters to be optimized.}
-\item{model}{if the model is not HRM, specifies the underlying model.}
+\item{model}{specifies the underlying model if a rate.mat is not provided ("ER", SYM", or "ARD").}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{get.likelihood}{a logical indicating whether to obtain the likelihood of the rates and states. The default is \code{FALSE}.}
 \item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
@@ -30,19 +30,21 @@ The user can fix the root state probabilities by supplying a vector to \code{roo
 Setting get.likelihood=TRUE will provide the user the joint likelihood of the rates and states.
 }
 \value{
-For the \code{joint}, a vector of likeliest states at internal nodes and tips. For either \code{marginal} or \code{scaled}, a matrix of the probabilities of each state for each internal node are returned. \code{info.anc.states}, a vector containing the amount of information (in bits) that the tip states and model gives to each node.
+\item{$lik.tip.states}{A matrix of the reconstructed tip values. If the number of rate.cats is greater than 2 then the probability that each observed state is in a particular hidden state is given.}
+\item{$lik.anc.states}{For \code{joint}, a vector of likeliest states at internal nodes and tips. For either \code{marginal} or \code{scaled}, a matrix of the probabilities of each state for each internal node are returned.}
+\item{info.anc.states}{A vector containing the amount of information (in bits) that the tip states and model gives to each node.}
 }
 \examples{
-# Not run
-## Load tree and trait
+# # Not run
 # data(primates)
-## Obtain the marginal reconstruction for a set of parameters:
-# param<-c(0.05,10,0.01,0.01,0.06,0,0.02,51.2)
-# states<-ancRECON(primates$tree,primates$trait,p=param,method="marginal",
-# hrm=FALSE,ntraits=2,model="ARD")
-## Put likeliest states on the tree:
-# pr<-apply(states$lik.anc.states,1,which.max)
-# primates$tree$node.label <- pr
+# phy <- multi2di(primates[[1]])
+# data <- primates[[2]]
+# MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
+
+# # one way to get the parameters from your corHMM object in the correct order
+# params <- sapply(na.omit(c(MK_3state$index.mat)), function(x) na.omit(c(MK_3state$solution))[x])
+
+# states <- ancRECON(phy = phy, data = MK_3state$data, p = params, method = "marginal", rate.cat = MK_3state$rate.cat, ntraits = NULL, rate.mat = MK_3state$index.mat, root.p = MK_3state$root.p)
 }
 \references{
 FitzJohn, R.G., W.P. Maddison, and S.P. Otto. 2009. Estimating trait-dependent speciation and extinction rates from incompletely resolved phylogenies. Systematic Biology 58:595-611.

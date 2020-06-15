@@ -4,7 +4,7 @@
 \description{Estimates hidden rates underlying the evolution of a binary character}
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
-fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, sann.its=5000, 
+fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, 
 get.tip.states = FALSE, lewis.asc.bias = FALSE)
 }
 \arguments{
@@ -20,7 +20,6 @@ get.tip.states = FALSE, lewis.asc.bias = FALSE)
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
 \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
 \item{n.cores}{the number of processor cores to spread out the random restarts.}
-\item{sann.its}{a numeric indicating the number of times the simulated annealing algorithm should call the objective function.}
 \item{get.tip.states}{a boolean indicating whether tip reconstructions should be output. The default is \code{FALSE}.}
 \item{lewis.asc.bias}{a boolean indicating whether to correct for observing a dataset that is not univariate. The default is \code{FALSE}}.
 }
@@ -29,11 +28,11 @@ The function takes a tree and a trait file and estimates transition rates and an
 
 From a more technical standpoint, let's say we have two rate classes, slow (S) and fast (F). They underlie each observed state of 0 and 1. Since we only observe states, we treat each observation as having a probability of 1 for being either in the F and S categories. In other words, a character state 0 at a tip is assumed to have a probability of 1 for being 0_S and 0_F. The likelihood function is then maximized using the bounded subplex optimization routine implemented in the R package \code{nloptr}, which provides a common interface to NLopt, an open-source library for nonlinear optimization. In the former case, however, it is recommended that \code{nstarts} is set to a large value (e.g. 100) to ensure that the maximum likelihood solution is found. Users can set \code{n.cores} to parse the random restarts onto multiple processors.
 
-If more than a single column of data is given double transitions between characters are disallowed. For example, if character 1 is the presence or absence of limbs, and character 2 is the presence or absence of fingers, then the transition from absence of limbs and fingers to presence of limbs and fingers is automatically disallowed. This is consistent with Pagel's (1994) model of correlated character evolution. Additionally, the input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. The first column of the trait file must contain the species labels to match to the tree, with any number of columns following. Note that for a given full model, the different rate classes are ordered from slowest (rate class R1) to fastest (rate class Rn) with respect to state 0.
+If more than a single column of data is given double transitions between characters are disallowed. For example, if character 1 is the presence or absence of limbs, and character 2 is the presence or absence of fingers, then the transition from absence of limbs and absence fingers to presence of limbs and presence of fingers is automatically disallowed. This is consistent with Pagel's (1994) model of correlated character evolution. Additionally, the input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. The first column of the trait file must contain the species labels to match to the tree, with any number of columns following. Note that for a given full model, the different rate classes are ordered from slowest (rate class R1) to fastest (rate class Rn) with respect to state 0.
 
 The user can fix the root state probabilities by supplying a vector to \code{root.p}. For example, if the hypothesis is that the root is 0_S in a model with two hidden rates, then the root vector would be \code{root.p=c(1,0,0,0)} for state combinations 0_S, 1_S, 0_F, and 1_F, respectively. If the user supplies the flag \code{root.p}=\dQuote{yang}, then the estimated transition rates are used to set the weights at the root (see pg. 124 Yang 2006), whereas specifying \code{root.p}=\dQuote{maddfitz} employs the same procedure described by Maddison et al. (2007) and FitzJohn et al. (2009). Note that the default \code{root.p=NULL} assumes equal weighting among all possible states.
 
-Ancestral states can be estimated using marginal, joint, scaled, or none approaches. Marginal gives the likelihood of state at each node, integrating over the states at other nodes. Joint gives the optimal state at each node for the entire tree at once. Scaled is included for compatibility with ape's ace() function. None suppresses calculation of ancestral states, which can dramatically speed up calculations if you're comparing models but make plotting difficult.
+Ancestral states can be estimated using marginal, joint, scaled, or none approaches. Marginal gives the likelihood of state at each node, integrating over the states at other nodes. Joint gives the optimal state at each node for the entire tree at once (it can only return the most likely state, i.e. it is not a probability like the marginal reconstruction). Scaled is included for compatibility with ape's ace() function. None suppresses calculation of ancestral states, which can dramatically speed up calculations if you're comparing models but make plotting difficult.
 }
 \value{
 \code{corHMM} returns an object of class \code{corHMM}. This is a list with elements:
@@ -43,13 +42,12 @@ Ancestral states can be estimated using marginal, joint, scaled, or none approac
 \item{$rate.cat}{The number of rate categories specified.}
 \item{$solution}{a matrix containing the maximum likelihood estimates of the transition rates. Note that the rate classes are ordered from slowest (R1) to fastest (Rn) with respect to state 0.}
 \item{$index.mat}{The indices of the parameters being estimated are returned}
-\item{$opts}{Internal settings of the likelihood search}
 \item{$data}{User-supplied dataset.}
 \item{$data.legend}{User-supplied dataset with an extra column of trait values corresponding to how corHMM calls the user data.}
 \item{$phy}{User-supplied tree.}
 \item{$states}{The likeliest states at each internal node. The state and rates reconstructed at internal nodes are in the order of the column headings of the rates matrix.}
 \item{$tip.states}{The likeliest state at each tip. The state and rates reconstructed at the tips are in the order of the column headings of the rates matrix.}
-\item{info.states}{a vector containing the amount of information (in bits) that the tip states and model gives to each node.}
+\item{$states.info}{a vector containing the amount of information (in bits) that the tip states and model gives to each node.}
 \item{$iterations}{The number of iterations used by the optimization routine.}
 \item{$root.p}{The root prior used in model estimation.}
 }
@@ -58,7 +56,6 @@ Ancestral states can be estimated using marginal, joint, scaled, or none approac
 # data(primates)
 # phy <- multi2di(primates[[1]])
 # data <- primates[[2]]
-## Obtain the fit of second rate class underlying a binary character:
 # MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
 # MK_3state
 }
@@ -77,5 +74,5 @@ Pagel, M. 1994. Detecting correlated evolution on phylogenies: a gneeral method 
 
 Yang, Z. 2006. Computational Molecular Evolution. Oxford Press:London.
 }
-\author{Jeremy M. Beaulieu}
+\author{Jeremy M. Beaulieu and James D. Boyko}
 \keyword{models}

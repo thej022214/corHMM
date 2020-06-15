@@ -130,3 +130,42 @@ makeSimmap <- function(tree, tip.states, states, model, nSim=1, nCores=1){
   return(obj)
 }
 
+
+
+
+
+
+##### a set of secret functions being used to test why number of substitutions is underestimated
+makeSimmapTipsy <- function(tree, tip.states, states, model, nSim=1, nCores=1){
+  # the substitution history needs to allow any tip history
+  maps <- mclapply(1:nSim, function(x) simSubstHistoryTipsy(tree, tip.states, states, model), mc.cores = nCores)
+  mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
+  obj <- vector("list", nSim)
+  for(i in 1:nSim){
+    tree.simmap <- tree
+    tree.simmap$maps <- maps[[i]]
+    tree.simmap$mapped.edge <- mapped.edge[[i]]
+    tree.simmap$Q <- model
+    attr(tree.simmap, "map.order") <- "right-to-left"
+    if (!inherits(tree.simmap, "simmap")) 
+      class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
+    obj[[i]] <- tree.simmap
+  }
+  return(obj)
+}
+
+simSubstHistoryTipsy <- function(phy, tip.states, states, model){
+  # set-up
+  cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
+  # simulate a character history
+  StateMax <- dim(tip.states)[2]
+  tipsy.states <- matrix(0, dim(tip.states)[1], dim(tip.states)[2])
+  new.tips <- round(runif(length(phy$tip.label), 1, StateMax))
+  for(i in 1:length(new.tips)){
+    tipsy.states[i,new.tips[i]] <- 1
+  }
+  CharHistories <- simCharHistory(phy=phy, tip.states=tipsy.states, states=states, model=model)
+  obj <- simSingleSubstHistory(cladewise.index, CharHistories, phy, model)
+  return(obj)
+}
+

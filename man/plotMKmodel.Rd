@@ -22,11 +22,32 @@ Plots Markov models in a ball and stick type diagram next to its corresponding m
 Returns a ball and stick diagram of the input model.  
 }
 \examples{
-## Not run
-# data(primates)
-## Obtain the fit of second rate class underlying a binary character:
-# pp<-corHMM(primates$tree,primates$trait[,c(1,2)],rate.cat=2,node.states="none")
-# plotMKmodel(pp)
+data(primates)
+phy <- primates[[1]]
+phy <- multi2di(phy)
+data <- primates[[2]]
+# create a legend and rate mat from a multi-character dataset.
+LegendAndRateMat <- getStateMat4Dat(data)
+rate.mat <- LegendAndRateMat$rate.mat
+legend <- LegendAndRateMat$legend
+
+# To create a hidden markov model first define your rate classes (state-dependent processes)
+# R1 will be a manually created SYM model
+R1 <- equateStateMatPars(rate.mat, c(1:6))
+# R2 will only allow transitions between 1 and 2
+R2 <- dropStateMatPars(rate.mat, c(3,4))
+# R1 and R2 will transtion at equal rates (i.e. the parameter process will be ER)
+P <- getRateCatMat(2)
+P <- equateStateMatPars(P, c(1,2))
+# combine our state-dependnet processes and parameter process
+HMM <- getFullMat(list(R1, R2), P)
+# plot the input
+plotMKmodel(HMM, rate.cat = 2)
+
+# This can now be used in a corHMM model
+CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
+# plot the output
+plotMKmodel(CustomModel)
 }
 \author{James D. Boyko}
 \keyword{plot}

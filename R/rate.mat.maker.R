@@ -444,6 +444,11 @@ getStateMat4Dat <- function(data, model = "ARD"){
     rate.mat <- StateMats[[1]]
   }
   
+  # adjusting the rate mat if there are any unobsered states
+  ObservedTraits <- which(1:nTraits %in% data[,2])
+  rate.mat <- rate.mat[ObservedTraits, ]
+  rate.mat <- rate.mat[, ObservedTraits]
+  
   if(model == "ER"){
     rate.mat[rate.mat > 0] <- 1
   }
@@ -454,11 +459,9 @@ getStateMat4Dat <- function(data, model = "ARD"){
     rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
   }
   
-  # adjusting the rate mat if there are any unobsered states
-  ObservedTraits <- which(1:nTraits %in% data[,2])
-  rate.mat <- rate.mat[ObservedTraits, ]
-  rate.mat <- rate.mat[, ObservedTraits]
-  rate.mat[rate.mat > 0] <- 1:length(rate.mat[rate.mat > 0])
+  if(model == "ARD"){
+    rate.mat[rate.mat > 0] <- 1:length(rate.mat[rate.mat > 0])
+  }
   
   colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nObs, ")", sep ="")
   legend <- gsub("_", " & ", Traits)

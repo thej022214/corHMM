@@ -20,26 +20,30 @@ This function will generate a substitution history given a model and dataset. It
 A list of simmaps.
 }
 \examples{
-#dataset
-data(primates)
-phy <- primates[[1]]
-phy <- multi2di(phy)
-data <- primates[[2]]
-
-#run corhmm
-MK <- corHMM(phy, data, 1)
-
-#get simmap inputs from corhmm outputs
-phy = MK$phy
-data = MK$data
-model  = MK$solution
-model[is.na(model)] <- 0
-diag(model) <- -rowSums(model)
-states = MK$states
-tip.states = MK$tip.states
-
-# run get simmap (can be plotted using phytools)
-simmap <- makeSimmap(phy, tip.states, states, model, 1, 1)
+# not run
+# #dataset
+# data(primates)
+# phy <- primates[[1]]
+# phy <- multi2di(phy)
+# data <- primates[[2]]
+# 
+# #run corhmm
+# MK <- corHMM(phy, data, 1)
+# 
+# #get simmap inputs from corhmm outputs
+# phy = MK$phy
+# data = MK$data
+# model  = MK$solution
+# model[is.na(model)] <- 0
+# diag(model) <- -rowSums(model)
+# states = MK$states
+# tip.states = MK$tip.states
+# 
+# # run get simmap (can be plotted using phytools)
+# simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
+# 
+# # we import phytools plotSimmap for plotting
+# plotSimmap(simmap[[1]])
 }
 \references{
 Bollback, J. P. 2006. SIMMAP: stochastic character mapping of discrete traits on phylogenies. BMC bioinformatics 7:88.

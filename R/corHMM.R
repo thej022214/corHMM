@@ -6,7 +6,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, sann.its=5000, get.tip.states = FALSE, lewis.asc.bias = FALSE){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE){
     
     # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
     if(is.null(node.states)){
@@ -427,14 +427,6 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
     obj$rate.cat<-rate.cat
     
     rate <- getStateMat4Dat(data, model)$rate.mat
-    if(model == "ER"){
-        rate[rate > 0] <- 1
-    }
-    if(model == "SYM"){
-        rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
-        rate <- t(rate)
-        rate[upper.tri(rate)] <- 1:length(rate[upper.tri(rate)])
-    }
     if(rate.cat > 1){
         StateMats <- vector("list", rate.cat)
         for(i in 1:rate.cat){
