@@ -5,7 +5,7 @@
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
 fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, 
-get.tip.states = FALSE, lewis.asc.bias = FALSE)
+get.tip.states = FALSE, lewis.asc.bias = FALSE, lower.bound = 1e-9, upper.bound = 100)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -22,6 +22,8 @@ get.tip.states = FALSE, lewis.asc.bias = FALSE)
 \item{n.cores}{the number of processor cores to spread out the random restarts.}
 \item{get.tip.states}{a boolean indicating whether tip reconstructions should be output. The default is \code{FALSE}.}
 \item{lewis.asc.bias}{a boolean indicating whether to correct for observing a dataset that is not univariate. The default is \code{FALSE}}.
+\item{lower.bound}{the lowest value a transition rate can be estimated to be.}
+\item{upper.bound}{the highest value a transition rate can be estimated to be.}
 }
 \details{
 The function takes a tree and a trait file and estimates transition rates and ancestral states for any number of discrete characters using a Markov model. These models describe evolution as discrete transitions between observed states. If rate.class > 1, then the model is a hidden Markov model (HMM; also known as a hidden rates model (HRM)). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states. Essentially a hidden Markov model allows for multiple processes to describe the evolution of your observed character. This could be another (hidden) state or a large group of them. Regardless of the reason, an HMM is saying that not all observed characters are expected to act the same way. 
