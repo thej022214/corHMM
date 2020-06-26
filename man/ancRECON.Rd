@@ -42,9 +42,12 @@ data <- primates[[2]]
 MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
 
 # # one way to get the parameters from your corHMM object in the correct order
-params <- sapply(na.omit(c(MK_3state$index.mat)), function(x) na.omit(c(MK_3state$solution))[x])
+params <- sapply(na.omit(c(MK_3state$index.mat)), 
+	function(x) na.omit(c(MK_3state$solution))[x])
 
-states <- ancRECON(phy = phy, data = MK_3state$data, p = params, method = "marginal", rate.cat <- MK_3state$rate.cat, ntraits = NULL, rate.mat = MK_3state$index.mat, root.p = MK_3state$root.p)
+states <- ancRECON(phy = phy, data = MK_3state$data, p = params, method = "marginal", 
+	rate.cat <- MK_3state$rate.cat, ntraits = NULL, rate.mat = MK_3state$index.mat, 
+	root.p = MK_3state$root.p)
 }
 }
 \references{

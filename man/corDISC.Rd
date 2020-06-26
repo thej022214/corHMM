@@ -5,7 +5,7 @@
 \usage{
 corDISC(phy,data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), 
 node.states=c("joint", "marginal", "scaled", "none"), lewis.asc.bias=FALSE, p=NULL, 
-root.p="yang", ip=NULL, lb=0, ub=100, diagn=FALSE)
+root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
