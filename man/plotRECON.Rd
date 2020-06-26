@@ -27,15 +27,15 @@ A plot indicating the maximum likelihood ancestral states at each internal node.
 }
 \seealso{\code{\link{corDISC}}, \code{\link{rayDISC}}}
 \examples{
-# Not run
-## Load data
-# data(rayDISC.example)
+\donttest{
+data(rayDISC.example)
 ## Perform ancestral state estimation, using a single rate of evolution and marginal 
 ## reconstruction of ancestral states
-# recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,model="ER",
-# node.states="marginal")
+recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,model="ER",
+node.states="marginal")
 ## Plot reconstructions on tree
-# plotRECON(rayDISC.example$tree,recon$states,title="rayDISC Example")
+plotRECON(rayDISC.example$tree,recon$states,title="rayDISC Example")
+}
 }
 \author{Jeffrey C. Oliver}
 \keyword{plot}

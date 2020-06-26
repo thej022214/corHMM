@@ -20,6 +20,7 @@ This function will generate an index matrix based on user provided data. It prov
 \code{getFullmat}
 }
 \examples{
+\donttest{
 data(primates)
 phy <- primates[[1]]
 phy <- multi2di(phy)
@@ -28,6 +29,7 @@ data <- primates[[2]]
 LegendAndRateMat <- getStateMat4Dat(data)
 rate.mat <- LegendAndRateMat$rate.mat
 legend <- LegendAndRateMat$legend
+}
 }
 \references{
 Pagel, M. 1994. Detecting correlated evolution on phylogenies: a gneeral method for the comparative analysis of discrete characters. Proc. R. Soc. Lond. B 255:37-45.

@@ -5,7 +5,7 @@
 \usage{
 corDISC(phy,data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD"), 
 node.states=c("joint", "marginal", "scaled", "none"), lewis.asc.bias=FALSE, p=NULL, 
-root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE)
+root.p="yang", ip=NULL, lb=0, ub=100, diagn=FALSE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -23,7 +23,7 @@ root.p=NULL, ip=NULL, lb=0, ub=100, diagn=FALSE)
 \item{diagn}{logical indicating whether diagnostic tests should be performed. The default is \code{FALSE}.}
 }
 \details{
-The function takes a tree and a trait file and estimates transition rates and ancestral states for two or three binary characters (see Pagel 1994). Note, however, that rayDISC can be used to evaluate the same models as in corDISC, with the major difference being that, with rayDISC, the rate matrix would have to be manipulated using \code{rate.mat.maker} in order to remove parameters associated with dual transitions. With corDISC, the input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. For the trait file, the first column of the trait file must contain the species labels to match to the tree, with the second column onwards corresponding to the binary traits of interest. 
+__THIS FUNCTION IS NO LONGER NECESSARY AS IT IS NOW ENTIRELY SUBSUMED WITHIN__ \code{corHMM} (see _Generalized corHMM_ vignette). But we still provide it for those that are more comfortable using it than exploring the new \code{corHMM} function. As before, \code{corDISC} takes a tree and a trait file and estimates transition rates and ancestral states for two or three binary characters (see Pagel 1994). Note, however, that rayDISC can be used to evaluate the same models as in corDISC, with the major difference being that, with rayDISC, the rate matrix would have to be manipulated using \code{rate.mat.maker} in order to remove parameters associated with dual transitions. With corDISC, the input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case. For the trait file, the first column of the trait file must contain the species labels to match to the tree, with the second column onwards corresponding to the binary traits of interest. 
 
 The user can fix the root state probabilities by supplying a vector to \code{root.p}. For example, in the two trait case, if the hypothesis is that the root is 00, then the root vector would be \code{root.p=c(1,0,0,0)} for state combinations 00, 01, 10, and 11, respectively. If the user supplies the flag \code{root.p}=\dQuote{yang}, then the estimated transition rates are used to set the weights at the root (see pg. 124 Yang 2006), whereas specifying \code{root.p}=\dQuote{maddfitz} employs the same procedure described by Maddison et al. (2007) and FitzJohn et al. (2009). Note that the default \code{root.p=NULL} assumes equal weighting among all possible states.
 
@@ -49,22 +49,23 @@ We also note that scoring information that is missing for a species can be incor
 \item{$eigvect}{The eigenvectors from the decomposition of the Hessian of the likelihood function is returned}
 }
 \examples{
-## Not run
+\donttest{
 ## Load tree and data
-# data(primates)
+data(primates)
 
 ## Obtain the fit for two binary characters
-# pp<-corDISC(primates$tree,primates$trait,ntraits=2,model="ARD",
-# node.states="marginal", diagn=FALSE)
-# pp
+pp <- corDISC(primates$tree,primates$trait,ntraits=2,model="ARD",
+node.states="marginal", diagn=FALSE)
+pp
 
 ## State combination three is not an observed state, so for fun, let's remove
 ## these transitions:
-# new.mat <- rate.mat.maker(hrm=FALSE, ntraits=2, model="ARD")
-# new.mat <- rate.par.drop(new.mat, c(2,8,5,6))
-# pp<-corDISC(primates$tree,primates$trait,ntraits=2,rate.mat=new.mat,model="ARD",
-# node.states="marginal", diagn=FALSE)
-# pp
+new.mat <- rate.mat.maker(hrm=FALSE, ntraits=2, model="ARD")
+new.mat <- rate.par.drop(new.mat, c(2,8,5,6))
+pp<-corDISC(primates$tree,primates$trait,ntraits=2,rate.mat=new.mat,model="ARD",
+node.states="marginal", diagn=FALSE)
+pp
+}
 }
 \references{
 Beaulieu J.M., and M.J. Donoghue 2013. Fruit evolution and diversification in campanulid angiosperms. Evolution, 67:3132-3144.

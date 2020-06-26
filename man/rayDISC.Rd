@@ -28,7 +28,7 @@ diagn=FALSE)
 \item{diagn}{logical indicating whether diagnostic tests should be performed. The default is \code{FALSE}.}
 }
 \details{
-The function takes a tree and a trait file and estimates transition rates and ancestral states for binary or multistate characters. The first column of the trait file must contain the species labels to match to the tree, with the second, third, fourth, and so on, corresponding to the traits of interest. Use the \code{charnum} variable to select the trait for analysis. Also, the input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case.
+__THIS FUNCTION IS NO LONGER NECESSARY AS IT IS NOW ENTIRELY SUBSUMED WITHIN__ \code{corHMM} (see _Generalized corHMM_ vignette). But we still provide it for those that are more comfortable using it than exploring the new \code{corHMM} function. As before, \code{rayDISC} takes a tree and a trait file and estimates transition rates and ancestral states for binary or multistate characters. The first column of the trait file must contain the species labels to match to the tree, with the second, third, fourth, and so on, corresponding to the traits of interest. Use the \code{charnum} variable to select the trait for analysis. Also, the input phylogeny need not be bifurcating as the algorithm is implemented to handle multifucations. Polytomies are allowed by generalizing Felsenstein's (1981) pruning algorithm to be the product of the probability of observing the tip states of n descendant nodes, rather than two, as in the completely bifurcating case.
 
 The user can fix the root state probabilities by supplying a vector to the \code{root.p}. If the user supplies the flag \code{root.p}=\dQuote{yang}, then the estimated transition rates are used to set the weights at the root (see pg. 124 Yang 2006), whereas specifying \code{root.p}=\dQuote{maddfitz} employs the same procedure described by Maddison et al. (2007) and FitzJohn et al. (2009). Note that the default \code{root.p=NULL} assumes equal weighting among all possible states.
 
@@ -60,31 +60,30 @@ In all ancestral state reconstruction implementations, the rates are first estim
 }
 \seealso{\code{\link{plotRECON}}}
 \examples{
-# Not run
+\donttest{
 ### Example 1
-# Load data
-# data(rayDISC.example)
-
+data(rayDISC.example)
 ## Perform ancestral state estimation, using an asymmetric model of evolution and marginal
 ## reconstruction of ancestral states
-# recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,model="ARD",
-# node.states="marginal")
+recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,model="ARD",
+node.states="marginal")
 
 ## Plot reconstructions on tree
-# plotRECON(rayDISC.example$tree,recon$states)
+plotRECON(rayDISC.example$tree,recon$states)
 
 ### Example 2
 ## Perform ancestral state estimation on second character, using a single-rate model of
 ## evolution, marginal reconstruction of ancestral states, and setting the lower bound for
-##parameter estimates to 0.01
-# recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,charnum=2,model="ER",
-# node.states="marginal",lb=0.01)
+## parameter estimates to 0.01
+recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,charnum=2,model="ER",
+node.states="marginal",lb=0.01)
 
 ### Example 3
 ## Perform ancestral state estimation on third character, using a single-rate model of
 ## evolution and joint reconstruction of ancestral states
-# recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,charnum=3,
-# model="ER",node.states="joint")
+recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,charnum=3,
+model="ER",node.states="joint")
+}
 }
 \references{
 Felsenstein, J. 1981. A likelihood approach to character weighting and what it tells us about parsimony and compatibility. Biological Journal of the Linnean Society 16: 183-196.

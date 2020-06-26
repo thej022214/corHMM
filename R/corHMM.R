@@ -102,7 +102,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     }
     
     #Creates the data structure and orders the rows to match the tree.
-    phy$edge.length[phy$edge.length<=1e-5]=1e-5
+    phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
     data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
     data.sort <- data.sort[phy$tip.label,]
     
@@ -118,17 +118,17 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     if(upper.bound < lower.bound){
       cat("Your upper bound is smaller than your lower bound.\n")
     }
-    lb = log(lower.bound)
-    ub = log(upper.bound)
+    lb <- log(lower.bound)
+    ub <- log(upper.bound)
     order.test <- TRUE
     
     obj <- NULL
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
-    rate.cat=rate.cat
-    root.p=root.p
-    nstarts=nstarts
-    ip=ip
+    rate.cat <- rate.cat
+    root.p <- root.p
+    nstarts <- nstarts
+    ip <- ip
     
     model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nObs, model = model)
     phy <- reorder(phy, "pruningwise")

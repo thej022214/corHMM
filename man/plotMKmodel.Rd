@@ -16,12 +16,13 @@ arrow.scale = 1, text.scale = 1, vertex.scale = 1)
 \item{vertex.scale}{determines the size of the text for the Markov diagram.} 
 }
 \details{
-Plots Markov models in a ball and stick type diagram next to its corresponding matrix. If plotting a hidden rates model it will produce a compound plot describing how the different rate classes are related to one another. If the input is a corHMM result then arrows are colored by relative rate. If the input is a custom matrix arrows are colored by the paramater index.
+Plots Markov models in a ball and stick type diagram next to its corresponding matrix. If plotting a hidden rates model it will produce a compound plot describing how the different rate classes are related to one another. If the input is a \code{corHMM} result then arrows are colored by relative rate. If the input is a custom matrix arrows are colored by the paramater index.
 }
 \value{
 Returns a ball and stick diagram of the input model.  
 }
 \examples{
+\donttest{
 data(primates)
 phy <- primates[[1]]
 phy <- multi2di(phy)
@@ -48,6 +49,7 @@ plotMKmodel(HMM, rate.cat = 2)
 CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
 # plot the output
 plotMKmodel(CustomModel)
+}
 }
 \author{James D. Boyko}
 \keyword{plot}

@@ -13,7 +13,7 @@ getFullMat(StateMats, RateClassMat = NULL)
 \item{RateClassMat}{An optional index matrix which describes how StateMats are related to one another. This will be a matrix of size: length(StateMats) by length(StateMats). By default, all transitions between StateMats are allowed and independently estimated.}
 }
 \details{
-This function is the final step in creating a custom hidden Markov model. It takes a list of index matrices (StateMats) which describe different ways that the observed states are related to one another and creates a single matrix to describe the model. The matrices are combined following equation 3 of Tarasov (2019). getFullMat is part of several functions which help the user efficiently create custom index matrices. Often, it will be more practical to begin constructing a custom model with \code{getRateMat4Dat}. 
+This function is the final step in creating a custom hidden Markov model. It takes a list of index matrices (StateMats) which describe different ways that the observed states are related to one another and creates a single matrix to describe the model. The matrices are combined following Eq. 2 of Tarasov (2019). getFullMat is part of several functions which help the user efficiently create custom index matrices. Often, it will be more practical to begin constructing a custom model with \code{getRateMat4Dat}. 
 
 getStateMat will generate an index matrix of size n by n in which all transitions between the n states are allowed and independently estimated. That index matrix can then be manipulated by dropStateMatPars and equateStateMatPars. dropStateMatPars will drop specific rates from an index matrix. dropStateMatPars requires an index matrix and a vector of which rates should be dropped. equateStateMatPars will equates rates within an index matrix. equateStateMatPars requires an index matrix and a list of vectors each element of which should correspond to two or more rates to be equated.
 }
@@ -24,6 +24,7 @@ Returns an index matrix.
 \code{getRateMat4Dat}
 }
 \examples{
+\donttest{
 data(primates)
 phy <- primates[[1]]
 phy <- multi2di(phy)
@@ -46,6 +47,10 @@ HMM <- getFullMat(list(R1, R2), P)
 
 # This can now be used in a corHMM model
 CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
+}
+}
+\references{
+Tarasov, S. (2019). Integration of Anatomy Ontologies and Evo-Devo Using Structured Markov Models Suggests a New Framework for Modeling Discrete Phenotypic Traits. Systematic Biology, 68(5) 698-716. doi:10.1093/sysbio/syz005
 }
 \author{James D. Boyko}
 \keyword{models}
