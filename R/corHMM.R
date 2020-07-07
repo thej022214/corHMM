@@ -324,7 +324,7 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
       }
   }
   
-  for (i  in seq(from = 1, length.out = nb.node)) {
+  for (i in seq(from = 1, length.out = nb.node)) {
       #the ancestral node at row i is called focal
       focal <- anc[i]
       #Get descendant information of focal

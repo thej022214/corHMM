@@ -13,13 +13,13 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(fig.width=6, fig.height=8)
+knitr::opts_chunk$set(cache=FALSE)
 knitr::opts_chunk$set(tidy.opts=list(width.cutoff=75),tidy=TRUE)
 ```
 
 The vignette is comprised of three sections, where we demonstrate all new extensions as well as other new and useful features: 
 
-* __Introduction Some background information__
+* __Background information__
 
 * __Section 1 Default use of corHMM__
     * 1.1: No hidden rate categores
@@ -39,7 +39,7 @@ The vignette is comprised of three sections, where we demonstrate all new extens
     * 3.2: Estimating rates under a parsimony reconstruction
     * 3.3: Fixing nodes when the model contains hidden states
 
-#Introduction
+#Background information
 
 The original version of `corHMM` contained a number of distinct functions for conducting analyses of discrete morphological characters. This included the `corHMM()` function for fitting a hidden rates model, which uses "hidden" states as a means of allowing transition rates in a binary character to vary across a tree. In reality, the hidden rates model falls within a general class of models, hidden Markov models (HMM), that may also be applied to multistate characters. So, whether the focal trait is binary or contains multiple states, or whether the observed states represents a set of binary and multistate characters, hidden states can be applied as a means of allowing heterogeneity in the transition model. Choosing a model specific to your question is of utmost importance in any comparative method, and in this new version of `corHMM` we provide users with the tools to create their own hidden Markov models.
 
@@ -172,7 +172,7 @@ tip.states = MK_3state$tip.states
 # run get simmap (can be plotted using phytools)
 simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
 # we import phytools plotSimmap for plotting
-phytools:::plotSimmap(simmap[[1]])
+phytools::plotSimmap(simmap[[1]])
 ```
 
 #### 1.2: A trait with any number of states and any number of hidden rate categories
@@ -186,6 +186,7 @@ HMM_3state
 Models with more states (larger state space) take longer to estimate because the number of transition rates increases. Hidden rate models further expand state space. For example, adding a second rate category incerases the number of transition rates from 4 to 10 (if the model is left as the default "ARD"). In section 1.1 we left our parameters unconstrained. We estimated all transisions as independent and allowed for transitions from all states to any other state. However, we can constrain a model in `corHMM` in two different ways. The easiest way is to set the model to either "SYM" or "ER". This is what we've done for the HMM_3state model above. By setting model = "SYM", we have forced the transition rates between any two states to be equal. In comparison, model = "ER" constrains all transition rates between states to be the same. Finally, model = "ARD" (the default) allows all transition rates to be independently estimated. Although "ER" and "SYM are common restrictions, it is often more useful to manually restrict your model to match a biological hypothesis (which is described in the next section). Finally, we set get.tip.states to be true because it is necessary for simmaps.
 
 Interpreting the estimated rate matrix for this hidden Markov model is intimidating. But, the same principles of interpreting the transition rate matrices apply -- that is, you still read rates from row to column. However, there is the added complexity of transitions among the different rate categories (as represented by R1 and R2). `plotMKmodel()` will plot the underlying structure of model in discrete parts. In the following example, the first 2 panels show how observed states transition within each rate category, and the last panel shows transitions among the different rate classes:
+
 ```{r, fig.align = "center", fig.width=10, fig.height=3}
 plotMKmodel(HMM_3state, display = "row")
 ```
@@ -206,7 +207,7 @@ tip.states = HMM_3state$tip.states
 simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
 
 # we import phytools plotSimmap for plotting
-phytools:::plotSimmap(simmap[[1]])
+phytools::plotSimmap(simmap[[1]])
 ```
 
 # Section 2: How to make and interpret custom models
@@ -277,9 +278,9 @@ FullMat <- getFullMat(StateMats, RateClassMat)
 FullMat
 ```
 
-Even though we created this larger index matrix from individuals components, we may not be sure it's exactly what we want. We can use `plotMKmodel()` to take a look at the model setup *before* running the analysis:
-```{r, fig.align = "center", fig.width=10, fig.height=3}
-plotMKmodel(pp = FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
+Even though we created this larger index matrix from individuals components, we may not be sure it's exactly what we want. We can use `plotMKmodel()` to take a look at the model setup *before* running the analysis. Here's an example function call:
+```{r, eval=FALSE}
+plotMKmodel(FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
 ```
 
 Since this is the model we intended on making, we can run `corHMM()` with our custom matrix:
@@ -350,8 +351,8 @@ MFT_FullMat <- getFullMat(MFT_ObsStateClasses, MFT_RateClassMat)
 MFT_FullMat
 ```
 
-That's kind of difficult to interpret, so let's plot it out and see if it's what we wanted:
-```{r, fig.align = "center", fig.height=8, fig.width=8}
+That's kind of difficult to interpret, so be sure to plot it out using `plotMKmodel()`
+```{r, eval=FALSE}
 plotMKmodel(pp = MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
 ```
 
@@ -437,11 +438,6 @@ Ont_LegendAndMat
 Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually observed. This is because all of the species were corporeal and thus the incorporeal form didn't factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. In addition, the transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed because it is impossible to have fingers without having limbs. Finally, all dual transitions have been removed.
 ```{r}
 Ont_res.corHMM <- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")
-```
-
-Plotting the results provides an overview of the rate classes amongst states.
-```{r, fig.align="center", fig.width=6, fig.height=4}
-plotMKmodel(Ont_res.corHMM)
 ```
 
 Note that hidden states can be added to this model by following the examples above. 

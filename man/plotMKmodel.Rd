@@ -3,11 +3,11 @@
 \title{Plot a Markov model}
 \description{Plots a diagram of a Markov model from the output of corHMM or a custom index matrix}
 \usage{
-plotMKmodel(pp, rate.cat = NULL, display = "column", color = c("blue", "red"), 
+plotMKmodel(corhmm.obj, rate.cat = NULL, display = "column", color = c("blue", "red"), 
 arrow.scale = 1, text.scale = 1, vertex.scale = 1)
 }
 \arguments{
-\item{pp}{an object of class corHMM or matrix.}
+\item{corhmm.obj}{an object of class corHMM or matrix.}
 \item{rate.cat}{if using a custom matrix then the number of rate categories must be indicated.}
 \item{display}{the structure of the plot. one of "column", "square", or "row".}
 \item{color}{Either, 1. a vector of 2 colors to create a gradient from low transition rates (first element) to high transition rates (second element), or 2. "col.blind" which will use the color pallete "plasma" from viridis.}

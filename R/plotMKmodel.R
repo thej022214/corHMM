@@ -14,10 +14,10 @@ getRateMatCoord <- function(RateMat){
   return(list(MatrixCoord = mat.coord, NameCoord = name.coord, DiagCoord = diag.coord))
 }
 
-getRateMats <- function(pp=NULL, rate.mat=NULL, rate.cat=NULL){
-  if(!is.null(pp)){
-    rate.cat <- pp$rate.cat
-    rate.mat <- pp$solution
+getRateMats <- function(corhmm.obj=NULL, rate.mat=NULL, rate.cat=NULL){
+  if(!is.null(corhmm.obj)){
+    rate.cat <- corhmm.obj$rate.cat
+    rate.mat <- corhmm.obj$solution
   }
   # find internal rate.cat dynamics
   RateCats <- paste("R", 1:rate.cat, sep = "")
@@ -40,9 +40,9 @@ getRateMats <- function(pp=NULL, rate.mat=NULL, rate.cat=NULL){
   return(RateMats)
 }
 
-plotMKmodel <- function(pp, rate.cat = NULL, display = "column", color = c("blue", "red"), arrow.scale = 1, text.scale = 1, vertex.scale = 1){
+plotMKmodel <- function(corhmm.obj, rate.cat = NULL, display = "column", color = c("blue", "red"), arrow.scale = 1, text.scale = 1, vertex.scale = 1){
   
-  if(class(pp) == "matrix" & is.null(rate.cat)){
+  if(class(corhmm.obj) == "matrix" & is.null(rate.cat)){
     return(cat("Error: user provided a rate matrix without providing the number of rate categories."))
   }
   
@@ -51,12 +51,12 @@ plotMKmodel <- function(pp, rate.cat = NULL, display = "column", color = c("blue
   text.scale <- text.scale * 3
   
   # decompose the matrix solution
-  if(class(pp) == "corhmm"){
-    RateMats <- getRateMats(pp = pp)
-    rate.cat <- pp$rate.cat
+  if(class(corhmm.obj) == "corhmm"){
+    RateMats <- getRateMats(corhmm.obj = corhmm.obj)
+    rate.cat <- corhmm.obj$rate.cat
   }
-  if(class(pp) == "matrix"){
-    RateMats <- getRateMats(rate.mat = pp, rate.cat = rate.cat)
+  if(class(corhmm.obj) == "matrix"){
+    RateMats <- getRateMats(rate.mat = corhmm.obj, rate.cat = rate.cat)
   }
   
   # i need the max rate to ensure all the colors are scaled the same way
