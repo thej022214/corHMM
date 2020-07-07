@@ -297,6 +297,15 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
   
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
+  # if the q matrix has columns not estimated, remove them
+  row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
+  col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
+  Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
+  root.test <- Null(Q.root)
+  if(dim(root.test)[2]>1){
+    return(1000000)
+  }
+  
   
   if(order.test == TRUE){
       # ensure that the rate classes have mean rates in a consistent order (A > B > C > n)
@@ -348,10 +357,6 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
   #If any of the logs have NAs restart search:
   if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
   equil.root <- NULL
-  # if the q matrix has columns not estimated, remove them
-  row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
-  col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
-  Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
 
   for(i in 1:ncol(Q.root)){
       posrows <- which(Q.root[,i] >= 0)

@@ -301,6 +301,7 @@ A lot of these new capabilities in `corHMM` were inspired by our current project
 
 To do this we will use a simulated a dataset that contains these 3 states:
 ```{r}
+phy <- read.tree("randomBD.tree")
 load("simulatedData.Rsave")
 head(MFT_dat)
 summary(as.factor(MFT_dat[,2])) # how many of each state do we have?
@@ -366,8 +367,6 @@ The precursor model of Marazzi et al. (2012) marks the beginning of HMMs being u
 
 We will start by loading a simulated dataset of presence and absence of extrafloral nectaries a randomly generated birth-death tree:
 ```{r}
-phy <- read.tree("randomBD.tree")
-load("simulatedData.Rsave")
 head(Precur_Dat)
 ```
 
