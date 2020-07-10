@@ -282,7 +282,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             #Outputs likeliest node states
             obj$lik.anc.states <- lik.states[-TIPS]
             #Outputs the information gained (in bits) per node
-            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states)
+            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
             return(obj)
         }
     }
@@ -440,7 +440,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             #Outputs likeliest node states
             obj$lik.anc.states <- liks.final[-TIPS,]
             #Outputs the information gained (in bits) per node
-            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states)
+            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
             return(obj)
         }
     }
@@ -503,7 +503,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         #Outputs likeliest node states
         obj$lik.anc.states <- liks[-TIPS,]
         #Outputs the information gained (in bits) per node
-        obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states)
+        obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
         return(obj)
     }
 }
@@ -515,9 +515,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 ######################################################################################################################################
 ######################################################################################################################################
 
-getInfoPerNode <- function(lik.anc.states){
-  nStates <- dim(lik.anc.states)[2]
-  H_uncond <- sum(1/nStates * -log2(rep(1/nStates, nStates)))
+getInfoPerNode <- function(lik.anc.states, Q){
+  Eq <- c(Null(Q))/sum(Null(Q))
+  #nStates <- dim(lik.anc.states)[2]
+  #H_uncond <- sum(1/nStates * -log2(rep(1/nStates, nStates)))
+  H_uncond <- sum(Eq * -log2(Eq))
   H_cond <- rowSums(lik.anc.states * -log2(lik.anc.states))
   Info <- H_uncond - H_cond
   return(Info)
