@@ -23,30 +23,9 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     
     #data consistency stuff
     input.data <- data
-    nCol <- dim(data)[2]
-    LevelList <- StateMats <- vector("list", nCol - 1)
-    for (i in 2:nCol) {
-        data[, i] <- as.factor(data[, i])
-        StateMats[[i - 1]] <- getStateMat(length(levels(data[, i])))
-        LevelList[[i - 1]] <- levels(as.factor(data[, i]))
-    }
-    if (nCol > 2) {
-        combined.data <- apply(data[, 2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-        TraitList <- expand.grid(LevelList)
-        Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x,  collapse = "_"))))
-        nTraits <- length(Traits)
-        nObs <- length(unique(combined.data))
-        data <- data.frame(sp = data[, 1], d = match(combined.data, Traits))
-        ObservedTraits <- which(1:nTraits %in% data[,2])
-        data[,2] <- match(data[,2], ObservedTraits)
-        names(Traits) <- 1:nTraits
-    }else {
-        Traits <- levels(as.factor(unique(data[, 2])))
-        nObs <- nTraits <- length(Traits)
-        data <- data.frame(sp = data[, 1], d = match(data[, 2], Traits))
-    }
-    
-    data[,2] <- as.numeric(data[,2])
+    corData <- corProcessData(data)
+    data <- corData$corData
+
     matching <- match.tree.data(phy,data)
     data <- matching$data
     phy <- matching$phy
@@ -63,10 +42,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     
-    ntraits <- length(levels)
+    ntraits <- length(corData$ObservedTraits)
     drop.states = NULL
     if(is.null(rate.mat)){
-        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = nObs, model = model)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model)
         rate.mat <- model.set.final$index.matrix
         rate <- model.set.final$rate
     }else{

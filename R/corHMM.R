@@ -42,42 +42,13 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         }
     }
     
-    data.legend <- input.data <- data
+    input.data <- data
     
     nCol <- dim(data)[2]
-    LevelList <- StateMats <- vector("list", nCol - 1)
-    for (i in 2:nCol) {
-        data[, i] <- as.factor(data[, i])
-        StateMats[[i - 1]] <- getStateMat(length(levels(data[, i])))
-        LevelList[[i - 1]] <- levels(as.factor(data[, i]))
-    }
-    if (nCol > 2) {
-        cat("\nInput data has more than a single column of trait information, converting...")
-        combined.data <- apply(data[, 2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-        TraitList <- expand.grid(LevelList)
-        Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x,  collapse = "_"))))
-        nTraits <- length(Traits)
-        nObs <- length(unique(combined.data))
-        data <- data.frame(sp = data[, 1], d = match(combined.data, Traits))
-        ObservedTraits <- which(1:nTraits %in% data[,2])
-        data[,2] <- match(data[,2], ObservedTraits)
-        names(Traits)[ObservedTraits] <- 1:nObs
-        names(Traits)[-ObservedTraits] <- "NA"
-        cat(paste("\n", nTraits, " unique trait combinations found.", "\n", sep = ""))
-        print(gsub("_", " & ", Traits))
-        cat("\n")
-        if (nObs != nTraits) {
-            cat("The potential number of trait combinations is", paste(nTraits, ",", sep = ""), "but only", nObs, "were found.\n\n")
-        }
-    }
-    else {
-        Traits <- levels(as.factor(unique(data[, 2])))
-        nObs <- nTraits <- length(Traits)
-        data <- data.frame(sp = data[, 1], d = match(data[, 2], Traits))
-    }
     
-    data[,2] <- as.numeric(data[,2])
-    data.legend$legend <- data[,2]
+    CorData <- corProcessData(data)
+    data.legend <- data <- CorData$corData
+    nObs <- length(CorData$ObservedTraits)
     
     # Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
     matching <- match.tree.data(phy,data)
@@ -447,20 +418,19 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
     index.matrix<-rate
     rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
     
-    data <- corProcessData(data)
-    data[,2] <- as.numeric(data[,2])
+    CorData <- corProcessData(data)
+    data <- CorData$corData
+    nObs <- length(CorData$ObservedTraits)
+    
     matching <- match.tree.data(phy,data)
     data <- matching$data
-    data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
-    data.sort <- data.sort[phy$tip.label,]
     
-    #Makes a matrix of tip states and empty cells corresponding
-    #to ancestral nodes during the optimization process.
-    x <- as.numeric(data.sort[,1])
-    TIPS <- 1:nb.tip
-    if(min(x) !=0){
-        x <- x - min(x)
-    }
+    # this is no longer needed since corProcessData will produce a dataset of a specific type every time
+    # x <- as.numeric(data.sort[,1])
+    # TIPS <- 1:nb.tip
+    # if(min(x) !=0){
+    #     x <- x - min(x)
+    # }
     # this is being removed temporarily - this handles NA tip states
     # for(i in 1:nb.tip){
     #     if(is.na(x[i])){x[i]=2}
@@ -468,7 +438,8 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
     
     tmp <- matrix(0, nb.tip + nb.node, ntraits)
     for(i in 1:nb.tip){
-        tmp[i, x[i]+1] <- 1
+        state_index <- as.numeric(unlist(strsplit(as.character(data[i,2]), "&")))
+        tmp[i, state_index] <- 1
     }
     liks <- matrix(rep(tmp, rate.cat), nb.tip + nb.node, ntraits*rate.cat)
     
@@ -483,36 +454,38 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
     return(obj)
 }
 
-
 corProcessData <- function(data){
-    nCol <- dim(data)[2]
-    LevelList <- StateMats <- vector("list", nCol-1)
-    # convert data to numeric
-    for(i in 2:nCol){
-        data[,i] <- as.factor(data[,i])
-        StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
-        LevelList[[i-1]] <- levels(as.factor(data[,i]))
-    }
-    
-    # will automatically detect if the input data has multiple columns and convert it to corHMM format.
-    if(nCol > 2){
-        combined.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-        TraitList <- expand.grid(LevelList)
-        Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x, collapse = "_"))))
-        nTraits <- length(Traits)
-        nObs <- length(unique(combined.data))
-        data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
-        ObservedTraits <- which(1:nTraits %in% data[,2])
-        data[,2] <- match(data[,2], ObservedTraits)
-    }else{
-        # if multiple columns are found we still will sort it through levels for consistency
-        Traits <- levels(as.factor(unique(data[,2])))
-        nTraits <- length(Traits)
-        data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
-    }
-    return(data)
+  nCol <- dim(data)[2]
+  LevelList <- StateMats <- vector("list", nCol-1)
+  # detect the number of states in each column. & is treated as indicating polymorphism. ? is treated as unknown data.
+  for(i in 2:nCol){
+    data[,i] <- as.character(data[,i])
+    data_i <- as.character(data[,i])
+    data_i <- data_i[!data_i == "?"]
+    States_i <- unique(unlist(strsplit(data_i, "&")))
+    StateMats[[i-1]] <- getRateCatMat(length(States_i))
+    LevelList[[i-1]] <- sort(States_i)
+  }
+  # identify the possible trait combinations
+  TraitList <- expand.grid(LevelList)
+  Traits <- sort(apply(TraitList, 1, function(x) paste(c(x), collapse = "_")))
+  # convert each column into a numeric value associated with a member of the trait combinations. ? are associated with all values of that column, & indicates the combination of two or more
+  search.strings <- observed.traits_index <- combined.data <- c()
+  for(i in 1:dim(data)[1]){
+    data_rowi <- data[i,2:nCol]
+    # and symbolizes it can be any of the separated states
+    search.string_i <- paste(sapply(data_rowi, function(x) paste("[", gsub("&", "", x), "]", sep = "")), collapse = "_")
+    # ? means it can be any of the states in that character
+    search.string_i <- gsub("[?]", ".", search.string_i, fixed=TRUE)
+    # if the data is polymorphic it will now have ands separating the corHMM states
+    combined.data[i] <- paste(grep(search.string_i, Traits), collapse="&")
+    observed.traits_index <- c(observed.traits_index, grep(search.string_i, Traits))
+    search.strings[i] <- search.string_i
+  }
+  ObservedTraits <- sort(Traits[unique(observed.traits_index)])
+  corData <- data.frame(sp = data[,1], d = sapply(search.strings, function(x) paste(grep(x, ObservedTraits), collapse="&")))
+  return(list(StateMats = StateMats,  PossibleTraits = Traits, ObservedTraits = ObservedTraits, corData = corData))
 }
-
 
 print.corhmm<-function(x,...){
     

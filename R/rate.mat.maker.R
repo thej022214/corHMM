@@ -405,29 +405,15 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
 
 getStateMat4Dat <- function(data, model = "ARD"){
   
-  data.legend <- input.data <- data
-  nCol <- dim(data)[2]
-  LevelList <- StateMats <- vector("list", nCol-1)
-  # convert data to numeric
-  for(i in 2:nCol){
-    data[,i] <- as.factor(as.character(data[, i]))
-    StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
-    LevelList[[i-1]] <- levels(as.factor(data[,i]))
-  }
+  CorData <- corProcessData(data)
   
-  # will automatically detect if the input data has multiple columns and convert it to corHMM format.
+  data.legend <- CorData$ObservedTraits
+  nObs <- length(CorData$ObservedTraits)
+  nCol <- dim(data)[2]
+  
   if(nCol > 2){
-    combined.data <- apply(data[,2:nCol], 1, function(x) paste(c(x), collapse = "_"))
-    TraitList <- expand.grid(LevelList)
-    Traits <- levels(as.factor(apply(TraitList, 1, function(x) paste(x, collapse = "_"))))
-    nTraits <- length(Traits)
-    nObs <- length(unique(combined.data))
-    data <- data.frame(sp = data[,1], d = match(combined.data, Traits))
-    names(Traits) <- 1:nTraits
-    
-    # up to this point is book keeping now we make matrices
+    StateMats <- CorData$StateMats
     IMats <- lapply(StateMats, convert2I)
-    # this ensures that a rate mat for multi character data doesn't allow dual transitions
     CurrentMat <- StateMats[[1]]
     for(i in 2:length(StateMats)){
       # this produces an independent model
@@ -438,16 +424,13 @@ getStateMat4Dat <- function(data, model = "ARD"){
       rate.mat <- CurrentMat
     }
   }else{
-    Traits <- levels(as.factor(unique(data[,2])))
-    nObs <- nTraits <- length(Traits)
-    data <- data.frame(sp = data[,1], d = match(data[,2], Traits))
-    rate.mat <- StateMats[[1]]
+    rate.mat <- CorData$StateMats[[1]]
   }
   
   # adjusting the rate mat if there are any unobsered states
-  ObservedTraits <- which(1:nTraits %in% data[,2])
-  rate.mat <- rate.mat[ObservedTraits, ]
-  rate.mat <- rate.mat[, ObservedTraits]
+  ObservedTraitIndex <- which(CorData$PossibleTraits %in% CorData$ObservedTraits)
+  rate.mat <- rate.mat[ObservedTraitIndex, ]
+  rate.mat <- rate.mat[, ObservedTraitIndex]
   # there is a possibility that some states require dual transitions, in these cases we allow all transitions to occur.
   # can all states go to another state?
   toTest <- apply(rate.mat, 1, function(x) all(x == 0))
@@ -455,8 +438,8 @@ getStateMat4Dat <- function(data, model = "ARD"){
   fromTest <- apply(rate.mat, 2, function(x) all(x == 0))
   # if there is a state that cannot be entered or left
   if(any(toTest & fromTest)){
-    cat("\nDual transitions have been enabled because at least one of the given states cannot be transitioned into or out of without it.\n")
-    rate.mat <- getStateMat(length(ObservedTraits))
+    cat("\nDual transitions have been enabled because at least one of the given states cannot be transitioned into or out of without a multi-state transition.\n\n")
+    rate.mat <- getStateMat(nObs)
   }
   
   if(model == "ER"){
@@ -474,9 +457,8 @@ getStateMat4Dat <- function(data, model = "ARD"){
   }
   
   colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nObs, ")", sep ="")
-  legend <- gsub("_", " & ", Traits)
-  names(legend)[ObservedTraits] <- 1:nObs
-  names(legend)[-ObservedTraits] <- "NA"
+  legend <- CorData$ObservedTraits
+  names(legend) <- 1:nObs
   res <- list(legend = legend, rate.mat = rate.mat)
   return(res)
 }
