@@ -410,7 +410,7 @@ getStateMat4Dat <- function(data, model = "ARD"){
   LevelList <- StateMats <- vector("list", nCol-1)
   # convert data to numeric
   for(i in 2:nCol){
-    data[,i] <- as.factor(data[,i])
+    data[,i] <- as.factor(as.character(data[, i]))
     StateMats[[i-1]] <- getStateMat(length(levels(data[,i])))
     LevelList[[i-1]] <- levels(as.factor(data[,i]))
   }
@@ -448,6 +448,16 @@ getStateMat4Dat <- function(data, model = "ARD"){
   ObservedTraits <- which(1:nTraits %in% data[,2])
   rate.mat <- rate.mat[ObservedTraits, ]
   rate.mat <- rate.mat[, ObservedTraits]
+  # there is a possibility that some states require dual transitions, in these cases we allow all transitions to occur.
+  # can all states go to another state?
+  toTest <- apply(rate.mat, 1, function(x) all(x == 0))
+  # can all states be approached from another state?
+  fromTest <- apply(rate.mat, 2, function(x) all(x == 0))
+  # if there is a state that cannot be entered or left
+  if(any(toTest & fromTest)){
+    cat("\nDual transitions have been enabled because at least one of the given states cannot be transitioned into or out of without it.\n")
+    rate.mat <- getStateMat(length(ObservedTraits))
+  }
   
   if(model == "ER"){
     rate.mat[rate.mat > 0] <- 1
