@@ -37,12 +37,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     levels <- levels(as.factor(data.sort[,1]))
     
     #Some initial values for use later
-    k=2
     obj <- NULL
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     
-    ntraits <- length(corData$ObservedTraits)
+    k <- ntraits <- length(corData$ObservedTraits)
     drop.states = NULL
     if(is.null(rate.mat)){
         model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model)
@@ -261,7 +260,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
             #Outputs likeliest node states
             obj$lik.anc.states <- lik.states[-TIPS]
             #Outputs the information gained (in bits) per node
-            obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
+            obj$info.anc.states <- NULL
             return(obj)
         }
     }
@@ -482,7 +481,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         #Outputs likeliest node states
         obj$lik.anc.states <- liks[-TIPS,]
         #Outputs the information gained (in bits) per node
-        obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
+        obj$info.anc.states <- NULL
         return(obj)
     }
 }
