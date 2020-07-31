@@ -48,7 +48,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         rate.mat <- model.set.final$index.matrix
         rate <- model.set.final$rate
     }else{
-        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = nObs, model = model)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model)
         rate <- rate.mat
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
@@ -398,7 +398,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         }
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
-            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=nObs, model=model, root.p=root.p_input)
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input)
         }else{
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
