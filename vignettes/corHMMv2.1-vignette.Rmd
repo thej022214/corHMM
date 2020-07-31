@@ -172,7 +172,7 @@ tip.states = MK_3state$tip.states
 # run get simmap (can be plotted using phytools)
 simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
 # we import phytools plotSimmap for plotting
-phytools::plotSimmap(simmap[[1]])
+phytools::plotSimmap(simmap[[1]], fsize=.5)
 ```
 
 #### 1.2: A trait with any number of states and any number of hidden rate categories
@@ -207,7 +207,7 @@ tip.states = HMM_3state$tip.states
 simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
 
 # we import phytools plotSimmap for plotting
-phytools::plotSimmap(simmap[[1]])
+phytools::plotSimmap(simmap[[1]], fsize=.5)
 ```
 
 # Section 2: How to make and interpret custom models
