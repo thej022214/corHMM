@@ -3,11 +3,12 @@
 \title{Produce an index matrix and legend from a dataset}
 \description{Takes a dataset to produce an index matrix that corresponds to a single state-dependent process (i.e. a single rate category) and a legend which matches input data to the rows and columns of the index matrix and corHMM solution.}
 \usage{
-getStateMat4Dat(data, model = "ARD")
+getStateMat4Dat(data, model = "ARD", dual = FALSE)
 }       
 \arguments{
-\item{data}{a data matrix containing species information in the same format as the main \code{corHMM} function: column[,1] is species names, column[,2:n] are the discrete states.}
+\item{data}{A data matrix containing species information in the same format as the main \code{corHMM} function: column[,1] is species names, column[,2:n] are the discrete states.}
 \item{model}{One of "ARD", "SYM", or "ER". ARD: all rates differ. SYM: rates between any two states do not differ. ER: all rates are equal.}
+\item{dual}{A boolean indicating whether or not to include dual transitions.}
 }
 \details{
 This function will generate an index matrix based on user provided data. It provides a useful starting point for further modifications using \code{dropStateMatPars}, \code{equateStateMatPars}, and \code{getFullMat}. If more than a single column of data is given double transitions between characters are disallowed. For example, if character 1 is the presence or absence of limbs, and character 2 is the presence or absence of fingers, then the transition from absence of limbs and fingers to presence of limbs and fingers is automatically disallowed. This is consistent with Pagel's (1994) model of correlated character evolution. 

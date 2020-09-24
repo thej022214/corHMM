@@ -403,7 +403,7 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
   return(FullMat)
 }
 
-getStateMat4Dat <- function(data, model = "ARD"){
+getStateMat4Dat <- function(data, model = "ARD", dual = FALSE){
   
   CorData <- corProcessData(data)
   
@@ -432,13 +432,7 @@ getStateMat4Dat <- function(data, model = "ARD"){
   rate.mat <- rate.mat[ObservedTraitIndex, ]
   rate.mat <- rate.mat[, ObservedTraitIndex]
   # there is a possibility that some states require dual transitions, in these cases we allow all transitions to occur.
-  # can all states go to another state?
-  toTest <- apply(rate.mat, 1, function(x) all(x == 0))
-  # can all states be approached from another state?
-  fromTest <- apply(rate.mat, 2, function(x) all(x == 0))
-  # if there is a state that cannot be entered or left
-  if(any(toTest & fromTest)){
-    cat("\nDual transitions have been enabled because at least one of the given states cannot be transitioned into or out of without a multi-state transition.\n\n")
+  if(dual){
     rate.mat <- getStateMat(nObs)
   }
   
@@ -463,6 +457,11 @@ getStateMat4Dat <- function(data, model = "ARD"){
   return(res)
 }
 
+checkCyclicMk <- function(rate.mat){
+  rate.mat > 0 
+  toTest <- apply(rate.mat, 1, function(x) which(x > 0))
+  fromTest <- apply(rate.mat, 2, function(x) which(x > 0))
+}
 
 # step 1: create the individual processes that you are trying to model (the number of matricies you create is the number of hidden states you're interested in modeling)
 # StateMatA <- getStateMat(nState = 3)
