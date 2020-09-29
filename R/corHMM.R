@@ -474,9 +474,9 @@ corProcessData <- function(data){
   for(i in 1:dim(data)[1]){
     data_rowi <- data[i,2:nCol]
     # and symbolizes it can be any of the separated states
-    search.string_i <- paste(sapply(data_rowi, function(x) paste("[", gsub("&", "", x), "]", sep = "")), collapse = "_")
+    search.string_i <- paste(sapply(data_rowi, function(x) paste("(", gsub("&", "|", x), ")", sep = "")),collapse = "_")
     # ? means it can be any of the states in that character
-    search.string_i <- gsub("[?]", ".", search.string_i, fixed=TRUE)
+    search.string_i <- gsub("(?)", ".", search.string_i, fixed=TRUE)
     # if the data is polymorphic it will now have ands separating the corHMM states
     combined.data[i] <- paste(grep(search.string_i, Traits), collapse="&")
     observed.traits_index <- c(observed.traits_index, grep(search.string_i, Traits))
@@ -516,7 +516,7 @@ print.corhmm<-function(x,...){
 
 ######################################################################################################################################
 ######################################################################################################################################
-### ORIGINAL CODE THAT IS NOW OBSOLETE
+### ORIGINAL CODE THAT IS NO LONGER USED
 ######################################################################################################################################
 ######################################################################################################################################
 

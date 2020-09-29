@@ -457,8 +457,17 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE){
   return(res)
 }
 
-checkCyclicMk <- function(rate.mat){
-  rate.mat > 0 
+checkErgodicity <- function(rate.mat){
+  nObs <- dim(rate.mat)[1]
+  toVisit <- 1:nObs
+  #  rate.mat[1,3] <- 0
+  # test if there is  a sink state
+  SinkTest <- apply(rate.mat, 1, function(x) all(x == 0))
+  # if the sink test returns true we have to make sure all states can move into the sink state
+  if(any(SinkTest == TRUE)){
+    rate.mat 
+  }
+  to <- rate.mat[i,]
   toTest <- apply(rate.mat, 1, function(x) which(x > 0))
   fromTest <- apply(rate.mat, 2, function(x) which(x > 0))
 }
