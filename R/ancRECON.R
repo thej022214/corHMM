@@ -7,8 +7,21 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, corHMM_fit, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE){
     
+  if(hasArg(corHMM_fit)){
+    corHMM_fit$phy$node.label <- NULL
+    phy = corHMM_fit$phy
+    data = corHMM_fit$data
+    p = sapply(na.omit(c(corHMM_fit$index.mat)), function(x) na.omit(c(corHMM_fit$solution))[x])
+    rate.cat = corHMM_fit$rate.cat
+    rate.mat = corHMM_fit$index.mat
+    root.p = corHMM_fit$root.p
+  }else{
+    if(!hasArg(phy) & hasArg(data) & hasArg(p) & hasArg(rate.cat)){
+      return(cat("Warning: please provide either a corHMM results object or a phylogeny, dataset, parameter vector, and rate category."))
+    }
+  }
     #Ensures that weird root state probabilities that do not sum to 1 are input:
     if(!is.null(root.p)){
         if(!is.character(root.p)){
