@@ -547,3 +547,166 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
     return(tip.states)
 }
 
+
+dev.ancRECON.marginal <- function(p, phy, liks, Q, rate, root.p, rate.cat, get.tip.states){
+  
+  obj <- NULL
+  nb.tip <- length(phy$tip.label)
+  nb.node <- phy$Nnode
+  phy <- reorder(phy, "pruningwise")
+  TIPS <- 1:nb.tip
+  anc <- unique(phy$edge[,1])
+  p[p==0] = exp(-21)
+  Q[] <- c(p, 0)[rate]
+  diag(Q) <- -rowSums(Q)
+  # if the q matrix has columns not estimated, remove them
+  row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
+  col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
+  Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
+  
+  #A temporary likelihood matrix so that the original does not get written over:
+  liks.down <- liks
+  #A transpose of Q for assessing probability of j to i, rather than i to j:
+  tranQ <- t(Q)
+  comp <- matrix(0,nb.tip + nb.node,ncol(liks))
+  #The first down-pass: The same algorithm as in the main function to calculate the conditional likelihood at each node:
+  for (i in seq(from = 1, length.out = nb.node)) {
+    #the ancestral node at row i is called focal
+    focal <- anc[i]
+    #Get descendant information of focal
+    desRows<-which(phy$edge[,1]==focal)
+    desNodes<-phy$edge[desRows,2]
+    v <- 1
+    for (desIndex in sequence(length(desRows))){
+      v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks.down[desNodes[desIndex],]
+    }
+    
+    ##Allows for fixed nodes based on user input tree.
+    if(!is.null(phy$node.label)){
+      if(!is.na(phy$node.label[focal - nb.tip])){
+        fixer.tmp = numeric(dim(Q)[2]/rate.cat)
+        fixer.tmp[phy$node.label[focal - nb.tip]] = 1
+        fixer = rep(fixer.tmp, rate.cat)
+        v <- v * fixer
+      }
+    }
+    
+    comp[focal] <- sum(v)
+    liks.down[focal, ] <- v/comp[focal]
+  }
+  root <- nb.tip + 1L
+  #Enter the root defined root probabilities if they are supplied by the user:
+  equil.root <- NULL
+  for(i in 1:ncol(Q.root)){
+    posrows <- which(Q.root[,i] >= 0)
+    rowsum <- sum(Q.root[posrows,i])
+    poscols <- which(Q.root[i,] >= 0)
+    colsum <- sum(Q.root[i,poscols])
+    equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+  }
+  if (is.null(root.p)){
+    flat.root = equil.root
+    k.rates <- 1/length(which(!is.na(equil.root)))
+    flat.root[!is.na(flat.root)] = k.rates
+    flat.root[is.na(flat.root)] = 0
+    liks.down[root, !col2rm] <- flat.root * liks.down[root, !col2rm]
+    liks.down[root, !col2rm] <- liks.down[root,!col2rm] / sum(liks.down[root, !col2rm])
+    root.p = flat.root
+  }else{
+    if(is.character(root.p)){
+      # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+      if(root.p == "yang"){
+        root.p <- Null(Q.root)
+        root.p <- c(root.p/sum(root.p))
+        liks.down[root, !col2rm] <-  liks.down[root, !col2rm] * root.p
+        liks.down[root, !col2rm] <- liks.down[root,!col2rm] / sum(liks.down[root,!col2rm])
+      }else{
+        # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+        root.p = liks.down[root,!col2rm] / sum(liks.down[root,!col2rm])
+        liks.down[root, !col2rm] <- root.p * liks.down[root, !col2rm]
+        liks.down[root, !col2rm] <- liks.down[root,!col2rm] / sum(liks.down[root, !col2rm])
+      }
+    }else{
+      liks.down[root, !col2rm] <- root.p * liks.down[root, !col2rm]
+      liks.down[root, !col2rm] <- liks.down[root,!col2rm] / sum(liks.down[root, !col2rm])
+    }
+  }
+  #The up-pass
+  obsRoot <- root.p
+  root.p <- vector("numeric", dim(liks)[2])
+  root.p[!col2rm] <- obsRoot
+  liks.up <- liks
+  states<-apply(liks,1,which.max)
+  N <- dim(phy$edge)[1]
+  comp <- numeric(nb.tip + nb.node)
+  for(i in length(anc):1){
+    focal <- anc[i]
+    if(!focal==root){
+      #Gets mother and sister information of focal:
+      focalRow <- which(phy$edge[,2]==focal)
+      motherRow <- which(phy$edge[,1]==phy$edge[focalRow,1])
+      motherNode <- phy$edge[focalRow,1]
+      desNodes <- phy$edge[motherRow,2]
+      sisterNodes <- desNodes[(which(!desNodes==focal))]
+      sisterRows <- which(phy$edge[,2]%in%sisterNodes==TRUE)
+      #If the mother is not the root then you are calculating the probability of being in either state.
+      #But note we are assessing the reverse transition, j to i, rather than i to j, so we transpose Q to carry out this calculation:
+      if(motherNode != root){
+        v <- expm(tranQ * phy$edge.length[which(phy$edge[,2]==motherNode)], method=c("Ward77")) %*% liks.up[motherNode,]
+        #Allows for fixed nodes based on user input tree.
+        if(!is.null(phy$node.label)){
+          if(!is.na(phy$node.label[motherNode - nb.tip])){
+            fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
+            fixer.tmp[phy$node.label[motherNode - nb.tip]] <- 1
+            fixer <- rep(fixer.tmp, rate.cat)
+            v <- v * fixer
+          }
+        }
+      }else{
+        #If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
+        #But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
+        v <- root.p
+      }
+      #Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
+      #This is essentially calculating the product of the mothers probability and the sisters probability:
+      for (sisterIndex in sequence(length(sisterRows))){
+        v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
+      }
+      
+      comp[focal] <- sum(v)
+      liks.up[focal,] <- v/comp[focal]
+    }
+  }
+  #The final pass
+  liks.final <- liks
+  comp <- numeric(nb.tip + nb.node)
+  #In this final pass, root is never encountered. But its OK, because root likelihoods are set after the loop:
+  for (i in seq(from = 1, length.out = nb.node-1)) {
+    #the ancestral node at row i is called focal
+    focal <- anc[i]
+    focalRows <- which(phy$edge[,2]==focal)
+    #Now you are assessing the change along the branch subtending the focal by multiplying the probability of
+    #everything at and above focal by the probability of the mother and all the sisters given time t:
+    v <- liks.down[focal,] * (expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,])
+    comp[focal] <- sum(v)
+    liks.final[focal, ] <- v/comp[focal]
+  }
+  if(get.tip.states == TRUE){
+    #Now get the states for the tips (will do, not available for general use):
+    liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input)
+  }else{
+    liks.final[TIPS,] <- liks.down[TIPS,]
+  }
+  #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
+  liks.final[root,] <- liks.down[root,]
+  #root.final <- liks.down[root,] * root.p
+  #comproot <- sum(root.final)
+  #liks.final[root,] <- root.final/comproot
+  
+  #Outputs likeliest tip states
+  obj$lik.tip.states <- liks.final[TIPS,]
+  #Outputs likeliest node states
+  obj$lik.anc.states <- liks.final[-TIPS,]
+  return(obj)
+}
+
