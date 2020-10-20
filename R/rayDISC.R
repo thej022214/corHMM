@@ -268,7 +268,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
         lik.anc$lik.anc.states <- "You turned this feature off. Try plugging into ancRECON function directly."
         tip.states <- lik.anc$lik.tip.states
     }else{
-        
+      data.rayDISC[is.na(data.rayDISC)] <- "?"
         if(node.states == "marginal" || node.states == "scaled"){
             lik.anc <- ancRECON(phy, data.rayDISC, est.pars, rate.cat=NULL, rate.mat=rate.mat, ntraits=ntraits, method=node.states, model=model, root.p=root.p)
             pr <- apply(lik.anc$lik.anc.states,1,which.max)
