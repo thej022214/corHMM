@@ -169,61 +169,101 @@ simSubstHistoryTipsy <- function(phy, tip.states, states, model){
   return(obj)
 }
 
-# simMarkov <- function(phy, Q, root.freqs, Q2 = NA, NoI = NA){
-#   
-#   #Randomly choose starting state at root using the root.values as the probability:
-#   root.value <- sample.int(dim(Q)[2], 1, FALSE, prob=root.freqs/sum(root.freqs))
-#   #Reorder the phy:
-#   phy <- reorder(phy, "postorder")
-#   ntips <- length(phy$tip.label)
-#   N <- dim(phy$edge)[1]
-#   ROOT <- ntips + 1 #perhaps use an accessor to get the root node id
-#   
-#   #Generate vector that contains the simulated states:
-#   CharacterHistory <- integer(ntips + phy$Nnode)
-#   CharacterHistory[ROOT] <- as.integer(root.value)
-#   anc <- phy$edge[, 1]
-#   des <- phy$edge[, 2]
-#   edge.length <- phy$edge.length
-#   diag(Q) = 0
-#   diag(Q) = -rowSums(Q)
-#   
-#   # setting up the alternative Q matrix at the node of interest
-#   if(!any(is.na(Q2))){
-#     diag(Q2) = 0
-#     diag(Q2) = -rowSums(Q2)
-#   }
-#   if(!is.na(NoI)){
-#     NewQDesc <- getDescendants(phy, NoI)
-#   }
-#   
-#   #standard simulation protocol
-#   if(any(is.na(Q2)) | is.na(NoI)){
-#     for (i in N:1) {
-#       p <- expm(Q * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
-#       CharacterHistory[des[i]] <- sample.int(dim(Q)[2], size = 1, FALSE, prob = p)
-#     }
-#   }
-#   
-#   # simulating a clade under a different (Q2) evolutionary model
-#   if(!any(is.na(Q2)) & !is.na(NoI)){
-#     for (i in N:1) {
-#       if(anc[i] %in% NewQDesc){
-#         p <- expm(Q2 * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
-#         CharacterHistory[des[i]] <- sample.int(dim(Q2)[2], size = 1, FALSE, prob = p)
-#       }else{
-#         p <- expm(Q * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
-#         CharacterHistory[des[i]] <- sample.int(dim(Q)[2], size = 1, FALSE, prob = p)
-#       }
-#     }
-#   }
-#   
-#   TipStates <-  CharacterHistory[1:ntips]
-#   names(TipStates) <- phy$tip.label
-#   NodeStates <- CharacterHistory[ROOT:(N+1)]
-#   names(NodeStates) <- ROOT:(N+1)
-#   
-#   res <- list(TipStates = TipStates, NodeStates = NodeStates)
-#   return(res)
-#   #return(CharacterHistory)
-# }
+simMarkov <- function(phy, Q, root.freqs, Q2 = NA, NoI = NA){
+
+  #Randomly choose starting state at root using the root.values as the probability:
+  root.value <- sample.int(dim(Q)[2], 1, FALSE, prob=root.freqs/sum(root.freqs))
+  #Reorder the phy:
+  phy <- reorder(phy, "postorder")
+  ntips <- length(phy$tip.label)
+  N <- dim(phy$edge)[1]
+  ROOT <- ntips + 1 #perhaps use an accessor to get the root node id
+
+  #Generate vector that contains the simulated states:
+  CharacterHistory <- integer(ntips + phy$Nnode)
+  CharacterHistory[ROOT] <- as.integer(root.value)
+  anc <- phy$edge[, 1]
+  des <- phy$edge[, 2]
+  edge.length <- phy$edge.length
+  diag(Q) = 0
+  diag(Q) = -rowSums(Q)
+
+  # setting up the alternative Q matrix at the node of interest
+  if(!any(is.na(Q2))){
+    diag(Q2) = 0
+    diag(Q2) = -rowSums(Q2)
+  }
+  if(!is.na(NoI)){
+    NewQDesc <- getDescendants(phy, NoI)
+  }
+
+  #standard simulation protocol
+  if(any(is.na(Q2)) | is.na(NoI)){
+    for (i in N:1) {
+      p <- expm(Q * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
+      CharacterHistory[des[i]] <- sample.int(dim(Q)[2], size = 1, FALSE, prob = p)
+    }
+  }
+
+  # simulating a clade under a different (Q2) evolutionary model
+  if(!any(is.na(Q2)) & !is.na(NoI)){
+    for (i in N:1) {
+      if(anc[i] %in% NewQDesc){
+        p <- expm(Q2 * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
+        CharacterHistory[des[i]] <- sample.int(dim(Q2)[2], size = 1, FALSE, prob = p)
+      }else{
+        p <- expm(Q * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
+        CharacterHistory[des[i]] <- sample.int(dim(Q)[2], size = 1, FALSE, prob = p)
+      }
+    }
+  }
+
+  TipStates <-  CharacterHistory[1:ntips]
+  names(TipStates) <- phy$tip.label
+  NodeStates <- CharacterHistory[ROOT:(N+1)]
+  names(NodeStates) <- ROOT:(N+1)
+
+  res <- list(TipStates = TipStates, NodeStates = NodeStates)
+  return(res)
+}
+
+# get the probability of a particular painting of a branch
+getSimmapBranchProb <- function(branch, Q){
+  P.Branch <- numeric(length(branch))
+  count <- 1
+  # 1. start rootward and determine if transition
+  while(length(branch) > 1){
+    # 2. if transition calculate probabality
+    from <- as.numeric(names(branch)[1])
+    to <- as.numeric(names(branch)[2])
+    qii <- -diag(Q)[from]
+    qij <- Q[from, to]
+    t <- branch[1]
+    P.waiting.time <- qii * exp(-qii * t)
+    P.trans <- qij/qii
+    P.Branch[count] <- P.waiting.time * P.trans
+  # 3. start at new starting place and determine if transition
+    count <- count + 1
+    branch <- branch[-1]
+  }
+  # 4. if transition repeat step 1.
+  # 5. else no transition calculate probabliity
+  from <- as.numeric(names(branch)[1])
+  qii <- -diag(Q)[from]
+  t <- branch[1]
+  P.Branch[count] <- 1 - (qii * exp(-qii * t))
+  return(sum(log(P.Branch)))
+}
+
+# get the likelihood/ of a particular simmap
+getSimmapLik <- function(simmap, Q){
+  maps <- simmap$maps
+  lik <- sum(unlist(lapply(maps, function(x) getSimmapBranchProb(x, Q))))
+  return(lik)
+}
+
+# simmap <- makeSimmap(tree=phy, tip.states=tip.states, states=states, model=model, 
+#                      nSim=10, nCores=1)
+# 
+# liks <- unlist(lapply(simmap, function(x) getSimmapLik(x, Q)))
+# log(sum(exp(liks)))
