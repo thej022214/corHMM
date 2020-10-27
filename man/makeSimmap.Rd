@@ -3,13 +3,13 @@
 \title{Simulate a character history}
 \description{Produces a character history given some of the outputs of a corHMM object.}
 \usage{
-makeSimmap(tree, tip.states, states, model, nSim=1, nCores=1)
+makeSimmap(tree, data, model, rate.cat, nSim=1, nCores=1)
 }       
 \arguments{
 \item{tree}{A phylogeny of class phylo.}
-\item{tip.states}{A data.frame where each column represents the presence or absence of a particular state and the rownames are the species names (see example below).}
-\item{states}{A data.frame where each column represents the marginal probability of a particular state at a node and the rownames are the species names (see example below).}
+\item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.}
 \item{model}{The transition rate matrix.}
+\item{rate.cat}{The number of rate categories.}
 \item{nSim}{The number of simmaps to be simulated.}
 \item{nCores}{The number of cores to be used.}
 }
@@ -29,18 +29,9 @@ data <- primates[[2]]
 ##run corhmm
 MK <- corHMM(phy, data, 1)
 
-##get simmap inputs from corhmm outputs
-phy <- MK$phy
-data <- MK$data
+##get simmap from corhmm solution
 model <- MK$solution
-model[is.na(model)] <- 0
-diag(model) <- -rowSums(model)
-states <- MK$states
-tip.states <- MK$tip.states
-
-## run get simmap (can be plotted using phytools)
-simmap <- makeSimmap(tree=phy, tip.states=tip.states, states=states, model=model, 
-	nSim=1, nCores=1)
+simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=1, nSim=1, nCores=1)
 
 ## we import phytools plotSimmap for plotting
 plotSimmap(simmap[[1]])

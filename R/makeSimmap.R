@@ -112,9 +112,43 @@ convertSubHistoryToEdge <- function(phy, map){
   return(obj)
 }
 
+# get the conditional likelihoods of particular nodes
+getConditionalNodeLik <- function(tree, data, model, rate.cat){
+  phy <- reorder(tree, "pruningwise")
+  nb.node <- phy$Nnode
+  nb.tip <- length(phy$tip.label)
+  # process the data to match the liks table
+  CorData <- corProcessData(data)
+  nObs <- length(CorData$ObservedTraits)
+  # get the liks table
+  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, ntraits = nObs, model = "ER")
+  liks <- model.set.final$liks
+  anc <- unique(phy$edge[,1])
+  for (i in seq(from = 1, length.out = nb.node)) {
+    #the ancestral node at row i is called focal
+    focal <- anc[i]
+    #Get descendant information of focal
+    desRows <- which(phy$edge[,1]==focal)
+    desNodes <- phy$edge[desRows,2]
+    v <- 1
+    #Loops through all descendants of focal (how we deal with polytomies):
+    for (desIndex in sequence(length(desRows))){
+      v <- v*expm(model * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+    }
+    #Divide each likelihood by the sum to obtain probabilities:
+    liks[focal, ] <- v/sum(v)
+  }
+  return(list(tip.states = liks[1:nb.tip,],
+              node.states = liks[(nb.tip+1):(nb.node+nb.tip),]))
+}
+
 # exported function for use
-makeSimmap <- function(tree, tip.states, states, model, nSim=1, nCores=1){
-  maps <- mclapply(1:nSim, function(x) simSubstHistory(tree, tip.states, states, model), mc.cores = nCores)
+makeSimmap <- function(tree, data, model, rate.cat, nSim=1, nCores=1){
+  model[is.na(model)] <- 0
+  diag(model) <- 0
+  diag(model) <- -rowSums(model)
+  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat)
+  maps <- mclapply(1:nSim, function(x) simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model), mc.cores = nCores)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
   for(i in 1:nSim){
@@ -129,7 +163,6 @@ makeSimmap <- function(tree, tip.states, states, model, nSim=1, nCores=1){
   }
   return(obj)
 }
-
 
 
 
@@ -252,15 +285,17 @@ getSimmapBranchProb <- function(branch, Q){
   qii <- -diag(Q)[from]
   t <- branch[1]
   P.Branch[count] <- 1 - (qii * exp(-qii * t))
-  return(sum(log(P.Branch)))
+  return(prod((P.Branch)))
 }
 
 # get the likelihood/ of a particular simmap
 getSimmapLik <- function(simmap, Q){
   maps <- simmap$maps
-  lik <- sum(unlist(lapply(maps, function(x) getSimmapBranchProb(x, Q))))
+  lik <- prod(unlist(lapply(maps, function(x) getSimmapBranchProb(x, Q))))
   return(lik)
 }
+
+
 
 # simmap <- makeSimmap(tree=phy, tip.states=tip.states, states=states, model=model, 
 #                      nSim=10, nCores=1)
