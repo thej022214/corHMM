@@ -1,8 +1,8 @@
 # simulate ancestral states at each internal node
-simSingleCharHistory<- function(phy, model, cladewise.index, state.probability, state.sample){
+simSingleCharHistory<- function(phy, model, cladewise.index, state.probability, state.sample, root.p){
   # sample the root state
   anc.index <- phy$edge[cladewise.index[1],1]
-  state.sample[anc.index,] <- t(rmultinom(1, 1, state.probability[anc.index,]))
+  state.sample[anc.index,] <- t(rmultinom(1, 1, state.probability[anc.index,] * root.p))
   
   # sample the nodes
   for(i in cladewise.index){
@@ -20,7 +20,7 @@ simSingleCharHistory<- function(phy, model, cladewise.index, state.probability, 
 }
 
 
-simCharHistory <- function(phy, tip.states, states, model, vector.form = FALSE){
+simCharHistory <- function(phy, tip.states, states, model, root.p, vector.form = FALSE){
   # warnings
   if(!all(round(rowSums(tip.states)) == 1)){
     return(cat("\nWarning: Tip states must be reconstructed to run Simmap.\n"))
@@ -34,7 +34,7 @@ simCharHistory <- function(phy, tip.states, states, model, vector.form = FALSE){
   state.sample <- matrix(0, dim(state.probability)[1], dim(state.probability)[2])
   
   # single sim function
-  state.samples <- simSingleCharHistory(phy, model, cladewise.index, state.probability, state.sample)
+  state.samples <- simSingleCharHistory(phy, model, cladewise.index, state.probability, state.sample, root.p)
   if(vector.form == FALSE){
     state.samples <- apply(state.samples, 1, function(y) which(y == 1))
   }
@@ -94,11 +94,11 @@ simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model){
 }
 
 # simulate a substitution history given the simulations of ancestral states
-simSubstHistory <- function(phy, tip.states, states, model){
+simSubstHistory <- function(phy, tip.states, states, model, root.p){
   # set-up
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # simulate a character history
-  CharHistories <- simCharHistory(phy=phy, tip.states=tip.states, states=states, model=model)
+  CharHistories <- simCharHistory(phy=phy, tip.states=tip.states, states=states, model=model, root.p=root.p)
   obj <- simSingleSubstHistory(cladewise.index, CharHistories, phy, model)
   return(obj)
 }
@@ -143,12 +143,15 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat){
 }
 
 # exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, nSim=1, nCores=1){
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1){
   model[is.na(model)] <- 0
   diag(model) <- 0
   diag(model) <- -rowSums(model)
   conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat)
-  maps <- mclapply(1:nSim, function(x) simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model), mc.cores = nCores)
+  if(root.p=="yang"){
+    root.p <- Null(model)/sum(Null(model))
+  }
+  maps <- mclapply(1:nSim, function(x) simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, root.p), mc.cores = nCores)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
   for(i in 1:nSim){

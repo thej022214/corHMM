@@ -3,13 +3,14 @@
 \title{Simulate a character history}
 \description{Produces a character history given some of the outputs of a corHMM object.}
 \usage{
-makeSimmap(tree, data, model, rate.cat, nSim=1, nCores=1)
+makeSimmap(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1)
 }       
 \arguments{
 \item{tree}{A phylogeny of class phylo.}
 \item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.}
 \item{model}{The transition rate matrix.}
 \item{rate.cat}{The number of rate categories.}
+\item{root.p}{The root prior to begin the sampling at the root. Currently only "yang" allowed.}
 \item{nSim}{The number of simmaps to be simulated.}
 \item{nCores}{The number of cores to be used.}
 }
