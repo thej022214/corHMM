@@ -133,8 +133,9 @@ We have two characters each with two possible states: trait 1 is the absence (bl
 The default use of `corHMM()` only requires that you declare your *phylogeny*, your *dataset*, and the number of *rate categories* (more detail about this later). We have updated `corHMM()` to handle different types of input data. Now to use `corHMM()`, the first column must be species names (as in the previous version), but there can be any number of data columns. If your dataset does have 2 or more columns of trait information, each column is taken to describe a separate character. Note that when the `corHMM()` call is used, the function automatically determines all the unique character combinations *observed* in the data set. In our primate example only 3 of the 4 possible combinations are observed, and so the model is constructed accordingly. Also, dual transitions are automatically disallowed. In other words, we expect that a species cannot go directly from estrus advertisement being absent in a single male mating system to having estrus advertisement in a multimale mating system. They must first evolve either estrus advertisement or multimale mating system. 
 
 Let's give this a try:
-```{r}
+```{r, eval=-1}
 MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
+load("corHMMResults.Rsave")
 MK_3state
 ```
 
@@ -167,10 +168,8 @@ data = MK_3state$data
 model  = MK_3state$solution
 model[is.na(model)] <- 0
 diag(model) <- -rowSums(model)
-states = MK_3state$states
-tip.states = MK_3state$tip.states
 # run get simmap (can be plotted using phytools)
-simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
+simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=1, nSim=1, nCores=1)
 # we import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap[[1]], fsize=.5)
 ```
@@ -178,7 +177,7 @@ phytools::plotSimmap(simmap[[1]], fsize=.5)
 #### 1.2: A trait with any number of states and any number of hidden rate categories
 
 The major difference between this version of `corHMM` and previous versions is allowing models of any number of states and any number of hidden rate categories (*hidden rate categories will be explained in more depth in section 2*). Running a hidden Markov model (HMM) only requires assigning a value greater than 1 to the rate.cat input. Below, we have assigned 2 rate categories to the data from above: 
-```{r}
+```{r, eval=-1}
 HMM_3state <- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM", get.tip.states = TRUE)
 HMM_3state
 ```
@@ -200,11 +199,9 @@ data = HMM_3state$data
 model  = HMM_3state$solution
 model[is.na(model)] <- 0
 diag(model) <- -rowSums(model)
-states = HMM_3state$states
-tip.states = HMM_3state$tip.states
 
 # run get simmap (can be plotted using phytools)
-simmap <- makeSimmap(tree= phy, tip.states = tip.states, states = states, model = model, nSim = 1, nCores = 1)
+simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=2, nSim=1, nCores=1)
 
 # we import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap[[1]], fsize=.5)
@@ -236,7 +233,7 @@ StateMatA_constrained
 ```
 
 To manually create a symmetric model, we used the equateStateMatPars() function, in which the first argument is the rate matrix being modified (i.e., rate.mat object) and second argument is list of the parameters to be equated. One thing to note is that you must have the appropriate number of rate categories since a user rate matrix is not duplicated or changed by `corHMM()`. Thus, this custom model can only be used if we set rate.cat=1 since that is the appropriate number of rate categories. We can now provide this customized `rate.mat` to `corHMM()`:
-```{r}
+```{r, eval=-1}
 MK_3state_customSYM <- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = StateMatA_constrained)
 MK_3state_customSYM
 ```
@@ -284,7 +281,7 @@ plotMKmodel(FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
 ```
 
 Since this is the model we intended on making, we can run `corHMM()` with our custom matrix:
-```{r}
+```{r, eval=-1}
 HMM_3state_custom <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")
 HMM_3state_custom
 ```
@@ -353,11 +350,11 @@ MFT_FullMat
 
 That's kind of difficult to interpret, so be sure to plot it out using `plotMKmodel()`
 ```{r, eval=FALSE}
-plotMKmodel(pp = MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
+plotMKmodel(MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
 ```
 
 To run this model, we would only need to specify 1) the data, 2) the phylogeny, 3) this matrix, and 4) that this matrix has 3 rate categories:
-```{r}
+```{r, eval=-1}
 MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none")
 MFT_res.corHMM
 ```
@@ -436,7 +433,7 @@ Ont_LegendAndMat
 ```
 
 Even though there were 3 binary characters (meaning 8 possible states), only 3 combinations were actually observed. This is because all of the species were corporeal and thus the incorporeal form didn't factor into the matrix structure. The next thing to notice is that one of the potential states (No Limbs, Yes Fingers) is not present in the dataset and thus not included in the model. In addition, the transition from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not allowed because it is impossible to have fingers without having limbs. Finally, all dual transitions have been removed.
-```{r}
+```{r, eval=-1}
 Ont_res.corHMM <- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")
 ```
 

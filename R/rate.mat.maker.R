@@ -457,21 +457,6 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE){
   return(res)
 }
 
-checkErgodicity <- function(rate.mat){
-  nObs <- dim(rate.mat)[1]
-  toVisit <- 1:nObs
-  #  rate.mat[1,3] <- 0
-  # test if there is  a sink state
-  SinkTest <- apply(rate.mat, 1, function(x) all(x == 0))
-  # if the sink test returns true we have to make sure all states can move into the sink state
-  if(any(SinkTest == TRUE)){
-    rate.mat 
-  }
-  to <- rate.mat[i,]
-  toTest <- apply(rate.mat, 1, function(x) which(x > 0))
-  fromTest <- apply(rate.mat, 2, function(x) which(x > 0))
-}
-
 # step 1: create the individual processes that you are trying to model (the number of matricies you create is the number of hidden states you're interested in modeling)
 # StateMatA <- getStateMat(nState = 3)
 # StateMatB <- getStateMat(nState = 3)

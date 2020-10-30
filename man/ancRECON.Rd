@@ -4,7 +4,7 @@
 \description{Infers ancestral states based on a set of model parameters}
 \usage{
 ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"),
-rate.cat, corHMM_fit, ntraits=NULL, rate.mat=NULL,
+rate.cat, ntraits=NULL, rate.mat=NULL,
 model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE)
 }       
 \arguments{
@@ -13,7 +13,6 @@ model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE)
 \item{p}{a vector of transition rates to be used to estimate ancestral states.}
 \item{method}{method used to calculate ancestral states at internal nodes. Can be one of: "joint", "marginal", or "scaled" (see Details).}
 \item{rate.cat}{specifies the number of rate categories in the HRM.} 
-\item{corHMM_fit}{A corHMM results object of class corhmm (see Details).} 
 \item{ntraits}{currently, this is automaticall detected and can always be set to NULL.}
 \item{rate.mat}{a user-supplied rate matrix index of parameters to be optimized.}
 \item{model}{specifies the underlying model if a rate.mat is not provided ("ER", SYM", or "ARD").}
@@ -22,7 +21,7 @@ model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE)
 \item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
 }
 \details{
-This is a stand alone function for computing the marginal, joint, or scaled likelihoods of internal nodes for a given set of transition rates. Like all other functions contained in corHMM, the tree does not have to be bifurcating in order for analyses to be carried out. IMPORTANT: If the corDISC, corHMM, and rayDISC functions are used they automatically provide a tree with the likeliest states as internal node labels. This function is intended for circumstances where the user would like to reconstruct states based on rates estimated elsewhere (e.g. BayesTraits, Mesquite, \code{ape}). It is also possible to use previous corHMM results if ancestral states were not reconstructed intially using the corHMM_fit option. In this case, a user only needs to input their corHMM results object as an input to corHMM_fit.
+This is a stand alone function for computing the marginal, joint, or scaled likelihoods of internal nodes for a given set of transition rates. Like all other functions contained in corHMM, the tree does not have to be bifurcating in order for analyses to be carried out. IMPORTANT: If the corDISC, corHMM, and rayDISC functions are used they automatically provide a tree with the likeliest states as internal node labels. This function is intended for circumstances where the user would like to reconstruct states based on rates estimated elsewhere (e.g. BayesTraits, Mesquite, \code{ape}).
 
 The algorithm based on Pupko et al. (2000, 2002) is used to calculate the \code{joint} estimates of ancestral states. The \code{marginal} method was originally implemented based on a description of an algorithm by Yang (2006). The basic idea is that the tree is rerooted on each internal node, with the marginal likelihood being the probabilities of observing the tips states given that the focal node is the root. However, this takes a ton of time as the number of nodes increase. But, importantly, this does not work easily when the model contains asymmetric rates. Here, we use the same dynamic programming algorithm as Mesquite (Maddison and Maddison, 2011), which is time linear with the number of species and calculates the marginal probability at a node using an additional up and down pass of the tree.  If \code{scaled}, the function uses the same algorithm from ace(). Note that the \code{scaled} method of ace() is simply the conditional likelihoods of observing everything at or above the focal node and these should NOT be used for ancestral state estimation.
 
@@ -50,9 +49,7 @@ params <- sapply(na.omit(c(MK_3state$index.mat)),
 states_1 <- ancRECON(phy = phy, data = MK_3state$data, p = params, method = "marginal", 
 	rate.cat <- MK_3state$rate.cat, ntraits = NULL, rate.mat = MK_3state$index.mat, 
 	root.p = MK_3state$root.p)
-# using the corHMM results object
-states_2<- ancRECON(corHMM_fit = MK_3state, method = "marginal")	
-	
+
 }
 }
 \references{
