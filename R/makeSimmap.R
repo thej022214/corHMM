@@ -102,7 +102,7 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores){
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # a potential speedup is to calculate all Pij (bollback eq.3) for all branches first
   Pij <- array(0, c(dim(model)[1], dim(model)[2], length(phy$edge.length)))
-  # plus one because the root is not an edge
+  # plus one because the root has no edge
   Pj <- array(0, c(dim(model)[1], dim(model)[2], length(phy$edge.length)+1))
   for(i in 1:length(phy$edge.length)){
     Pij[,,i] <- expm(model * phy$edge.length[i])
@@ -112,7 +112,7 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores){
   dec.index <- phy$edge[,2]
   count <- 1
   for(i in dec.index){
-    Pj[,,count] <- sweep(Pij[,,count], MARGIN = 2, l_sigma_j[count,], '*')
+    Pj[,,count] <- sweep(Pij[,,count], MARGIN = 2, l_sigma_j[i,], '*')
     count <- count + 1
   }
   # simulate a character history
