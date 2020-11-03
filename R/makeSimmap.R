@@ -34,7 +34,7 @@ simCharHistory <- function(phy, Pj, root, model, vector.form = FALSE){
     # A = the probability of transition FROM node i (ancestor)
     anc.index <- phy$edge[i,1]
     dec.index <- phy$edge[i,2]
-    p <- Pj[,,i][state.sample[anc.index,],]
+    p <- Pj[,,i][which(state.sample[anc.index,] == 1),]
     state.sample[dec.index,] <- c(rmultinom(1, 1, p))
   }
   if(vector.form == FALSE){
