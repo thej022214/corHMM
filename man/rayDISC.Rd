@@ -6,7 +6,7 @@
 \usage{
 rayDISC(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","SYM","ARD"),
 node.states=c("joint", "marginal", "scaled", "none"), state.recon=c("subsequently"), 
-lewis.asc.bias=FALSE, p=NULL, root.p=NULL, ip=NULL, lb=0, ub=100, verbose=TRUE, 
+lewis.asc.bias=FALSE, p=NULL, root.p="yang", ip=NULL, lb=1e-9, ub=100, verbose=TRUE, 
 diagn=FALSE)
 }
 \arguments{
