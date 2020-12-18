@@ -355,7 +355,6 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
       }else{
           # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
           root.p = liks[root,!col2rm] / sum(liks[root,!col2rm])
-          print(root.p)
           loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
       }
   }
