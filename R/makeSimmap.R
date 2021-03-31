@@ -1,3 +1,43 @@
+# exported function for use
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL){
+  model[is.na(model)] <- 0
+  diag(model) <- 0
+  diag(model) <- -rowSums(model)
+  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p)
+  if((!is.null(fix.node) & is.null(fix.state)) | (is.null(fix.node) & !is.null(fix.state))){
+    stop("Only one of a node to fix or the state to fix was supplied when both are needed.",.call=FALSE)
+  }
+  
+  if(!is.null(fix.node) & !is.null(fix.state)){
+    if(dim(model)[1] < fix.state){
+      stop("The state being fixed does not exist in this model. The max number of states is ", dim(model)[1], .call=FALSE)
+    }
+    # test if we are fixing an external or internal node
+    if(fix.node <= length(tree$tip.label)){
+      conditional.lik$tip.states[fix.node,] <- 0
+      conditional.lik$tip.states[fix.node, fix.state] <- 1
+    }else{
+      fix.internal <- fix.node - length(tree$tip.label)
+      conditional.lik$node.states[fix.internal,] <- 0
+      conditional.lik$node.states[fix.internal, fix.state] <- 1
+    }
+  }
+  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores)
+  mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
+  obj <- vector("list", nSim)
+  for(i in 1:nSim){
+    tree.simmap <- tree
+    tree.simmap$maps <- maps[[i]]
+    tree.simmap$mapped.edge <- mapped.edge[[i]]
+    tree.simmap$Q <- model
+    attr(tree.simmap, "map.order") <- "right-to-left"
+    if (!inherits(tree.simmap, "simmap")) 
+      class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
+    obj[[i]] <- tree.simmap
+  }
+  return(obj)
+}
+
 # simulate ancestral states at each internal node
 # simSingleCharHistory<- function(phy, model, cladewise.index, state.probability, state.sample){
 #   # sample the root state
@@ -176,28 +216,6 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
   
   return(list(tip.states = liks[1:nb.tip,],
               node.states = liks[(nb.tip+1):(nb.node+nb.tip),]))
-}
-
-# exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1){
-  model[is.na(model)] <- 0
-  diag(model) <- 0
-  diag(model) <- -rowSums(model)
-  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p)
-  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores)
-  mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
-  obj <- vector("list", nSim)
-  for(i in 1:nSim){
-    tree.simmap <- tree
-    tree.simmap$maps <- maps[[i]]
-    tree.simmap$mapped.edge <- mapped.edge[[i]]
-    tree.simmap$Q <- model
-    attr(tree.simmap, "map.order") <- "right-to-left"
-    if (!inherits(tree.simmap, "simmap")) 
-      class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
-    obj[[i]] <- tree.simmap
-  }
-  return(obj)
 }
 
 # simulate a Q along a phylogeny
