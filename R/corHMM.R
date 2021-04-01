@@ -496,6 +496,12 @@ print.corhmm<-function(x,...){
     print(output)
     cat("\n")
     
+    UserStates <- corProcessData(x$data)$ObservedTraits
+    names(UserStates) <- 1:length(UserStates)
+    cat("Legend\n")
+    print(UserStates)
+    cat("\n")
+    
     param.est<- x$solution
     cat("Rates\n")
     print(param.est)
