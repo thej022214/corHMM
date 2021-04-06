@@ -10,7 +10,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   
   if(!is.null(fix.node) & !is.null(fix.state)){
     if(dim(model)[1] < fix.state){
-      stop("The state being fixed does not exist in this model. The max number of states is ", dim(model)[1], .call=FALSE)
+      stop("The state being fixed does not exist in this model. The max number of states is ", dim(model)[1])
     }
     # test if we are fixing an external or internal node
     if(fix.node <= length(tree$tip.label)){
@@ -90,7 +90,12 @@ simBranchSubstHistory <- function(init, final, total.bl, model, d.rates){
   while(restart == TRUE){
     # draw a rate and waiting time based on init
     rate <- d.rates[current.state]
-    waiting.time <- rexp(1, rate)
+    # if the rate is 0, then we are in a sink state and we will remain in that state for the entire branch length
+    if(rate == 0){
+      waiting.time <- total.bl
+    }else{
+      waiting.time <- rexp(1, rate)
+    }
     current.bl <- c(current.bl, waiting.time)
     names(current.bl)[length(current.bl)] <- current.state
     # if the waiting time is smaller than the branch
@@ -209,7 +214,7 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
     root.p <- Null(model)
     root.p <- c(root.p/sum(root.p))
   }
-  if(input.root.p == "madfitz"){
+  if(input.root.p == "maddfitz"){
     root.p <- liks[focal, ]
   }
   liks[focal, ] <-  liks[focal, ] * root.p
