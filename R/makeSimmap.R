@@ -75,6 +75,11 @@ simCharHistory <- function(phy, Pj, root, model, vector.form = FALSE){
     anc.index <- phy$edge[i,1]
     dec.index <- phy$edge[i,2]
     p <- Pj[,,i][which(state.sample[anc.index,] == 1),]
+    # if all p = 0, then we have an incompatible character history (possible with hidden states and directional models) and we have to try another character history.
+    if(all(p == 0)){
+      state.sample <- simCharHistory(phy, Pj, root, model, vector.form = FALSE)
+      return(state.sample)
+    }
     state.sample[dec.index,] <- c(rmultinom(1, 1, p))
   }
   if(vector.form == FALSE){
