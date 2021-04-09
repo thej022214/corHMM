@@ -51,5 +51,10 @@ CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node
 plotMKmodel(CustomModel)
 }
 }
+
+\references{
+Boyko, J. D., and J. M. Beaulieu. 2021. Generalized hidden Markov models for phylogenetic comparative datasets. Methods in Ecology and Evolution 12:468-478.
+}
+
 \author{James D. Boyko}
 \keyword{plot}

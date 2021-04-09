@@ -1,3 +1,43 @@
+# exported function for use
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE){
+  model[is.na(model)] <- 0
+  diag(model) <- 0
+  diag(model) <- -rowSums(model)
+  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony)
+  if((!is.null(fix.node) & is.null(fix.state)) | (is.null(fix.node) & !is.null(fix.state))){
+    stop("Only one of a node to fix or the state to fix was supplied when both are needed.",.call=FALSE)
+  }
+  
+  if(!is.null(fix.node) & !is.null(fix.state)){
+    if(dim(model)[1] < fix.state){
+      stop("The state being fixed does not exist in this model. The max number of states is ", dim(model)[1])
+    }
+    # test if we are fixing an external or internal node
+    if(fix.node <= length(tree$tip.label)){
+      conditional.lik$tip.states[fix.node,] <- 0
+      conditional.lik$tip.states[fix.node, fix.state] <- 1
+    }else{
+      fix.internal <- fix.node - length(tree$tip.label)
+      conditional.lik$node.states[fix.internal,] <- 0
+      conditional.lik$node.states[fix.internal, fix.state] <- 1
+    }
+  }
+  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores)
+  mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
+  obj <- vector("list", nSim)
+  for(i in 1:nSim){
+    tree.simmap <- tree
+    tree.simmap$maps <- maps[[i]]
+    tree.simmap$mapped.edge <- mapped.edge[[i]]
+    tree.simmap$Q <- model
+    attr(tree.simmap, "map.order") <- "right-to-left"
+    if (!inherits(tree.simmap, "simmap")) 
+      class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
+    obj[[i]] <- tree.simmap
+  }
+  return(obj)
+}
+
 # simulate ancestral states at each internal node
 # simSingleCharHistory<- function(phy, model, cladewise.index, state.probability, state.sample){
 #   # sample the root state
@@ -35,6 +75,11 @@ simCharHistory <- function(phy, Pj, root, model, vector.form = FALSE){
     anc.index <- phy$edge[i,1]
     dec.index <- phy$edge[i,2]
     p <- Pj[,,i][which(state.sample[anc.index,] == 1),]
+    # if all p = 0, then we have an incompatible character history (possible with hidden states and directional models) and we have to try another character history.
+    if(all(p == 0)){
+      state.sample <- simCharHistory(phy, Pj, root, model, vector.form = FALSE)
+      return(state.sample)
+    }
     state.sample[dec.index,] <- c(rmultinom(1, 1, p))
   }
   if(vector.form == FALSE){
@@ -50,7 +95,12 @@ simBranchSubstHistory <- function(init, final, total.bl, model, d.rates){
   while(restart == TRUE){
     # draw a rate and waiting time based on init
     rate <- d.rates[current.state]
-    waiting.time <- rexp(1, rate)
+    # if the rate is 0, then we are in a sink state and we will remain in that state for the entire branch length
+    if(rate == 0){
+      waiting.time <- total.bl
+    }else{
+      waiting.time <- rexp(1, rate)
+    }
     current.bl <- c(current.bl, waiting.time)
     names(current.bl)[length(current.bl)] <- current.state
     # if the waiting time is smaller than the branch
@@ -131,7 +181,7 @@ convertSubHistoryToEdge <- function(phy, map){
 }
 
 # get the conditional likelihoods of particular nodes
-getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
+getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE){
   phy <- reorder(tree, "pruningwise")
   nb.node <- phy$Nnode
   nb.tip <- length(phy$tip.label)
@@ -140,6 +190,9 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
   nObs <- length(CorData$ObservedTraits)
   # get the liks table
   model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, ntraits = nObs, model = "ER")
+  if(parsimony==TRUE){
+    model <- model/1000
+  }
   liks <- model.set.final$liks
   anc <- unique(phy$edge[,1])
   for (i in seq(from = 1, length.out = nb.node)) {
@@ -169,35 +222,13 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
     root.p <- Null(model)
     root.p <- c(root.p/sum(root.p))
   }
-  if(input.root.p == "madfitz"){
+  if(input.root.p == "maddfitz"){
     root.p <- liks[focal, ]
   }
   liks[focal, ] <-  liks[focal, ] * root.p
   
   return(list(tip.states = liks[1:nb.tip,],
               node.states = liks[(nb.tip+1):(nb.node+nb.tip),]))
-}
-
-# exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1){
-  model[is.na(model)] <- 0
-  diag(model) <- 0
-  diag(model) <- -rowSums(model)
-  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p)
-  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores)
-  mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
-  obj <- vector("list", nSim)
-  for(i in 1:nSim){
-    tree.simmap <- tree
-    tree.simmap$maps <- maps[[i]]
-    tree.simmap$mapped.edge <- mapped.edge[[i]]
-    tree.simmap$Q <- model
-    attr(tree.simmap, "map.order") <- "right-to-left"
-    if (!inherits(tree.simmap, "simmap")) 
-      class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
-    obj[[i]] <- tree.simmap
-  }
-  return(obj)
 }
 
 # simulate a Q along a phylogeny
