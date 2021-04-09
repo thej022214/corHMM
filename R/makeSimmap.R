@@ -1,9 +1,9 @@
 # exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL){
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE){
   model[is.na(model)] <- 0
   diag(model) <- 0
   diag(model) <- -rowSums(model)
-  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p)
+  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony)
   if((!is.null(fix.node) & is.null(fix.state)) | (is.null(fix.node) & !is.null(fix.state))){
     stop("Only one of a node to fix or the state to fix was supplied when both are needed.",.call=FALSE)
   }
@@ -181,7 +181,7 @@ convertSubHistoryToEdge <- function(phy, map){
 }
 
 # get the conditional likelihoods of particular nodes
-getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
+getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE){
   phy <- reorder(tree, "pruningwise")
   nb.node <- phy$Nnode
   nb.tip <- length(phy$tip.label)
@@ -190,6 +190,9 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p){
   nObs <- length(CorData$ObservedTraits)
   # get the liks table
   model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, ntraits = nObs, model = "ER")
+  if(parsimony==TRUE){
+    model <- model/1000
+  }
   liks <- model.set.final$liks
   anc <- unique(phy$edge[,1])
   for (i in seq(from = 1, length.out = nb.node)) {

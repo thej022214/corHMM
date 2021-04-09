@@ -31,8 +31,8 @@ Setting get.likelihood=TRUE will provide the user the joint likelihood of the ra
 }
 \value{
 \item{$lik.tip.states}{A matrix of the reconstructed tip values. If the number of rate.cats is greater than 2 then the probability that each observed state is in a particular hidden state is given.}
-\item{$lik.anc.states}{For \code{joint}, a vector of likeliest states at internal nodes and tips. For either \code{marginal} or \code{scaled}, a matrix of the probabilities of each state for each internal node are returned.}
-\item{info.anc.states}{A vector containing the amount of information (in bits) that the tip states and model gives to each node.}
+\item{$lik.anc.states}{For \code{joint}, a vector of likeliest states at internal nodes and tips. For either \code{marginal} or \code{$scaled}, a matrix of the probabilities of each state for each internal node are returned.}
+\item{$info.anc.states}{A vector containing the amount of information (in bits) that the tip states and model gives to each node. See Boyko and Beaulieu (2021).}
 }
 \examples{
 \donttest{
@@ -62,6 +62,8 @@ Pupko, T., I. Pe'er, R. Shamir, and D. Graur. 2000. A fast algorithm for joint r
 Pupko, T., I. Pe'er, D. Graur, M. Hasegawa, and N Friedman N. 2002. A branch-and-bound algorithm for the inference of ancestral amino-acid sequences when the replacement rate varies among sites: application to the evolution of five gene families. Bioinformatics 18:1116-1123.
 
 Yang, Z. 2006. Computational Molecular Evolution. London:Oxford.
+
+Boyko, J. D., and J. M. Beaulieu. 2021. Generalized hidden Markov models for phylogenetic comparative datasets. Methods in Ecology and Evolution 12:468-478.
 }
 
 \author{Jeremy M. Beaulieu and Jeffrey C. Oliver}
