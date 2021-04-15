@@ -36,7 +36,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     
     #data consistency stuff
     input.data <- data
-    corData <- corProcessData(data)
+    corData <- corProcessData(data, collapse = is.null(rate.mat))
     data <- corData$corData
 
     matching <- match.tree.data(phy,data)
@@ -57,11 +57,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     k <- ntraits <- length(corData$ObservedTraits)
     drop.states = NULL
     if(is.null(rate.mat)){
-        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat = rate.mat)
         rate.mat <- model.set.final$index.matrix
         rate <- model.set.final$rate
     }else{
-        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat=rate.mat)
         rate <- rate.mat
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)

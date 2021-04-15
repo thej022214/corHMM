@@ -46,7 +46,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     nCol <- dim(data)[2]
     
-    CorData <- corProcessData(data)
+    CorData <- corProcessData(data, collapse = is.null(rate.mat))
     data.legend <- data <- CorData$corData
     nObs <- length(CorData$ObservedTraits)
     
@@ -101,7 +101,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     nstarts <- nstarts
     ip <- ip
     
-    model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat, ntraits = nObs, model = model)
+    model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat,ntraits=nObs,model=model,rate.mat=rate.mat)
     phy <- reorder(phy, "pruningwise")
     
     # this allows for custom rate matricies!
@@ -217,7 +217,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     # finalize the output
     solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-    StateNames <- paste("(", rep(1:nObs, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
+    StateNames <- paste("(", rep(1:dim(model.set.final$index.matrix)[1], rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
     rownames(solution) <- colnames(solution) <- StateNames
     AIC <- -2*loglik+2*model.set.final$np
     AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
@@ -399,27 +399,31 @@ getLewisLikelihood <- function(p, phy, liks, Q, rate, root.p, rate.cat){
 }
 
 # JDB modified functions
-rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
+rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NULL){
     
     obj <- NULL
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     obj$rate.cat<-rate.cat
-    
-    rate <- getStateMat4Dat(data, model)$rate.mat
-    if(rate.cat > 1){
+    if(is.null(rate.mat)){
+      rate <- getStateMat4Dat(data, model)$rate.mat
+      if(rate.cat > 1){
         StateMats <- vector("list", rate.cat)
         for(i in 1:rate.cat){
-            StateMats[[i]] <- rate
+          StateMats[[i]] <- rate
         }
         rate <- getFullMat(StateMats)
+      }
+    }else{
+      rate <- rate.mat
+      ntraits <- dim(rate)[1]
     }
     nTraits <- dim(rate)[1]
     rate[rate == 0] <- NA
     index.matrix<-rate
     rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
     
-    CorData <- corProcessData(data)
+    CorData <- corProcessData(data, collapse = is.null(rate.mat))
     data <- CorData$corData
     nObs <- length(CorData$ObservedTraits)
     
@@ -455,7 +459,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model){
     return(obj)
 }
 
-corProcessData <- function(data){
+corProcessData <- function(data, collapse=TRUE){
   nCol <- dim(data)[2]
   LevelList <- StateMats <- vector("list", nCol-1)
   # detect the number of states in each column. & is treated as indicating polymorphism. ? is treated as unknown data.
@@ -484,7 +488,11 @@ corProcessData <- function(data){
     search.strings[i] <- search.string_i
   }
   ObservedTraits <- sort(Traits[unique(observed.traits_index)])
-  corData <- data.frame(sp = data[,1], d = sapply(search.strings, function(x) paste(grep(x, ObservedTraits), collapse="&")))
+  if(collapse){
+    corData <- data.frame(sp = data[,1], d = sapply(search.strings, function(x) paste(grep(x, ObservedTraits), collapse="&")))
+  }else{
+    corData <- data.frame(sp = data[,1], d = observed.traits_index)
+  }
   return(list(StateMats = StateMats,  PossibleTraits = Traits, ObservedTraits = ObservedTraits, corData = corData))
 }
 
@@ -498,7 +506,7 @@ print.corhmm<-function(x,...){
     cat("\n")
     
     UserStates <- corProcessData(x$data)$ObservedTraits
-    names(UserStates) <- 1:length(UserStates)
+    names(UserStates) <- sort(unique(x$data.legend[,2]))
     cat("Legend\n")
     print(UserStates)
     cat("\n")

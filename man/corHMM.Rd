@@ -45,7 +45,7 @@ Ancestral states can be estimated using marginal, joint, scaled, or none approac
 \item{$AICc}{Akaike information criterion corrected for sample size.}
 \item{$rate.cat}{The number of rate categories specified.}
 \item{$solution}{a matrix containing the maximum likelihood estimates of the transition rates. Note that the rate classes are ordered from slowest (R1) to fastest (Rn) with respect to state 0.}
-\item{$index.mat}{The indices of the parameters being estimated are returned}
+\item{$index.mat}{The indices of the parameters being estimated are returned. This also is a way to allow the estimation of transition rates for parameters not oberved in the dataset. Say you have 2 traits X and Y, where the combinations 00, 01, and 11 are observed (10 is not). A 4 by 4 index matrix could be used to force 10 into the model.}
 \item{$data}{User-supplied dataset.}
 \item{$data.legend}{User-supplied dataset with an extra column of trait values corresponding to how corHMM calls the user data.}
 \item{$phy}{User-supplied tree.}
