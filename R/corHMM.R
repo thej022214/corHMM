@@ -217,7 +217,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     # finalize the output
     solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-    StateNames <- paste("(", rep(1:dim(model.set.final$index.matrix)[1], rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
+    StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
     rownames(solution) <- colnames(solution) <- StateNames
     AIC <- -2*loglik+2*model.set.final$np
     AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
@@ -268,12 +268,12 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
   
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
-  # if the q matrix has columns not estimated, remove them
-  row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
-  col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
-  Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
+  # # if the q matrix has columns not estimated, remove them
+  # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
+  # col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
+  # Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
   if(root.p == "yang"){
-    root.test <- Null(Q.root)
+    root.test <- Null(Q)
     if(dim(root.test)[2]>1){
       return(1000000)
     }
@@ -330,11 +330,11 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
   if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
   equil.root <- NULL
 
-  for(i in 1:ncol(Q.root)){
-      posrows <- which(Q.root[,i] >= 0)
-      rowsum <- sum(Q.root[posrows,i])
-      poscols <- which(Q.root[i,] >= 0)
-      colsum <- sum(Q.root[i,poscols])
+  for(i in 1:ncol(Q)){
+      posrows <- which(Q[,i] >= 0)
+      rowsum <- sum(Q[posrows,i])
+      poscols <- which(Q[i,] >= 0)
+      colsum <- sum(Q[i,poscols])
       equil.root <- c(equil.root,rowsum/(rowsum+colsum))
   }
   if (is.null(root.p)){
@@ -342,26 +342,26 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
       k.rates <- 1/length(which(!is.na(equil.root)))
       flat.root[!is.na(flat.root)] = k.rates
       flat.root[is.na(flat.root)] = 0
-      loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,!col2rm])))
+      loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
   }
   if(is.character(root.p)){
       # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
       if(root.p == "yang"){
-          root.p <- Null(Q.root)
+          root.p <- Null(Q)
           root.p <- c(root.p/sum(root.p))
-          loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,!col2rm])))
+          loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
           if(is.infinite(loglik)){
               return(1000000)
           }
       }else{
           # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-          root.p = liks[root,!col2rm] / sum(liks[root,!col2rm])
-          loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
+          root.p = liks[root,] / sum(liks[root,])
+          loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
       }
   }
   # root.p!==NULL will fix root probabilities based on user supplied vector:
   if(is.numeric(root.p[1])){
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,!col2rm])))))
+      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
       if(is.infinite(loglik)){
           return(1000000)
       }
@@ -416,7 +416,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NU
       }
     }else{
       rate <- rate.mat
-      ntraits <- dim(rate)[1]
+      ntraits <- dim(rate)[1]/rate.cat
     }
     nTraits <- dim(rate)[1]
     rate[rate == 0] <- NA

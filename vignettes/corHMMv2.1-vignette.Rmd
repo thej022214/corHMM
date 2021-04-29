@@ -355,7 +355,7 @@ plotMKmodel(MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
 
 To run this model, we would only need to specify 1) the data, 2) the phylogeny, 3) this matrix, and 4) that this matrix has 3 rate categories:
 ```{r, eval=-1}
-MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none")
+MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none", root.p = "maddfitz")
 MFT_res.corHMM
 ```
 
@@ -406,7 +406,7 @@ Precur_FullMat
 
 We now run `corHMM()` making sure to specify that we have 2 rate categories (or rate classes or hidden states - it's all the same).
 ```{r}
-Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat)
+Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat, root.p = "maddfitz")
 Precur_res.corHMM
 ```
 
