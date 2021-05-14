@@ -7,7 +7,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, collapse = TRUE){
     
   # if(hasArg(corHMM_fit)){
   #   corHMM_fit$phy$node.label <- NULL
@@ -36,7 +36,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     
     #data consistency stuff
     input.data <- data
-    corData <- corProcessData(data, collapse = is.null(rate.mat))
+    corData <- corProcessData(data, collapse = collapse)
     data <- corData$corData
 
     matching <- match.tree.data(phy,data)
@@ -57,11 +57,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     k <- ntraits <- length(corData$ObservedTraits)
     drop.states = NULL
     if(is.null(rate.mat)){
-        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat = rate.mat)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat = rate.mat, collapse = collapse)
         rate.mat <- model.set.final$index.matrix
         rate <- model.set.final$rate
     }else{
-        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat=rate.mat)
+        model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat=rate.mat, collapse = collapse)
         rate <- rate.mat
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
@@ -411,7 +411,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         }
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
-            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input)
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input, collapse = collapse)
         }else{
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
@@ -516,12 +516,12 @@ getInfoPerNode <- function(lik.anc.states, Q){
   return(Info)
 }
 
-GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p){
+GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p, collapse = TRUE){
     
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     
-    data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model)
+    data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model, collapse = collapse)
     
     if(!is.null(rate.mat)){
         rate <- rate.mat
