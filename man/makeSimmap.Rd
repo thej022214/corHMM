@@ -3,7 +3,8 @@
 \title{Simulate a character history}
 \description{Produces a character history given some of the outputs of a corHMM object.}
 \usage{
-makeSimmap(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE)
+makeSimmap(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL,
+fix.state=NULL, parsimony = FALSE)
 }       
 \arguments{
 \item{tree}{A phylogeny of class phylo.}

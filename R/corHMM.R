@@ -272,13 +272,15 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
   # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
   # col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
   # Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
-  if(root.p == "yang"){
-    root.test <- Null(Q)
-    if(dim(root.test)[2]>1){
-      return(1000000)
-    }
+  if(is.character(root.p)){
+      if(root.p == "yang"){
+          root.test <- Null(Q)
+          if(dim(root.test)[2]>1){
+              return(1000000)
+          }
+      }      
   }
-  
+
   if(order.test == TRUE){
       # ensure that the rate classes have mean rates in a consistent order (A > B > C > n)
       StateOrderMat <- matrix(1, (dim(Q)/rate.cat)[1], (dim(Q)/rate.cat)[2])
