@@ -131,7 +131,7 @@ test_that("Simple tests of corDISC vs. new corHMM",{
   p <- c(na.omit(as.vector(res$old.cordisc$solution)))
   rate.mat <- getStateMat4Dat(data, "ARD")$rate.mat
 
-  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=1, rate.mat = rate.mat, p = p, root.p = NULL)
+  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=1, p = p, root.p = NULL)
   
   comparison <- identical(corHMM.new$loglik - res$old.cordisc$loglik, 0)
   expect_true(comparison)
