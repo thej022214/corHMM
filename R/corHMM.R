@@ -46,7 +46,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     nCol <- dim(data)[2]
     
-    CorData <- corProcessData(data, collapse = is.null(rate.mat))
+    CorData <- corProcessData(data, collapse = collapse)
     data.legend <- data <- CorData$corData
     nObs <- length(CorData$ObservedTraits)
     
