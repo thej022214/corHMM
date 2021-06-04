@@ -403,12 +403,12 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
   return(FullMat)
 }
 
-getStateMat4Dat <- function(data, model = "ARD", dual = FALSE){
+getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE){
   
-  CorData <- corProcessData(data)
+  CorData <- corProcessData(data, collapse)
   
   data.legend <- CorData$ObservedTraits
-  nObs <- length(CorData$ObservedTraits)
+  nObs <- as.numeric(max(CorData$corData[,2]))
   nCol <- dim(data)[2]
   
   if(nCol > 2){
@@ -428,9 +428,11 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE){
   }
   
   # adjusting the rate mat if there are any unobsered states
-  ObservedTraitIndex <- which(CorData$PossibleTraits %in% CorData$ObservedTraits)
-  rate.mat <- rate.mat[ObservedTraitIndex, ]
-  rate.mat <- rate.mat[, ObservedTraitIndex]
+  if(collapse){
+    ObservedTraitIndex <- which(CorData$PossibleTraits %in% CorData$ObservedTraits)
+    rate.mat <- rate.mat[ObservedTraitIndex, ]
+    rate.mat <- rate.mat[, ObservedTraitIndex]
+  }
   # there is a possibility that some states require dual transitions, in these cases we allow all transitions to occur.
   if(dual){
     rate.mat <- getStateMat(nObs)
@@ -451,8 +453,13 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE){
   }
   
   colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nObs, ")", sep ="")
-  legend <- CorData$ObservedTraits
-  names(legend) <- 1:nObs
+  if(collapse){
+    legend <- CorData$ObservedTraits
+    names(legend) <- 1:nObs
+  }else{
+    legend <- CorData$PossibleTraits
+    names(legend) <- 1:nObs
+  }
   res <- list(legend = legend, rate.mat = rate.mat)
   return(res)
 }
