@@ -1,9 +1,17 @@
 # exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE){
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 1000){
   model[is.na(model)] <- 0
   diag(model) <- 0
   diag(model) <- -rowSums(model)
   conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony)
+  # if(!is.null(tip.probs)){
+  #   for(i in 1:dim(conditional.lik$tip.states)[1]){
+  #     nCol <- dim(tip.probs)[2]
+  #     tmp <- vector("numeric", nCol)
+  #     tmp[sample(1:nCol, 1, prob = tip.probs[i,])] <- 1
+  #     conditional.lik$tip.states[i, ] <- tmp
+  #   }
+  # }
   if((!is.null(fix.node) & is.null(fix.state)) | (is.null(fix.node) & !is.null(fix.state))){
     stop("Only one of a node to fix or the state to fix was supplied when both are needed.",.call=FALSE)
   }
@@ -22,7 +30,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
       conditional.lik$node.states[fix.internal, fix.state] <- 1
     }
   }
-  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores)
+  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores, max.attempt)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
   for(i in 1:nSim){
@@ -88,11 +96,19 @@ simCharHistory <- function(phy, Pj, root, model, vector.form = FALSE){
   return(state.sample)
 }
 
-simBranchSubstHistory <- function(init, final, total.bl, model, d.rates){
+simBranchSubstHistory <- function(init, final, total.bl, model, d.rates, max.attempt=1000){
   current.bl <- c()
   current.state <- init
   restart <- TRUE
+  attempt.no <- 0
   while(restart == TRUE){
+    if(attempt.no >= max.attempt){
+      ViableShortPath <- FloydWalshAlg(model, init, final)
+      current.bl <- rep(total.bl/length(ViableShortPath), length(ViableShortPath))
+      names(current.bl) <- ViableShortPath
+      return(current.bl)
+    }
+    attempt.no <- attempt.no + 1
     # draw a rate and waiting time based on init
     rate <- d.rates[current.state]
     # if the rate is 0, then we are in a sink state and we will remain in that state for the entire branch length
@@ -103,6 +119,7 @@ simBranchSubstHistory <- function(init, final, total.bl, model, d.rates){
     }
     current.bl <- c(current.bl, waiting.time)
     names(current.bl)[length(current.bl)] <- current.state
+    # if reach the max attempts, draw a path of viable character states then use a uniform distribution to split the times
     # if the waiting time is smaller than the branch
     if(sum(current.bl) < total.bl){
       # then: a substitution is drawn with probability of leaving that state
@@ -131,7 +148,7 @@ simBranchSubstHistory <- function(init, final, total.bl, model, d.rates){
   return(current.bl)
 }
 
-simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model){
+simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model, max.attempt = 1000){
   SubstHistory <- vector("list", length(cladewise.index))
   d.rates <- -diag(model)
   for(i in cladewise.index){
@@ -141,13 +158,13 @@ simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model){
     init <- CharHistory[anc.index]
     final <- CharHistory[dec.index]
     total.bl <- phy$edge.length[i]
-    SubstHistory[[i]] <- simBranchSubstHistory(init, final, total.bl, model, d.rates)
+    SubstHistory[[i]] <- simBranchSubstHistory(init, final, total.bl, model, d.rates, max.attempt = max.attempt)
   }
   return(SubstHistory)
 }
 
 # simulate a substitution history given the simulations of ancestral states
-simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores){
+simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.attempt = 1000){
   # set-up
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # a potential speedup is to calculate all Pij (bollback eq.3) for all branches first
@@ -167,7 +184,7 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores){
   }
   # simulate a character history
   CharHistories <- lapply(1:nSim, function(x) simCharHistory(phy=phy, Pj=Pj, root=states[1,], model=model))
-  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model), mc.cores = nCores)
+  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model, max.attempt), mc.cores = nCores)
   return(obj)
 }
 
@@ -325,7 +342,43 @@ getSimmapLik <- function(simmap, Q){
   return(lik)
 }
 
-
+# The Floyd–Warshall algorithm (also known as Floyd's algorithm, the Roy–Warshall algorithm, the Roy–Floyd algorithm, or the WFI algorithm) is an algorithm for finding shortest paths in a directed weighted graph with positive or negative edge weights (but with no negative cycles).
+FloydWalshAlg <- function(model, init, final){
+  nStates <- dim(model)[1]
+  Dist <- matrix(Inf, nStates, nStates)
+  Next <- matrix(NA, nStates, nStates)
+  for(V_index in sequence(nStates)){
+    Dist[V_index, V_index] <- 0
+    Next[V_index, V_index] <- V_index
+  }
+  for(V_index in sequence(nStates)){
+    To <- which(model[V_index, ] > 0)
+    Dist[V_index, To] <- 1
+    Next[V_index, To] <- To
+  }
+  for(k in sequence(nStates)){
+    for(i in sequence(nStates)){
+      for(j in sequence(nStates)){
+        if(Dist[i,j] > Dist[i,k] + Dist[k,j]){
+          Dist[i,j] = Dist[i,k] + Dist[k,j]
+          Next[i,j] = Next[i,k]
+        }
+      }
+    }
+  }
+  if(is.na(Next[init, final])){
+    stop("Impossible transition on branch detected...")
+  }else{
+    path = init
+    u = init
+    v = final
+    while(u != v){
+      u <- Next[u, v]
+      path <- c(path, u)
+    }
+  }
+  return(path)
+}
 
 # simmap <- makeSimmap(tree=phy, tip.states=tip.states, states=states, model=model, 
 #                      nSim=10, nCores=1)
