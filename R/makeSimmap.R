@@ -43,6 +43,9 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
       class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
     obj[[i]] <- tree.simmap
   }
+  if(nSim > 1){
+    class(obj) <- c("multiSimmap", "multiPhylo")
+  }
   return(obj)
 }
 
