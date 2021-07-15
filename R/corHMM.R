@@ -164,7 +164,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                 if(mean.change==0){
                     starts=rep(0.01+exp(lb), model.set.final$np)
                 }else{
-                    starts<-rexp(model.set.final$np, 1/mean.change)
+                    starts<-sort(rexp(model.set.final$np, 1/mean.change), decreasing = TRUE)
                 }
                 starts[starts < exp(lb)] = exp(lb)
                 starts[starts > exp(ub)] = exp(lb)
