@@ -408,7 +408,7 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE){
   CorData <- corProcessData(data, collapse)
   
   data.legend <- CorData$ObservedTraits
-  nObs <- as.numeric(max(CorData$corData[,2]))
+  nObs <- max(as.numeric(CorData$corData[,2]))
   nCol <- dim(data)[2]
   
   if(nCol > 2){
