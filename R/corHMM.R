@@ -493,7 +493,7 @@ corProcessData <- function(data, collapse=TRUE){
   if(collapse){
     corData <- data.frame(sp = data[,1], d = sapply(search.strings, function(x) paste(grep(x, ObservedTraits), collapse="&")))
   }else{
-    corData <- data.frame(sp = data[,1], d = observed.traits_index)
+    corData <- data.frame(sp = data[, 1], d = sapply(search.strings, function(x) paste(grep(x, Traits),collapse = "&")))
   }
   return(list(StateMats = StateMats,  PossibleTraits = Traits, ObservedTraits = ObservedTraits, corData = corData))
 }
