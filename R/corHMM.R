@@ -48,7 +48,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     CorData <- corProcessData(data, collapse = collapse)
     data.legend <- data <- CorData$corData
-    nObs <- length(CorData$ObservedTraits)
+    # nObs <- length(CorData$ObservedTraits)
+    nObs <- max(as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])]))
     
     # Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
     matching <- match.tree.data(phy,data)
