@@ -49,8 +49,11 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     CorData <- corProcessData(data, collapse = collapse)
     data.legend <- data <- CorData$corData
     # nObs <- length(CorData$ObservedTraits)
-    nObs <- max(as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])]))
-    
+    if(length(grep("&", CorData$corData[,2])) > 0){
+      nObs <- max(as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])]))
+    }else{
+      nObs <- max(as.numeric(CorData$corData[,2]))
+    }
     # Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
     matching <- match.tree.data(phy,data)
     data <- matching$data
@@ -73,8 +76,11 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         }
     }
     
+    if(any(phy$edge.length<=1e-5)){
+      warning("Branch lengths of 0 detected. Adding 1e-5 to these branches.", immediate. = TRUE)
+      phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
+    }
     #Creates the data structure and orders the rows to match the tree.
-    phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
     data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
     data.sort <- data.sort[phy$tip.label,]
     
