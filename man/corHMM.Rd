@@ -6,7 +6,7 @@
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
 fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, 
 get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, 
-upper.bound = 100)
+upper.bound = 100, opts=NULL)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -26,6 +26,7 @@ upper.bound = 100)
 \item{collapse}{a boolean indicating whether to collapse multiple character combinations into only the observed states. For example, if true a two character dataset contained (0,0), (1,0), and (1,1), this would be collapsed into 1,2,3. However, if set to false it would 1,2,4. In combination with a custom rate matrix this allows for the estimation of transitions between the unobserved character combination. The default is \code{TRUE}}.
 \item{lower.bound}{lower bound for the likelihood search. The default is \code{lower.bound=1e-9}.}
 \item{upper.bound}{upper bound for the likelihood search. The default is \code{upper.bound=100}.}
+\item{opts}{options to pass to nloptr. default is \code{NULL}.}
 }
 \details{
 This function takes a tree and a trait file and estimates transition rates and ancestral states for any number of discrete characters using a Markov model with or without "hidden" states. Users are advised to read the _Generalized corHMM_ vignette for details on how to make full use of \code{corHMM}'s new functionality. In general, these models describe evolution as discrete transitions between observed states. If rate.class > 1, then the model is a hidden Markov model (HMM; also known as a hidden rates model (HRM)). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states. Essentially a hidden Markov model allows for multiple processes to describe the evolution of your observed character. This could be another (hidden) state or a large group of them. Regardless of the reason, an HMM is saying that not all observed characters are expected to act the same way. 
