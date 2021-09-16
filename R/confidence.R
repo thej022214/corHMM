@@ -303,3 +303,19 @@ MatrixToPars <- function(corhmm.object) {
 	}
 	return(par)
 }
+
+
+getParamVector <- function(corhmm.object) {
+  par <- corhmm.object$solution[!is.na(corhmm.object$solution)]
+  position <- 0
+  for (col_index in sequence(nrow(corhmm.object$solution))) {
+    for(row_index in sequence(nrow(corhmm.object$solution))) {
+      if(!is.na(corhmm.object$solution[row_index, col_index])) {
+        position <- position+1
+        par[position] <- corhmm.object$solution[row_index, col_index]
+        names(par)[position] <- paste0(rownames(corhmm.object$solution)[row_index], " to ", colnames(corhmm.object$solution)[col_index])
+      }
+    }
+  }
+  return(par)
+}
