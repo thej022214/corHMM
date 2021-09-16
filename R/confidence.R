@@ -95,8 +95,8 @@ ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.point
 #' @param corhmm.object The result of a corHMM search
 #' @param desired.delta How many log likelihood units to deviate from the optimal likelihood from
 #' @param n.points How many points to use
+#' @param print_freq Output progress every print_freq steps.
 #' @param verbose If TRUE, print details of the search to the screen
-#' @param good.only If TRUE, only return the ones within the desired delta
 #' @param ... Other arguments to pass into the likelihood function.
 #' @export 
 #' @examples 
@@ -108,7 +108,7 @@ ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.point
 #'  print(confidence_results)
 #'  plot(confidence_results, pch=".", col=rgb(0,0,0,.5))
 #' @author Brian C. O'Meara
-ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE, good.only=TRUE, ...) {
+ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE,  print_freq=50, ...) {
 	best.neglnl <- -corhmm.object$loglik
 	index.mat <- corhmm.object$index.mat
 	raw.rates <- corhmm.object$solution
@@ -120,15 +120,11 @@ ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta 
 	# compute_neglnlikelihood <- function(...) {
 	# 	return(-compute_lnlikelihood(...))	
 	# }
-	dented_results <- dentist::dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=1, corhmm.object=corhmm.object)
+	dented_results <- dentist::dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=print_freq, corhmm.object=corhmm.object)
 
-	results.good.enough <- subset(dented_results, dented_results[,1]>max(dented_results[,1])-desired.delta)
 
-	if(good.only) {
-		dented_results <- results.good.enough
-	}
-	colnames(dented_results) <- c("lnL", names(par))
-	class(dented_results) <- append("corhmm_confidence", class(dented_results))
+	
+	#class(dented_results) <- append("corhmm_confidence", class(dented_results))
     return(dented_results)
 }
 
