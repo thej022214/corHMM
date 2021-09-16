@@ -1,4 +1,4 @@
-export(corHMM,corDISC,ancRECON,rayDISC,plotRECON, dev.raydisc, ConvertPhangornReconstructions, plotMKmodel, getRateCatMat, dropStateMatPars, equateStateMatPars, getFullMat, getStateMat4Dat, makeSimmap, getParamVector)
+export(corHMM,corDISC,ancRECON,rayDISC,plotRECON, dev.raydisc, ConvertPhangornReconstructions, plotMKmodel, getRateCatMat, dropStateMatPars, equateStateMatPars, getFullMat, getStateMat4Dat, makeSimmap)
 import(ape, nloptr, corpcor, GenSA)
 importFrom(phytools, plotSimmap)
 importFrom(igraph, graph_from_adjacency_matrix, layout_in_circle, vertex.attributes, plot.igraph)

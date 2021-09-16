@@ -97,8 +97,6 @@ ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.point
 #' @param n.points How many points to use
 #' @param verbose If TRUE, print details of the search to the screen
 #' @param good.only If TRUE, only return the ones within the desired delta
-#' @param use.pbapply If TRUE, use the pbapply package to give output for the multivariate fitting
-#' @param n.cores If using pbapply, batch the analyses across this many cores
 #' @param ... Other arguments to pass into the likelihood function.
 #' @export 
 #' @examples 
@@ -110,8 +108,8 @@ ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.point
 #'  print(confidence_results)
 #'  plot(confidence_results, pch=".", col=rgb(0,0,0,.5))
 #' @author Brian C. O'Meara
-ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE, good.only=TRUE, use.pbapply=FALSE, n.cores=1, ...) {
-	best.neglnl <- corhmm.object$loglik
+ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE, good.only=TRUE, ...) {
+	best.neglnl <- -corhmm.object$loglik
 	index.mat <- corhmm.object$index.mat
 	raw.rates <- corhmm.object$solution
 	corhmm.object$node.states <- "none" #we don't want to waste time on this
@@ -119,19 +117,19 @@ ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta 
 	par <- MatrixToPars(corhmm.object)
 	par.best <- par
 
-	compute_neglnlikelihood <- function(...) {
-		return(-compute_lnlikelihood(...))	
-	}
-	dented_results <- dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=100, print_freq=1, corhmm.object=corhmm.object)
+	# compute_neglnlikelihood <- function(...) {
+	# 	return(-compute_lnlikelihood(...))	
+	# }
+	dented_results <- dentist::dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=1, corhmm.object=corhmm.object)
 
-	results.good.enough <- subset(results, results[,1]>max(results[,1])-desired.delta)
+	results.good.enough <- subset(dented_results, dented_results[,1]>max(dented_results[,1])-desired.delta)
 
 	if(good.only) {
-		results <- results.good.enough
+		dented_results <- results.good.enough
 	}
-	colnames(results) <- c("lnL", names(par))
-	class(results) <- append("corhmm_confidence", class(results))
-    return(results)
+	colnames(dented_results) <- c("lnL", names(par))
+	class(dented_results) <- append("corhmm_confidence", class(dented_results))
+    return(dented_results)
 }
 
 print.corhmm_confidence <- function(obj) {
@@ -172,7 +170,7 @@ HessianConfidence <- function(corhmm.object) {
 
 
 # simple function; returns log likelihood
-compute_lnlikelihood <- function(par, corhmm.object) {
+compute_neglnlikelihood <- function(par, corhmm.object) {
 
 	corhmm.object$order.test <- FALSE
 	corhmm.object$phy$node.label <- NULL
@@ -206,7 +204,7 @@ compute_lnlikelihood <- function(par, corhmm.object) {
 	)
 
 	#return(dev.corhmm(log(par), corhmm_object$phy, liks=42, Q=42, rate=42, root.p=corhmm.object$root.p, rate.cat=42, order.test=42, lewis.asc.bias=ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE)))
-	return(-result)
+	return(result)
 }
 
 #' Gets random numbers to try
