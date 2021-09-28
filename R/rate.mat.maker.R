@@ -273,7 +273,8 @@ dropStateMatPars <- function(StateMat, Pars){
   for(i in Pars){
     StateMat[StateMat==i] <- 0
   }
-  pars <- unique(as.vector(StateMat))[-1]
+  StateMat[StateMat == 0] <- NA
+  pars <- unique(na.omit(as.vector(StateMat)))
   for(i in 1:length(pars)){
     StateMat[StateMat == pars[i]] <- i
   }
@@ -293,22 +294,16 @@ equateStateMatPars <- function(StateMat, ParsList){
   if(!class(ParsList) == "list"){
     ParsList <- list(ParsList)
   }
-  TestMat <- do.call(rbind, ParsList)
-  RowLow <- apply(TestMat, 1, min)
-  ParsList <- ParsList[match(sort(RowLow), RowLow)]
-  newMat <- StateMat
-  pars <- StateMat[StateMat > 0]
   for(i in 1:length(ParsList)){
-    newMat[StateMat %in% ParsList[[i]]] <- min(ParsList[[i]])
+    min_par_i <- min(ParsList[[i]])
+    StateMat[as.vector(StateMat) %in% ParsList[[i]]] <- min_par_i
   }
-  pars <- newMat[newMat > 0]
-  for(i in 1:length(unique(pars))){
-    if(!i %in% pars){
-      pars[pars == min(pars[pars > i])] <- i
-    }
+  StateMat[StateMat == 0] <- NA
+  pars <- unique(na.omit(as.vector(StateMat)))
+  for(i in 1:length(pars)){
+    StateMat[StateMat == pars[i]] <- i
   }
-  newMat[newMat > 0] <- pars
-  return(newMat)
+  return(StateMat)
 }
 
 updateStateMats <- function(StateMats){
