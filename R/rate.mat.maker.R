@@ -404,7 +404,7 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE){
   
   data.legend <- CorData$ObservedTraits
   if(length(grep("&", CorData$corData[,2])) > 0){
-    nObs <- max(as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])]))
+    nObs <- max(as.numeric(unlist(strsplit(CorData$corData[,2], "&"))))
   }else{
     nObs <- max(as.numeric(CorData$corData[,2]))
   }
