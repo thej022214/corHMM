@@ -316,9 +316,14 @@ updateStateMats <- function(StateMats){
 }
 
 getFullMat <- function(StateMats, RateClassMat = NULL){
+  for(i in 1:length(StateMats)){
+    StateMats[[i]][is.na(StateMats[[i]])] <- 0
+  }
   StateMats <- updateStateMats(StateMats)
   if(is.null(RateClassMat)){
     RateClassMat <- getStateMat(length(StateMats))
+  }else{
+    RateClassMat[is.na(RateClassMat)] <- 0
   }
   FullMat <- convert2I(RateClassMat) %x% matrix(0, dim(StateMats[[1]])[1], dim(StateMats[[1]])[2])
   IndMat <- matrix(0, length(StateMats), length(StateMats))
