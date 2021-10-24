@@ -50,7 +50,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     data.legend <- data <- CorData$corData
     # nObs <- length(CorData$ObservedTraits)
     if(length(grep("&", CorData$corData[,2])) > 0){
-      nObs <- max(as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])]))
+      non_and_chars <- as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])])
+      and_chars <- as.numeric(unlist(strsplit(CorData$corData[,2][grep("&", CorData$corData[,2])], "&")))
+      nObs <- max(c(non_and_chars, and_chars))
     }else{
       nObs <- max(as.numeric(CorData$corData[,2]))
     }
