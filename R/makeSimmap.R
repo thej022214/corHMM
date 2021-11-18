@@ -1,9 +1,9 @@
 # exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 1000){
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 1000, collapse=TRUE){
   model[is.na(model)] <- 0
   diag(model) <- 0
   diag(model) <- -rowSums(model)
-  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony)
+  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony, collapse=collapse)
   # if(!is.null(tip.probs)){
   #   for(i in 1:dim(conditional.lik$tip.states)[1]){
   #     nCol <- dim(tip.probs)[2]
@@ -201,15 +201,15 @@ convertSubHistoryToEdge <- function(phy, map){
 }
 
 # get the conditional likelihoods of particular nodes
-getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE){
+getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE, collapse=TRUE){
   phy <- reorder(tree, "pruningwise")
   nb.node <- phy$Nnode
   nb.tip <- length(phy$tip.label)
   # process the data to match the liks table
-  CorData <- corProcessData(data)
+  CorData <- corProcessData(data, collapse=collapse)
   nObs <- length(CorData$ObservedTraits)
   # get the liks table
-  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, ntraits = nObs, model = "ER")
+  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, ntraits = nObs, model = "ER", collapse=collapse, rate.mat=model)
   if(parsimony==TRUE){
     model <- model/1000
   }
