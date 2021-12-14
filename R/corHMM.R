@@ -242,7 +242,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         }
     }
     
-    if(loglik == -1e-6){
+    if(loglik == -1e+06){
       warning("corHMM may have failed to optimize correctly, consider checking inputs and running again.", immediate. = TRUE)
     }
     
