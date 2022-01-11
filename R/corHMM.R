@@ -548,6 +548,35 @@ print.corhmm<-function(x,...){
     }
 }
 
+# function for calculating PIR according to gardner and organ (2021)
+getPIR <- function(phy, data, collapse){
+  # calculate the CI score
+  CorData <- corProcessData(data, collapse = collapse)
+  dat <- CorData$corData
+  matching <- match.tree.data(phy,dat)
+  dat <- matching$data
+  phy <- matching$phy
+  data.sort <- data.frame(dat[,2], dat[,2],row.names=dat[,1])
+  data.sort <- data.sort[phy$tip.label,]
+  data.sort <- as.matrix(data.sort)
+  dat.phangorn <- phyDat(data.sort,type="USER", levels=1:max(as.numeric(dat[,2])))
+  phy.tmp <- multi2di(phy)
+  par.score <- parsimony(phy.tmp, dat.phangorn, method="fitch")/2
+  ci.score <- CI(phy.tmp, dat.phangorn)
+  
+  # calcualte the NIR
+  state_table <- table(dat[,2])
+  levels <- 1:max(as.numeric(dat[,2]))
+  # if all levels are observed, then we use the min from the observed states, otherwise the min is just 0
+  if(dim(state_table) == length(levels)){
+    nir.score <- (max(state_table) - min(state_table))/length(phy$tip.label)
+  }else{
+    nir.score <- (max(state_table) - 0)/length(phy$tip.label)
+  }
+  pir.score <- ci.score * nir.score 
+  return(pir.score)
+}
+
 
 ######################################################################################################################################
 ######################################################################################################################################

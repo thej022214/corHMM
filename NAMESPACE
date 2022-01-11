@@ -5,7 +5,7 @@ importFrom(igraph, graph_from_adjacency_matrix, layout_in_circle, vertex.attribu
 importFrom(viridis, plasma, viridis, magma)
 importFrom(numDeriv, hessian)
 importFrom(expm, expm)
-importFrom(phangorn, parsimony, phyDat, acctran)
+importFrom(phangorn, parsimony, phyDat, acctran, CI)
 importFrom(parallel, mclapply)
 importFrom(Rmpfr, mpfr)
 importFrom(nnet, which.is.max)
