@@ -295,8 +295,8 @@ equateStateMatPars <- function(StateMat, ParsList){
     ParsList <- list(ParsList)
   }
   for(i in 1:length(ParsList)){
-    min_par_i <- min(ParsList[[i]])
-    StateMat[as.vector(StateMat) %in% ParsList[[i]]] <- min_par_i
+    max_par_i <- max(StateMat, na.rm = TRUE) + 1
+    StateMat[as.vector(StateMat) %in% ParsList[[i]]] <- max_par_i
   }
   StateMat[StateMat == 0] <- NA
   pars <- unique(na.omit(as.vector(StateMat)))
