@@ -33,11 +33,21 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores, max.attempt)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
+  legend <- getStateMat4Dat(data, collapse = collapse)$legend
+  if(rate.cat > 1){
+    StateNames <- paste("(", rep(legend, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(legend)), ")", sep = "")
+    names(StateNames) <- 1:length(StateNames)
+  }else{
+    StateNames <- legend
+  }
   for(i in 1:nSim){
     tree.simmap <- tree
     tree.simmap$maps <- maps[[i]]
+    tree.simmap$maps <- lapply(maps[[i]], function(x) correctMapName(x, StateNames))
     tree.simmap$mapped.edge <- mapped.edge[[i]]
+    colnames(tree.simmap$mapped.edge) <- StateNames
     tree.simmap$Q <- model
+    colnames(tree.simmap$Q) <- rownames(tree.simmap$Q) <- StateNames
     attr(tree.simmap, "map.order") <- "right-to-left"
     if (!inherits(tree.simmap, "simmap")) 
       class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
@@ -47,6 +57,11 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     class(obj) <- c("multiSimmap", "multiPhylo")
   }
   return(obj)
+}
+
+correctMapName <- function(map_element, state_names){
+  names(map_element) <- state_names[match(as.numeric(names(map_element)), as.numeric(names(state_names)))]
+  return(map_element)
 }
 
 # simulate ancestral states at each internal node
