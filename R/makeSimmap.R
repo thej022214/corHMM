@@ -15,8 +15,10 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   if(length(fix.node) != length(fix.state)){
     stop("The number of nodes supplied to be fixed does not match the number of states provided.",.call=FALSE)
   }
-  if(max(fix.state) > dim(model)[1]){
-    stop("One of the states being fixed does not exist in this model.")
+  if(!is.null(fix.state)){
+    if(max(fix.state) > dim(model)[1]){
+      stop("One of the states being fixed does not exist in this model.")
+    }
   }
   if(!is.null(fix.node) & !is.null(fix.state)){
     # test if we are fixing an external or internal node
