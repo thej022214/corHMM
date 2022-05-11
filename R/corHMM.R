@@ -526,7 +526,7 @@ print.corhmm<-function(x,...){
     cat("\n")
     
     UserStates <- corProcessData(x$data)$ObservedTraits
-    names(UserStates) <- sort(unique(as.numeric(x$data.legend[,2])))
+    names(UserStates) <- sort(unique(as.numeric(unlist(strsplit(x$data.legend[,2], "&")))))
     cat("Legend\n")
     print(UserStates)
     cat("\n")
