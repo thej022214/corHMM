@@ -30,8 +30,9 @@ The problem of single unreplicated evolutionary events manifests itself as rate 
 data(primates)
 phy <- multi2di(primates[[1]])
 data <- primates[[2]]
-corr_test_fits <- fitCorrelationTest(phy = phy, data = data, simplified_models = TRUE)
-corr_test_fits
+# not run because of long run times
+#corr_test_fits <- fitCorrelationTest(phy = phy, data = data, simplified_models = TRUE)
+#corr_test_fits
 }
 }
 \references{

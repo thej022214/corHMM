@@ -60,8 +60,8 @@ pp
 
 ## State combination three is not an observed state, so for fun, let's remove
 ## these transitions:
-new.mat <- rate.mat.maker(hrm=FALSE, ntraits=2, model="ARD")
-new.mat <- rate.par.drop(new.mat, c(2,8,5,6))
+new.mat <- getStateMat4Dat(primates$trait, collapse = FALSE)$rate.mat
+new.mat <- dropStateMatPars(new.mat, c(2,8,5,6))
 pp<-corDISC(primates$tree,primates$trait,ntraits=2,rate.mat=new.mat,model="ARD",
 node.states="marginal", diagn=FALSE)
 pp
