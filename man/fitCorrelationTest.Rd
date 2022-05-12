@@ -36,6 +36,6 @@ data <- primates[[2]]
 }
 }
 \references{
-Maddison W.P., FitzJohn R.G. 2015. The Unsolved Challenge to Phylogenetic Correlation Tests for Categorical Characters. Syst Biol. 64:127–136.
+Maddison W.P., FitzJohn R.G. 2015. The Unsolved Challenge to Phylogenetic Correlation Tests for Categorical Characters. Syst Biol. 64:127-136.
 }
 \author{James D. Boyko}

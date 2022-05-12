@@ -42,7 +42,7 @@ getRateMats <- function(corhmm.obj=NULL, rate.mat=NULL, rate.cat=NULL){
 
 plotMKmodel <- function(corhmm.obj, rate.cat = NULL, display = "column", color = c("blue", "red"), arrow.scale = 1, text.scale = 1, vertex.scale = 1){
   
-  if(class(corhmm.obj) == "matrix" & is.null(rate.cat)){
+  if(class(corhmm.obj)[1] == "matrix" & is.null(rate.cat)){
     return(cat("Error: user provided a rate matrix without providing the number of rate categories."))
   }
   
@@ -51,11 +51,11 @@ plotMKmodel <- function(corhmm.obj, rate.cat = NULL, display = "column", color =
   text.scale <- text.scale * 3
   
   # decompose the matrix solution
-  if(class(corhmm.obj) == "corhmm"){
+  if(class(corhmm.obj)[1] == "corhmm"){
     RateMats <- getRateMats(corhmm.obj = corhmm.obj)
     rate.cat <- corhmm.obj$rate.cat
   }
-  if(class(corhmm.obj) == "matrix"){
+  if(class(corhmm.obj)[1] == "matrix"){
     RateMats <- getRateMats(rate.mat = corhmm.obj, rate.cat = rate.cat)
   }
   

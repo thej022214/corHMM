@@ -41,7 +41,8 @@ model <- MK$solution
 simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=1, nSim=1, nCores=1)
 
 ## we import phytools plotSimmap for plotting
-plotSimmap(simmap[[1]])
+# library(phytools)
+# plotSimmap(simmap[[1]])
 }
 }
 \references{
