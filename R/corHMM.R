@@ -378,14 +378,15 @@ dev.corhmm <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bi
           root.p = liks[root,] / sum(liks[root,])
           loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
       }
-  }
-  # root.p!==NULL will fix root probabilities based on user supplied vector:
-  if(is.numeric(root.p[1])){
+  }else{
+    if(is.numeric(root.p[1])){
       loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
       if(is.infinite(loglik)){
-          return(1000000)
+        return(1000000)
       }
+    }
   }
+  # root.p!==NULL will fix root probabilities based on user supplied vector:
   if(lewis.asc.bias == TRUE){
     p <- log(p)
     dummy.liks.vec <- getLewisLikelihood(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = cp_root.p, rate.cat = rate.cat)
