@@ -274,7 +274,7 @@ dropStateMatPars <- function(StateMat, Pars){
     StateMat[StateMat==i] <- 0
   }
   StateMat[StateMat == 0] <- NA
-  pars <- unique(na.omit(as.vector(StateMat)))
+  pars <- sort(unique(na.omit(as.vector(StateMat))))
   for(i in 1:length(pars)){
     StateMat[StateMat == pars[i]] <- i
   }
