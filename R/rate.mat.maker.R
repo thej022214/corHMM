@@ -291,7 +291,7 @@ keepStateMatPars <- function(StateMat, Pars){
 }
 
 equateStateMatPars <- function(StateMat, ParsList){
-  if(!class(ParsList) == "list"){
+  if(!inherits(ParsList, what="list")){
     ParsList <- list(ParsList)
   }
   for(i in 1:length(ParsList)){
