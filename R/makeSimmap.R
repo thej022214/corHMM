@@ -49,8 +49,16 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     tree.simmap <- tree
     tree.simmap$maps <- maps[[i]]
     tree.simmap$maps <- lapply(maps[[i]], function(x) correctMapName(x, StateNames))
-    tree.simmap$mapped.edge <- mapped.edge[[i]]
-    colnames(tree.simmap$mapped.edge) <- StateNames
+    if(dim(mapped.edge[[i]])[2] == length(StateNames)){
+      tree.simmap$mapped.edge <- mapped.edge[[i]]
+      colnames(tree.simmap$mapped.edge) <- StateNames
+    }else{ # some states are missing from the simulation
+      missing_states <- which(!(1:length(StateNames) %in% as.numeric(colnames(mapped.edge[[i]]))))
+      mapped.edge[[i]] <- cbind(mapped.edge[[i]], matrix(0, dim(mapped.edge[[i]])[1], length(missing_states), dimnames = list(rownames(mapped.edge[[i]]), missing_states)))
+      tree.simmap$mapped.edge <- mapped.edge[[i]]
+      colnames(tree.simmap$mapped.edge) <- StateNames[as.numeric(colnames(tree.simmap$mapped.edge))]
+    }
+    tree.simmap$mapped.edge <- tree.simmap$mapped.edge[,match(StateNames, colnames(tree.simmap$mapped.edge))]
     tree.simmap$Q <- model
     colnames(tree.simmap$Q) <- rownames(tree.simmap$Q) <- StateNames
     attr(tree.simmap, "map.order") <- "right-to-left"
@@ -213,10 +221,11 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.at
 
 # convert a substitution history into a mapped edge
 convertSubHistoryToEdge <- function(phy, map){
-  Traits <- levels(as.factor(unique(names(unlist(map)))))
+  Traits <- as.numeric(unique(names(unlist(map))))
   RowNames <- apply(phy$edge, 1, function(x) paste(x[1], x[2], sep = ","))
   obj <- do.call(rbind, lapply(map, function(x) sapply(Traits, function(y) sum(x[names(x) == y]))))
   rownames(obj) <- RowNames
+  colnames(obj) <- Traits
   return(obj)
 }
 
