@@ -48,25 +48,6 @@ We also note that scoring information that is missing for a species can be incor
 \item{$eigval}{The eigenvalues from the decomposition of the Hessian of the likelihood function. If any \code{eigval<0} then one or more parameters were not optimized during the likelihood search}
 \item{$eigvect}{The eigenvectors from the decomposition of the Hessian of the likelihood function is returned}
 }
-\examples{
-\donttest{
-## Load tree and data
-data(primates)
-
-## Obtain the fit for two binary characters
-pp <- corDISC(primates$tree,primates$trait,ntraits=2,model="ARD",
-node.states="marginal", diagn=FALSE)
-pp
-
-## State combination three is not an observed state, so for fun, let's remove
-## these transitions:
-new.mat <- getStateMat4Dat(primates$trait, collapse = FALSE)$rate.mat
-new.mat <- dropStateMatPars(new.mat, c(2,8,5,6))
-pp<-corDISC(primates$tree,primates$trait,ntraits=2,rate.mat=new.mat,model="ARD",
-node.states="marginal", diagn=FALSE)
-pp
-}
-}
 \references{
 Beaulieu J.M., and M.J. Donoghue 2013. Fruit evolution and diversification in campanulid angiosperms. Evolution, 67:3132-3144.
 
