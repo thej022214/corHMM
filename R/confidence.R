@@ -20,73 +20,73 @@
 #'  print(confidence_results)
 #'  plot(confidence_results, pch=".", col=rgb(0,0,0,.5))
 #' @author Brian C. O'Meara
-ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE, good.only=TRUE, use.pbapply=FALSE, n.cores=1, ...) {
-	best.lnl <- corhmm.object$loglik
-	index.mat <- corhmm.object$index.mat
-	raw.rates <- corhmm.object$solution
-	corhmm.object$node.states <- "none" #we don't want to waste time on this
-
-	par <- MatrixToPars(corhmm.object)
-	par.best <- par
-
-	# Univariate
-	results<-data.frame(data.frame(matrix(nrow=1, ncol=1+length(par))))
-	results[1,] <- c(best.lnl, par.best)
-	for(par_index in seq_along(par)) {
-		par <- par.best
-		current.lnl <- best.lnl
-		while(current.lnl > best.lnl - 5*desired.delta) {
-			par[par_index] <- par[par_index]*.97
-			current.lnl <- compute_neglnlikelihood(par, corhmm.object)
-			results[nrow(results)+1,] <- c(current.lnl, par)
-			if(verbose & nrow(results)%%100==0) {
-				print(tail(results,100))
-			}
-		}
-		current.lnl <- best.lnl
-		while(current.lnl > best.lnl - 5*desired.delta) {
-			par[par_index] <- par[par_index]*1.03
-			current.lnl <- compute_neglnlikelihood(par, corhmm.object)
-			results[nrow(results)+1,] <- c(current.lnl, par)
-			if(verbose & nrow(results)%%100==0) {
-				print(tail(results,100))
-			}
-		}
-	}
-	dim_univariate <- nrow(results)-1
-
-	# Multivariate
-	lower <- apply(results[,-1], 2, min, na.rm=TRUE)
-	upper <- apply(results[,-1], 2, max, na.rm=TRUE)
-	#new.params <- GetGridPoints(lower, upper, n.points)
-	new.params <- GetLHSPoints(lower, upper, n.points)
-
-	if(verbose) {
-		print("About to estimate multivariate uncertainty")
-	}
-	new.lnl <- rep(NA, nrow(new.params))
-	if(use.pbapply) {
-		new.lnl <- pbapply::pbapply(new.params, 1, compute_neglnlikelihood, corhmm.object, cl=n.cores)
-	} else {
-		new.lnl <- apply(new.params, 1, compute_neglnlikelihood, corhmm.object)
-	}
-
-	more_results <- cbind(matrix(new.lnl, ncol=1), new.params)
-	colnames(more_results) <- colnames(results)
-
-
-	results <- rbind(results, more_results)
-	#results$type <- c("start", rep("univariate", dim_univariate), rep("multivariate", n.points))
-
-	results.good.enough <- subset(results, results[,1]>max(results[,1])-desired.delta)
-
-	if(good.only) {
-		results <- results.good.enough
-	}
-	colnames(results) <- c("lnL", names(par))
-	class(results) <- append("corhmm_confidence", class(results))
-    return(results)
-}
+# ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE, good.only=TRUE, use.pbapply=FALSE, n.cores=1, ...) {
+# 	best.lnl <- corhmm.object$loglik
+# 	index.mat <- corhmm.object$index.mat
+# 	raw.rates <- corhmm.object$solution
+# 	corhmm.object$node.states <- "none" #we don't want to waste time on this
+# 
+# 	par <- MatrixToPars(corhmm.object)
+# 	par.best <- par
+# 
+# 	# Univariate
+# 	results<-data.frame(data.frame(matrix(nrow=1, ncol=1+length(par))))
+# 	results[1,] <- c(best.lnl, par.best)
+# 	for(par_index in seq_along(par)) {
+# 		par <- par.best
+# 		current.lnl <- best.lnl
+# 		while(current.lnl > best.lnl - 5*desired.delta) {
+# 			par[par_index] <- par[par_index]*.97
+# 			current.lnl <- compute_neglnlikelihood(par, corhmm.object)
+# 			results[nrow(results)+1,] <- c(current.lnl, par)
+# 			if(verbose & nrow(results)%%100==0) {
+# 				print(tail(results,100))
+# 			}
+# 		}
+# 		current.lnl <- best.lnl
+# 		while(current.lnl > best.lnl - 5*desired.delta) {
+# 			par[par_index] <- par[par_index]*1.03
+# 			current.lnl <- compute_neglnlikelihood(par, corhmm.object)
+# 			results[nrow(results)+1,] <- c(current.lnl, par)
+# 			if(verbose & nrow(results)%%100==0) {
+# 				print(tail(results,100))
+# 			}
+# 		}
+# 	}
+# 	dim_univariate <- nrow(results)-1
+# 
+# 	# Multivariate
+# 	lower <- apply(results[,-1], 2, min, na.rm=TRUE)
+# 	upper <- apply(results[,-1], 2, max, na.rm=TRUE)
+# 	#new.params <- GetGridPoints(lower, upper, n.points)
+# 	new.params <- GetLHSPoints(lower, upper, n.points)
+# 
+# 	if(verbose) {
+# 		print("About to estimate multivariate uncertainty")
+# 	}
+# 	new.lnl <- rep(NA, nrow(new.params))
+# 	if(use.pbapply) {
+# 		new.lnl <- pbapply::pbapply(new.params, 1, compute_neglnlikelihood, corhmm.object, cl=n.cores)
+# 	} else {
+# 		new.lnl <- apply(new.params, 1, compute_neglnlikelihood, corhmm.object)
+# 	}
+# 
+# 	more_results <- cbind(matrix(new.lnl, ncol=1), new.params)
+# 	colnames(more_results) <- colnames(results)
+# 
+# 
+# 	results <- rbind(results, more_results)
+# 	#results$type <- c("start", rep("univariate", dim_univariate), rep("multivariate", n.points))
+# 
+# 	results.good.enough <- subset(results, results[,1]>max(results[,1])-desired.delta)
+# 
+# 	if(good.only) {
+# 		results <- results.good.enough
+# 	}
+# 	colnames(results) <- c("lnL", names(par))
+# 	class(results) <- append("corhmm_confidence", class(results))
+#     return(results)
+# }
 
 #' Compute confidence around rate estimates
 #' 
@@ -108,7 +108,7 @@ ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.point
 #'  print(confidence_results)
 #'  plot(confidence_results, pch=".", col=rgb(0,0,0,.5))
 #' @author Brian C. O'Meara
-ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE,  print_freq=50, ...) {
+ComputeCI <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE,  print_freq=50, ...) {
 	best.neglnl <- -corhmm.object$loglik
 	index.mat <- corhmm.object$index.mat
 	raw.rates <- corhmm.object$solution
@@ -120,11 +120,11 @@ ComputeConfidenceIntervalsUsingDentist <- function(corhmm.object, desired.delta 
 	# compute_neglnlikelihood <- function(...) {
 	# 	return(-compute_lnlikelihood(...))	
 	# }
-	dented_results <- dentist::dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=print_freq, corhmm.object=corhmm.object)
-
+	dented_results <- dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=print_freq, corhmm.object=corhmm.object)
+	# class(dented_results) <- "dentist"
 
 	
-	#class(dented_results) <- append("corhmm_confidence", class(dented_results))
+	# class(dented_results) <- append("corhmm_confidence", class(dented_results))
     return(dented_results)
 }
 
@@ -247,7 +247,7 @@ GetGridPoints <- function(lower, upper, n.points) {
 }
 
 GetLHSPoints <- function(lower, upper, n.points) {
-	raw.points <- lhs::randomLHS(n=n.points, k=length(lower))
+	raw.points <- lhs:::randomLHS(n=n.points, k=length(lower))
 	parameter.matrix <- NA*raw.points
 	for (i in seq_along(lower)) {
 		parameter.matrix[,i] <- qunif(raw.points[,i], min=lower[i], max=upper[i])
