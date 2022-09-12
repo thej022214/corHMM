@@ -1,7 +1,7 @@
 \name{corHMM}
 \alias{corHMM}
 \title{Hidden Rates Model}
-\description{Estimates hidden rates underlying the evolution of a binary character}
+\description{Estimates hidden rates underlying the evolution of any number of multi-state characters}
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
 fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, 
