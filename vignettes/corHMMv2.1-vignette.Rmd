@@ -1,13 +1,13 @@
 ---
-title: "corHMM 2.1: Generalized hidden Markov models"
+title: 'corHMM 2.1: Generalized hidden Markov models'
 author: "James D. Boyko and Jeremy M. Beaulieu"
 output:
-  pdf_document: 
+  html_document:
+    df_print: paged
+  pdf_document:
     fig_caption: yes
-vignette: >
-   %\VignetteEngine{knitr::rmarkdown}
-   %\VignetteIndexEntry{Generalized corHMM}
-   \usepackage[utf8]{inputenc}
+vignette: |
+  %\VignetteEngine{knitr::rmarkdown} %\VignetteIndexEntry{Generalized corHMM} \usepackage[utf8]{inputenc}
 ---
 
 
