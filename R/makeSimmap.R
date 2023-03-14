@@ -259,23 +259,25 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony
     liks[focal, ] <- v/sum(v)
   }
   input.root.p <- root.p
-  if(!is.null(input.root.p)){
-    if(!is.character(input.root.p)){
-      root.p <- input.root.p/sum(input.root.p)
-    }
+  if(is.numeric(input.root.p)){
+    root.p <- input.root.p/sum(input.root.p)
   }
-  if(is.null(input.root.p) | input.root.p == "flat"){
+  if(is.character(input.root.p)){
+      if(input.root.p == "yang"){
+        root.p <- Null(model)
+        root.p <- c(root.p/sum(root.p))
+        }
+      if(input.root.p == "maddfitz"){
+        root.p <- liks[focal, ]
+        }
+      if(input.root.p == "flat"){
+        root.p <- rep(1/dim(model)[1], dim(model))
+        }
+  }
+  if(is.null(input.root.p)){
     root.p <- rep(1/dim(model)[1], dim(model))
   }
-  if(input.root.p == "yang"){
-    root.p <- Null(model)
-    root.p <- c(root.p/sum(root.p))
-  }
-  if(input.root.p == "maddfitz"){
-    root.p <- liks[focal, ]
-  }
   liks[focal, ] <-  liks[focal, ] * root.p
-  
   return(list(tip.states = liks[1:nb.tip,],
               node.states = liks[(nb.tip+1):(nb.node+nb.tip),]))
 }
