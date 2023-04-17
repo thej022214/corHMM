@@ -11,7 +11,7 @@ fix.state=NULL, parsimony = FALSE, max.attempt = 1000, collapse=TRUE)
 \item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.}
 \item{model}{The transition rate matrix.}
 \item{rate.cat}{The number of rate categories.}
-\item{root.p}{The root prior to begin the sampling at the root. Currently only "yang" allowed.}
+\item{root.p}{The root prior to begin the sampling at the root.}
 \item{nSim}{The number of simmaps to be simulated.}
 \item{nCores}{The number of cores to be used.}
 \item{fix.node}{A vector specifying node numbers to be fixed. Also possible to fix tips if using a hidden Markov model. Tips are in the order of tree$tip.label.}
