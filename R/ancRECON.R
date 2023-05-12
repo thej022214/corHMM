@@ -723,3 +723,125 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 #   return(obj)
 # }
 
+######################################################################################################################################
+######################################################################################################################################
+### time_slice ancestral state reconstruction
+######################################################################################################################################
+######################################################################################################################################
+
+#Marginal reconstruction function for our custom corHMM
+GetEdgeMarginal <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p, collapse = TRUE){
+  
+  nb.tip <- length(phy$tip.label)
+  nb.node <- phy$Nnode
+  data.for.likelihood.function <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model, collapse = collapse)
+  
+  if(!is.null(rate.mat)){
+    rate <- rate.mat
+    data.for.likelihood.function$np <- max(rate, na.rm=TRUE)
+    rate[is.na(rate)]=max(rate, na.rm=TRUE)+1
+    data.for.likelihood.function$rate <- rate
+    data.for.likelihood.function$index.matrix <- rate.mat
+    ## for precursor type models ##
+    col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
+    row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
+    drop.states <- col.sums[which(col.sums == row.sums)]
+    
+    if(length(drop.states > 0)){
+      data.for.likelihood.function$liks[,drop.states] <- 0
+    }
+    ###############################
+  }else{
+    drop.states <- NULL
+  }
+  
+  phy <- reorder(phy, "pruningwise")
+  nodes <- unique(phy$edge[,1])
+  taxon.index <- grep("FakeyMcFakerson", x=phy$tip.label)
+  
+  marginal.probs.tmp <- numeric(dim(data.for.likelihood.function$Q)[2])
+  nstates = which(!data.for.likelihood.function$liks[taxon.index,] == 0)
+  states.keep = data.for.likelihood.function$liks[taxon.index,]
+  for(state.index in setdiff(1:dim(data.for.likelihood.function$Q)[2], drop.states)){
+    data.for.likelihood.function$liks[taxon.index,] = 0
+    data.for.likelihood.function$liks[taxon.index,state.index] = 1
+    # print(data.for.likelihood.function$liks)
+    marginal.probs.tmp[state.index] <- -corHMM:::dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
+  }
+  data.for.likelihood.function$liks[taxon.index,] <- states.keep
+  best.probs <- max(marginal.probs.tmp[nstates])
+  marginal.probs.rescaled <- marginal.probs.tmp[nstates] - best.probs
+  marginal.probs.final <- exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
+  
+  return(marginal.probs.final)
+}
+
+# creates a table for locating where to add nodes. first column is the node index (tip or internal). second column is the time period from the node to add
+getNodePlacementsForSlice <- function(phy, time_slice){
+  to_add <- data.frame(node = 1:length(phy$tip.label), position = time_slice)
+  nodes_younger_than_slice <- branching.times(phy)[branching.times(phy) < time_slice]
+  node_to_add <- data.frame(node = as.numeric(names(nodes_younger_than_slice)), position = time_slice - nodes_younger_than_slice)
+  to_add <- rbind(to_add, node_to_add)
+  edge_lengths <- phy$edge.length[match(to_add[,1], phy$edge[,2])]
+  to_add <- to_add[edge_lengths - to_add[,2] > 0,] # exludes nodes too far away
+  return(to_add)
+}
+
+# the main function for doing a marginal time slice reconstruction
+ancRECON_slice <- function(corhmm.obj, time_slice, collapse=TRUE, ncores = 1){
+  if(max(time_slice) >= max(branching.times(corhmm.obj$phy))){
+    stop("time_slice must be less than the maximum branching time of the tree")
+  }
+  # get the fake node locations for the reconstruction based on the time slice
+  to_recon <- sapply(time_slice, function(x) getNodePlacementsForSlice(phy, x))
+  to_recon <- (apply(to_recon, 2, function(x) do.call(cbind, x)))
+  for(i in seq_len(length(time_slice))){
+    to_recon[[i]] <- cbind(time_slice = time_slice[i], to_recon[[i]])
+  }
+  to_recon <- do.call(rbind, to_recon)
+  # create a dummy tip and dummy data
+  tip.name <- "FakeyMcFakerson"
+  tip <- list(edge=matrix(c(2,1),1,2), tip.label=tip.name, edge.length=0, Nnode=1)
+  class(tip) <- "phylo"
+  new.data <- corhmm.obj$data.legend
+  new.data[,1] <- as.character(new.data[,1])
+  new.data <- rbind(new.data, "?")
+  new.data[nrow(new.data), 1] <- "FakeyMcFakerson"
+  ntraits <- max(as.numeric(corhmm.obj$data.legend$d))
+  # get all the new phys
+  print(paste0("Reconstructing ", nrow(to_recon), " nodes for ", length(time_slice), " time slices..."))
+  corhmm.obj$phy$node.label <- NULL
+  all_trees <- apply(to_recon, 1, function(x) bind.tree(corhmm.obj$phy, tip, x[2], x[3]))
+  #Now lets calculate some marginals!
+  p <- sapply(1:max(corhmm.obj$index.mat, na.rm = TRUE), function(x) na.omit(c(corhmm.obj$solution))[na.omit(c(corhmm.obj$index.mat) == x)][1])
+  all_recon <- mclapply(all_trees, function(x) GetEdgeMarginal(p=p, phy=x, data=new.data, rate.mat=corhmm.obj$index.mat, rate.cat=corhmm.obj$rate.cat, ntraits=ntraits, root.p=corhmm.obj$root.p, model = "ARD", collapse = collapse), mc.cores = ncores)
+  all_recon <-  do.call(rbind, all_recon)
+  colnames(all_recon) <- colnames(corhmm.obj$solution)
+  out <- cbind(to_recon, all_recon)
+  return(out)
+}
+
+plot_slice_recon <- function(phy, slice_df, col=NULL){
+  plot(phy, show.tip.label = FALSE)
+  lastPP <- get("last_plot.phylo", envir = .PlotPhyloEnv)
+  node <- (lastPP$Ntip + 1):length(lastPP$xx)
+  XX <- lastPP$xx[node]
+  YY <- lastPP$yy[node]
+  for(i in 1:nrow(slice_df)){
+    focal <- slice_df[i,]
+    xx <- lastPP$xx[focal[2]] - focal[3]
+    yy <- lastPP$yy[focal[2]]
+    pp <- focal[-c(1:3)]
+    floating.pie.asp(xx, yy, pp, radius = 0.5, col = col)
+  }
+}
+
+# # testing
+# library(corHMM)
+# library(viridis)
+# data(primates)
+# phy <- multi2di(primates[[1]])
+# data <- primates[[2]]
+# corhmm.obj <- corHMM(phy = phy, data = data, rate.cat = 1)
+# test <- ancRECON_slice(corhmm.obj, time_slice = c(1, 10, 20, 30, 40, 49), collapse = TRUE, ncores = 4)
+# corHMM:::plot_slice_recon(phy, test, col = viridis(3))
