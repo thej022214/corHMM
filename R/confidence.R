@@ -247,7 +247,7 @@ GetGridPoints <- function(lower, upper, n.points) {
 }
 
 GetLHSPoints <- function(lower, upper, n.points) {
-	raw.points <- lhs:::randomLHS(n=n.points, k=length(lower))
+	raw.points <- randomLHS(n=n.points, k=length(lower))
 	parameter.matrix <- NA*raw.points
 	for (i in seq_along(lower)) {
 		parameter.matrix[,i] <- qunif(raw.points[,i], min=lower[i], max=upper[i])

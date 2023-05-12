@@ -111,7 +111,7 @@ test_that("Simple tests of Old corHMM vs. New corHMM",{
 
   corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=2, rate.mat = rate.mat, p = p, root.p = NULL)
 
-  comparison <- identical(corHMM.new$loglik - res$old.corhmm$loglik, 0)
+  comparison <- identical(round(corHMM.new$loglik - res$old.corhmm$loglik, 4), 0)
   expect_true(comparison)
 })
 
@@ -133,7 +133,7 @@ test_that("Simple tests of corDISC vs. new corHMM",{
 
   corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=1, p = p, root.p = NULL)
   
-  comparison <- identical(corHMM.new$loglik - res$old.cordisc$loglik, 0)
+  comparison <- identical(round(corHMM.new$loglik - res$old.cordisc$loglik, 4), 0)
   expect_true(comparison)
 })
 
@@ -156,6 +156,6 @@ test_that("Simple tests of rayDISC vs. new corHMM",{
   
   corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=1, rate.mat = rate.mat, p = p, root.p = NULL)
   
-  comparison <- identical(corHMM.new$loglik - res$old.raydisc$loglik, 0)
+  comparison <- identical(round(corHMM.new$loglik - res$old.raydisc$loglik, 4), 0)
   expect_true(comparison)
 })

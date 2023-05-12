@@ -3,10 +3,10 @@
 \title{Hidden Rates Model}
 \description{Estimates hidden rates underlying the evolution of any number of multi-state characters}
 \usage{
-corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", 
-fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, nstarts=0, n.cores=1, 
-get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, 
-upper.bound = 100, opts=NULL)
+corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", 
+node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, 
+nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, 
+collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -73,13 +73,19 @@ MK_3state
 
 ### custom rate.mat and user supplied transition rates not to be optimised
 
-# this is the rate matrix used in the above example, which represents the ARD model with four different rates for all four possible transitions
+# this is the rate matrix used in the above example, which represents the ARD 
+#model with four different rates for all four possible transitions
 MK_3state$index.mat
 
-# now we specify our own one where the transitions in and out of state 3 are forced to be the same:
+# now we specify our own one where the transitions in and out of state 3 are 
+#forced to be the same:
 rate.mat <- matrix(c(NA, 1, NA, 2, NA, 3, NA, 3, NA), 3, 3)
 
-# we supply the fixed transition rates for which we want the likelihood calculated. Since we optimise 3 states in the above matrix, we have to give a vector with three rates, which will be applied to the transition with the corresponding rate above (e.g. the transition 2 -> 1 happens at rate 0.05)
+# we supply the fixed transition rates for which we want the likelihood 
+#calculated. Since we optimise 3 states in the above matrix, we have to 
+#give a vector with three rates, which will be applied to the transition 
+#with the corresponding rate above (e.g. the transition 2 -> 1 happens at 
+#rate 0.05)
 p <- c(0.05, 0.02, 0.03)
 
 # run

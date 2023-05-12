@@ -16,6 +16,7 @@ importFrom("stats", "median", "reorder", "rexp", "runif", "pgamma", "qgamma", "q
 importFrom("MASS", "Null")
 importFrom("graphics", "par", "rect", "text")
 importFrom("stats", "na.exclude", "na.omit", "rmultinom")
+importFrom("lhs", "randomLHS")
 S3method(print, corhmm)
 S3method(print, cordisc)
 S3method(print, raydisc)

@@ -1,6 +1,6 @@
 Package: corHMM
-Version: 2.8
-Date: 2022-06-10
+Version: 2.9
+Date: 2023-05-12
 Title: Hidden Markov Models of Character Evolution
 Authors@R: c(person("Jeremy", "Beaulieu", role=c("aut", "cre"),
                      email = "jmbeauli@uark.edu"),
@@ -10,7 +10,7 @@ Authors@R: c(person("Jeremy", "Beaulieu", role=c("aut", "cre"),
 Maintainer: Jeremy Beaulieu <jmbeauli@uark.edu>
 Depends: ape, nloptr, GenSA
 Suggests: testthat, knitr, rmarkdown
-Imports: expm, numDeriv, corpcor, MASS, nnet, phangorn, parallel, viridis, Rmpfr, igraph, phytools
+Imports: expm, numDeriv, corpcor, MASS, nnet, phangorn, parallel, viridis, Rmpfr, igraph, phytools, lhs
 Description: Fits hidden Markov models of discrete character evolution which allow different transition rate classes on different portions of a phylogeny. Beaulieu et al (2013) <doi:10.1093/sysbio/syt034>.
 License: GPL (>= 2)
 VignetteBuilder: knitr
