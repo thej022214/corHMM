@@ -793,7 +793,7 @@ ancRECON_slice <- function(corhmm.obj, time_slice, collapse=TRUE, ncores = 1){
     stop("time_slice must be less than the maximum branching time of the tree")
   }
   # get the fake node locations for the reconstruction based on the time slice
-  to_recon <- sapply(time_slice, function(x) getNodePlacementsForSlice(phy, x))
+  to_recon <- sapply(time_slice, function(x) getNodePlacementsForSlice(corhmm.obj$phy, x))
   to_recon <- (apply(to_recon, 2, function(x) do.call(cbind, x)))
   for(i in seq_len(length(time_slice))){
     to_recon[[i]] <- cbind(time_slice = time_slice[i], to_recon[[i]])
