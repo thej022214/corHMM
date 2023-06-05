@@ -2,14 +2,14 @@
 #   plot.recons   #
 ###################
 
-plotRECON <- function(phy, likelihoods, piecolors=NULL, cex=0.5, pie.cex=0.25, file=NULL, height=11, width=8.5, show.tip.label=TRUE, show.legend = T, title=NULL, ...){
+plotRECON <- function(phy, likelihoods, piecolors=NULL, cex=0.5, pie.cex=0.25, file=NULL, height=11, width=8.5, show.tip.label=TRUE, show.legend = T, label.offset = 0.05, title=NULL, ...){
 	if(is.null(piecolors)){
 		piecolors=c("white","black","red","yellow","forestgreen","blue","coral","aquamarine","darkorchid","gold","grey","yellow","#3288BD","#E31A1C")
 	}
 	if(!is.null(file)){
 		pdf(file, height=height, width=width,useDingbats=FALSE)
 	}
-	ape::plot.phylo(phy, cex=cex, show.tip.label=show.tip.label, ...)
+	ape::plot.phylo(phy, cex=cex, show.tip.label=show.tip.label, label.offset = label.offset, ...)
 
 	if(!is.null(title)){
 		title(main=title)
