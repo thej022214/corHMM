@@ -9,7 +9,7 @@ plotRECON <- function(phy, likelihoods, piecolors=NULL, cex=0.5, pie.cex=0.25, f
 	if(!is.null(file)){
 		pdf(file, height=height, width=width,useDingbats=FALSE)
 	}
-	plot(phy, cex=cex, show.tip.label=show.tip.label, ...)
+	ape::plot.phylo(phy, cex=cex, show.tip.label=show.tip.label, ...)
 
 	if(!is.null(title)){
 		title(main=title)
