@@ -6,12 +6,14 @@
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
-rayDISC<-function(phy, data, charnum = 1, ...){
+rayDISC<-function(phy, data, charnum = 1, lb = 1e-9, ub = 100, ...){
   data <- data[, c(1, (charnum + 1))]
 
   return(corHMM(phy = phy,
                 data = data,
                 rate.cat = 1, 
+                lower.bound = lb,
+                upper.bound = ub,
                 ...))  
 }
 

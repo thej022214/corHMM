@@ -4,12 +4,14 @@
 \title{Evolution of categorical traits}
 \description{Fits a model of evolution for categorical traits, allowing for multi-state characters, polymorphisms, missing data, and incompletely resolved trees}
 \usage{
-rayDISC(phy, data, ...)
+rayDISC(phy, data, charnum, lb, ub, ...)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
 \item{data}{a data matrix containing species information (see Details).}
-
+\item{charnum}{integer index + 1 of the character to analyze.}
+\item{lb}{lower bound for the likelihood search.}
+\item{ub}{upper bound for the likelihood search.}
 \item{...}{additional arguments passed to \code{corHMM}.}
 }
 \details{
@@ -44,16 +46,16 @@ recon <- rayDISC(phy = rayDISC.example$tree, data = rayDISC.example$trait, model
 plotRECON(rayDISC.example$tree, recon$states)
 
 ### Example 2
-## Perform ancestral state estimation, using a single-rate model of
+## Perform ancestral state estimation on the second character, using a single-rate model of
 ## evolution, marginal reconstruction of ancestral states, and setting the lower bound for
 ## parameter estimates to 0.01
-recon <- rayDISC(rayDISC.example$tree, rayDISC.example$trait, model="ER",
+recon <- rayDISC(rayDISC.example$tree, rayDISC.example$trait, charnum = 2, model="ER",
 node.states="marginal",lb=0.01)
 
 ### Example 3
-## Perform ancestral state estimation, using a single-rate model of
+## Perform ancestral state estimation on the third character, using a single-rate model of
 ## evolution and joint reconstruction of ancestral states
-recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait,
+recon <- rayDISC(rayDISC.example$tree,rayDISC.example$trait, charnum = 3, 
 model="ER",node.states="joint")
 }
 }
