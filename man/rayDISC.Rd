@@ -9,6 +9,7 @@ rayDISC(phy, data, ...)
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
 \item{data}{a data matrix containing species information (see Details).}
+
 \item{...}{additional arguments passed to \code{corHMM}.}
 }
 \details{

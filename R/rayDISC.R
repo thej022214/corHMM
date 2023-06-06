@@ -6,7 +6,8 @@
 
 #written by Jeremy M. Beaulieu & Jeffrey C. Oliver
 
-rayDISC<-function(phy, data, ...){
+rayDISC<-function(phy, data, charnum = 1, ...){
+  data <- data[, c(1, (charnum + 1))]
 
   return(corHMM(phy = phy,
                 data = data,
