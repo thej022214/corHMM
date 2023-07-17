@@ -481,7 +481,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NU
     return(obj)
 }
 
-corProcessData <- function(data, collapse=TRUE){
+corProcessData <- function(data, rate.mat=NULL, collapse=TRUE){
   nCol <- dim(data)[2]
   LevelList <- StateMats <- vector("list", nCol-1)
   # detect the number of states in each column. & is treated as indicating polymorphism. ? is treated as unknown data.
@@ -491,11 +491,15 @@ corProcessData <- function(data, collapse=TRUE){
     data_i <- data_i[!data_i == "?"]
     States_i <- unique(unlist(strsplit(data_i, "&")))
     StateMats[[i-1]] <- getRateCatMat(length(States_i))
-    LevelList[[i-1]] <- sort(States_i)
+    if(any(is.na(is.numeric(States_i)))){
+      LevelList[[i-1]] <- sort(States_i)
+    }else{
+      LevelList[[i-1]] <- States_i[sort(as.numeric(States_i), index.return=TRUE)$ix]
+    }
   }
   # identify the possible trait combinations
   TraitList <- expand.grid(LevelList)
-  Traits <- sort(apply(TraitList, 1, function(x) paste(c(x), collapse = "_")))
+  Traits <- apply(TraitList, 1, function(x) paste(c(x), collapse = "_"))
   # convert each column into a numeric value associated with a member of the trait combinations. ? are associated with all values of that column, & indicates the combination of two or more
   search.strings <- observed.traits_index <- combined.data <- c()
   for(i in 1:dim(data)[1]){
