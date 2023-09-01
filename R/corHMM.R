@@ -491,7 +491,7 @@ corProcessData <- function(data, rate.mat=NULL, collapse=TRUE){
     data_i <- data_i[!data_i == "?"]
     States_i <- unique(unlist(strsplit(data_i, "&")))
     StateMats[[i-1]] <- getRateCatMat(length(States_i))
-    if(any(is.na(is.numeric(States_i)))){
+    if(any(is.na(suppressWarnings(as.numeric(States_i))))){
       LevelList[[i-1]] <- sort(States_i)
     }else{
       LevelList[[i-1]] <- States_i[sort(as.numeric(States_i), index.return=TRUE)$ix]
