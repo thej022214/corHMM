@@ -419,3 +419,69 @@ FloydWalshAlg <- function(model, init, final){
 # 
 # liks <- unlist(lapply(simmap, function(x) getSimmapLik(x, Q)))
 # log(sum(exp(liks)))
+
+# 
+# library(castor)
+# library(corHMM)
+# 
+# data(primates)
+# phy <- primates[[1]]
+# phy <- multi2di(phy)
+# data <- primates[[2]][,-3]
+# 
+# ##run corhmm
+# MK <- corHMM(phy, data, 1)
+# 
+# ##get simmap from corhmm solution
+# model <- MK$solution
+# simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=1, nSim=1, nCores=1)[[1]]
+# 
+# ltt_dat <- count_lineages_through_time(phy, 100)
+# 
+# get_edge_span <- function(simmap){
+#   bt <- branching.times(simmap)
+#   time_frame <- simmap$edge
+#   for(i in 1:length(bt)){
+#     index <- simmap$edge[,1] == names(bt)[i]
+#     time_frame[index, 1] <- bt[i]
+#     time_frame[index, 2] <- bt[i] - simmap$edge.length[index]
+#   }
+#   return(time_frame)
+# }
+# 
+# get_char_at_time <- function(time, simmap){
+#   edge_span <- round(get_edge_span(simmap), 4)
+#   edge_index <- which((time <= edge_span[,1]) & (time >= edge_span[,2]))
+#   bt <- branching.times(simmap)
+#   char_at_time <- c()
+#   for(i in edge_index){
+#     focal_map <- simmap$maps[[i]]
+#     if(length(focal_map) == 1){
+#       char <- names(focal_map)
+#     }else{
+#       starting_age <- bt[names(bt) == simmap$edge[i,1]]
+#       time_span <- round(starting_age - cumsum(focal_map), 5)
+#       possible_index <- which(time >= time_span)
+#       char <- names(focal_map)[possible_index[1]]
+#     }
+#     char_at_time <- c(char_at_time, char)
+#   }
+#   char_at_time <- c(char_at_time, colnames(simmap$mapped.edge))
+#   out <- table(char_at_time)
+#   out <- out - 1
+#   return(out)
+# }
+# 
+# ages <- round(ltt_dat$ages, 4)
+# test <- sapply(ages, function(x) get_char_at_time(x, simmap))
+# plot_table <- data.frame(ages = ages, t(test))
+# 
+# library(ggplot2)
+# 
+# ggplot(plot_table, aes(x = rev(ages))) +
+#   geom_line(aes(y = log(X0), color = "X0"), size = 1) +
+#   geom_line(aes(y = log(X1), color = "X1"), size = 1) +
+#   scale_color_manual(values = c("X0" = "blue", "X1" = "red")) +
+#   labs(x = "Ages", y = "Values") +
+#   theme_minimal()
+
