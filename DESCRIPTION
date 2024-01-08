@@ -13,5 +13,7 @@ Suggests: testthat, knitr, rmarkdown
 Imports: expm, numDeriv, corpcor, MASS, nnet, phangorn, parallel, viridis, Rmpfr, igraph, phytools, lhs
 Description: Fits hidden Markov models of discrete character evolution which allow different transition rate classes on different portions of a phylogeny. Beaulieu et al (2013) <doi:10.1093/sysbio/syt034>.
 License: GPL (>= 2)
+URL: https://github.com/thej022214/corHMM
+BugReports: https://github.com/thej022214/corHMM/issues
 VignetteBuilder: knitr
 
