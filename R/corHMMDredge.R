@@ -388,6 +388,9 @@ get_penalty_score <- function(p, pen_type){
   if(pen_type == "l1"){
     pen <- sum(p)
   }
+  if(pen_type == "l2"){
+    pen <- sum(p^2)
+  }
   if(pen_type == "logl1"){
     pen <- sum(log(p))
   }
@@ -406,6 +409,9 @@ get_penalty_score <- function(p, pen_type){
     sum_of_differences <- sum(differences, na.rm = TRUE)
     num_pairwise_differences <- choose(length(p), 2)
     pen <- sum_of_differences / num_pairwise_differences
+  }
+  if(pen_type == "log_exp"){
+    pen <- -sum(dexp(p, rate = 1, log=TRUE))
   }
   return(pen)
 }
