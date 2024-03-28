@@ -10,7 +10,7 @@ collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
-\item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.}
+\item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data. All columns are converted to class factor unless already is.factor. Order of states is determined by the levels of column. Unobserved levels may be modeled if collapse=FALSE.}
 \item{rate.cat}{specifies the number of hidden rate categories (if 1, there are no hidden states, see Details).}
 \item{rate.mat}{a user-supplied matrix containing indexes of parameters to be optimized (see Details).}
 \item{model}{One of "ARD", "SYM", or "ER". ARD: all rates differ. SYM: rates between any two states do not differ. ER: all rates are equal.} 

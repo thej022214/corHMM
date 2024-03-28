@@ -47,15 +47,9 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "logl1", lambda = 1
   
   CorData <- corProcessData(data, collapse = collapse)
   data.legend <- data <- CorData$corData
-  # nObs <- length(CorData$ObservedTraits)
-  if(length(grep("&", CorData$corData[,2])) > 0){
-    non_and_chars <- as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])])
-    and_chars <- as.numeric(unlist(strsplit(CorData$corData[,2][grep("&", CorData$corData[,2])], "&")))
-    nObs <- max(c(non_and_chars, and_chars))
-  }else{
-    nObs <- max(as.numeric(CorData$corData[,2]))
-  }
-  # Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
+  nObs <- length(CorData$ObservedTraits)
+
+    # Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
   matching <- match.tree.data(phy,data)
   data <- matching$data
   phy <- matching$phy

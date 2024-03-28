@@ -406,13 +406,13 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
 getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALSE){
   
   CorData <- corProcessData(data, collapse)
-  
   data.legend <- CorData$ObservedTraits
-  if(length(grep("&", CorData$corData[,2])) > 0){
-    nObs <- max(as.numeric(unlist(strsplit(CorData$corData[,2], "&"))))
-  }else{
-    nObs <- max(as.numeric(CorData$corData[,2]))
-  }
+  nObs <- length(data.legend)
+  # if(length(grep("&", CorData$corData[,2])) > 0){
+  #   nObs <- max(as.numeric(unlist(strsplit(CorData$corData[,2], "&"))))
+  # }else{
+  #   nObs <- max(as.numeric(CorData$corData[,2]))
+  # }
   #nObs <- max(as.numeric(CorData$corData[,2]), na.rm = TRUE)
   nCol <- dim(data)[2]
   

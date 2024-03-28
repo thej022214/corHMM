@@ -48,14 +48,14 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     CorData <- corProcessData(data, collapse = collapse)
     data.legend <- data <- CorData$corData
-    # nObs <- length(CorData$ObservedTraits)
-    if(length(grep("&", CorData$corData[,2])) > 0){
-      non_and_chars <- as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])])
-      and_chars <- as.numeric(unlist(strsplit(CorData$corData[,2][grep("&", CorData$corData[,2])], "&")))
-      nObs <- max(c(non_and_chars, and_chars))
-    }else{
-      nObs <- max(as.numeric(CorData$corData[,2]))
-    }
+    nObs <- length(CorData$ObservedTraits)
+    # if(length(grep("&", CorData$corData[,2])) > 0){
+    #   non_and_chars <- as.numeric(CorData$corData[,2][-grep("&", CorData$corData[,2])])
+    #   and_chars <- as.numeric(unlist(strsplit(CorData$corData[,2][grep("&", CorData$corData[,2])], "&")))
+    #   nObs <- max(c(non_and_chars, and_chars))
+    # }else{
+    #   nObs <- max(as.numeric(CorData$corData[,2]))
+    # }
     # Checks to make sure phy & data have same taxa. Fixes conflicts (see match.tree.data function).
     matching <- match.tree.data(phy,data)
     data <- matching$data
@@ -90,8 +90,13 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     counts <- table(data.sort[,1])
     levels <- levels(as.factor(data.sort[,1]))
     cols <- as.factor(data.sort[,1])
+    if(collapse){
+      StateNames <- gsub("_", "|", CorData$ObservedTraits)
+    }else{
+      StateNames <- gsub("_", "|", CorData$PossibleTraits)
+    }
     cat("State distribution in data:\n")
-    cat("States:",levels,"\n",sep="\t")
+    cat("States:",StateNames,"\n",sep="\t")
     cat("Counts:",counts,"\n",sep="\t")
     
     #Some initial values for use later
@@ -232,7 +237,17 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     # finalize the output
     solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-    StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
+    if(collapse){
+      StateNames <- rep(gsub("_", "|", CorData$ObservedTraits), rate.cat)
+      RCNames <- rep(paste("R", 1:rate.cat, sep = ""), each = length(CorData$ObservedTraits))
+    }else{
+      StateNames <- rep(gsub("_", "|", CorData$PossibleTraits), rate.cat)
+      RCNames <- rep(paste("R", 1:rate.cat, sep = ""), each = length(CorData$PossibleTraits))
+    }
+    if(rate.cat > 1){
+      StateNames <- paste(RCNames, StateNames)
+    }
+    # StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
     rownames(solution) <- colnames(solution) <- StateNames
     AIC <- -2*loglik+2*model.set.final$np
     AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
@@ -428,7 +443,7 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NU
     nb.node <- phy$Nnode
     obj$rate.cat<-rate.cat
     if(is.null(rate.mat)){
-      rate <- getStateMat4Dat(data, model)$rate.mat
+      rate <- getStateMat4Dat(data, model, collapse = collapse)$rate.mat
       if(rate.cat > 1){
         StateMats <- vector("list", rate.cat)
         for(i in 1:rate.cat){
@@ -438,9 +453,9 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NU
       }
     }else{
       rate <- rate.mat
-      ntraits <- dim(rate)[1]/rate.cat
+      nTraits <- dim(rate)[1]/rate.cat
     }
-    nTraits <- dim(rate)[1]
+    nTraits <- dim(rate)[1]/rate.cat
     rate[rate == 0] <- NA
     index.matrix<-rate
     rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
@@ -463,12 +478,17 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NU
     #     if(is.na(x[i])){x[i]=2}
     # }
     
-    tmp <- matrix(0, nb.tip + nb.node, ntraits)
+    tmp <- matrix(0, nb.tip + nb.node, nTraits)
     for(i in 1:nb.tip){
-        state_index <- as.numeric(unlist(strsplit(as.character(data[i,2]), "&")))
-        tmp[i, state_index] <- 1
+        focal_state <- matching$data[i,2]
+        if(focal_state == "?"){
+          tmp[i, ] <- 1
+        }else{
+          state_index <- as.numeric(unlist(strsplit(as.character(focal_state), "&")))
+          tmp[i, state_index] <- 1
+        }
     }
-    liks <- matrix(rep(tmp, rate.cat), nb.tip + nb.node, ntraits*rate.cat)
+    liks <- matrix(rep(tmp, rate.cat), nb.tip + nb.node, nTraits*rate.cat)
     
     Q <- matrix(0, dim(rate)[1], dim(rate)[1])
     
@@ -481,21 +501,29 @@ rate.cat.set.corHMM.JDB<-function(phy,data,rate.cat, ntraits, model, rate.mat=NU
     return(obj)
 }
 
-corProcessData <- function(data, rate.mat=NULL, collapse=TRUE){
+corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
   nCol <- dim(data)[2]
   LevelList <- StateMats <- vector("list", nCol-1)
   # detect the number of states in each column. & is treated as indicating polymorphism. ? is treated as unknown data.
   for(i in 2:nCol){
-    data[,i] <- as.character(data[,i])
-    data_i <- as.character(data[,i])
-    data_i <- data_i[!data_i == "?"]
-    States_i <- unique(unlist(strsplit(data_i, "&")))
-    StateMats[[i-1]] <- getRateCatMat(length(States_i))
-    if(any(is.na(suppressWarnings(as.numeric(States_i))))){
-      LevelList[[i-1]] <- sort(States_i)
-    }else{
-      LevelList[[i-1]] <- States_i[sort(as.numeric(States_i), index.return=TRUE)$ix]
+    if(!is.factor(data[,i])){
+      data[,i] <- as.factor(data[,i])
     }
+    States_i <- levels(data[,i])
+    if(any(States_i == "?")){
+      States_i <- States_i[!States_i == "?"]
+    }
+    if(length(grep("&", States_i)) > 0){
+      States_i <- unique(unlist(strsplit(States_i, "&")))
+    }
+    
+    StateMats[[i-1]] <- getRateCatMat(length(States_i))
+    LevelList[[i-1]] <- States_i
+    # if(any(is.na(suppressWarnings(as.numeric(States_i))))){
+    #   LevelList[[i-1]] <- sort(States_i)
+    # }else{
+    #   LevelList[[i-1]] <- States_i[sort(as.numeric(States_i), index.return=TRUE)$ix]
+    # }
   }
   # identify the possible trait combinations
   TraitList <- expand.grid(LevelList)
@@ -513,11 +541,15 @@ corProcessData <- function(data, rate.mat=NULL, collapse=TRUE){
     observed.traits_index <- c(observed.traits_index, grep(search.string_i, Traits))
     search.strings[i] <- search.string_i
   }
-  ObservedTraits <- sort(Traits[unique(observed.traits_index)])
+  ObservedTraits <- Traits[sort(unique(observed.traits_index))]
   if(collapse){
-    corData <- data.frame(sp = data[,1], d = sapply(search.strings, function(x) paste(grep(x, ObservedTraits), collapse="&")))
+    corData <- data.frame(sp = data[,1], 
+                          d = sapply(search.strings, function(x) 
+                            paste(grep(x, ObservedTraits), collapse="&")))
   }else{
-    corData <- data.frame(sp = data[, 1], d = sapply(search.strings, function(x) paste(grep(x, Traits),collapse = "&")))
+    corData <- data.frame(sp = data[, 1], 
+                          d = sapply(search.strings, function(x) 
+                            paste(grep(x, Traits),collapse = "&")))
   }
   return(list(StateMats = StateMats,  PossibleTraits = Traits, ObservedTraits = ObservedTraits, corData = corData))
 }
@@ -531,13 +563,11 @@ print.corhmm<-function(x,...){
     print(output)
     cat("\n")
     
-    UserStates <- corProcessData(x$data)$ObservedTraits
-    if(length(grep("&", x$data.legend[,2])) > 0){
-      names(UserStates) <- sort(unique(as.numeric(unlist(strsplit(x$data.legend[,2], "&")))))
-    }else{
-      names(UserStates) <- sort(unique(as.numeric(x$data.legend[,2])))
-    }
+    UserStates <- gsub("_", "|", corProcessData(x$data)$PossibleTraits)
+    ColNames <- paste0(colnames(data)[-1], collapse = "|")
+
     cat("Legend\n")
+    print(ColNames)
     print(UserStates)
     cat("\n")
     
