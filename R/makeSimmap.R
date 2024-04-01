@@ -38,12 +38,16 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores, max.attempt)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
-  legend <- getStateMat4Dat(data, collapse = collapse)$legend
-  if(rate.cat > 1){
-    StateNames <- paste("(", rep(legend, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = length(legend)), ")", sep = "")
-    names(StateNames) <- 1:length(StateNames)
+  CorData <- corProcessData(data, collapse = collapse)
+  if(collapse){
+    StateNames <- rep(gsub("_", "|", CorData$ObservedTraits), rate.cat)
+    RCNames <- rep(paste("R", 1:rate.cat, sep = ""), each = length(CorData$ObservedTraits))
   }else{
-    StateNames <- legend
+    StateNames <- rep(gsub("_", "|", CorData$PossibleTraits), rate.cat)
+    RCNames <- rep(paste("R", 1:rate.cat, sep = ""), each = length(CorData$PossibleTraits))
+  }
+  if(rate.cat > 1){
+    StateNames <- paste(RCNames, StateNames)
   }
   for(i in 1:nSim){
     tree.simmap <- tree
@@ -73,7 +77,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
 }
 
 correctMapName <- function(map_element, state_names){
-  names(map_element) <- state_names[match(as.numeric(names(map_element)), as.numeric(names(state_names)))]
+  names(map_element) <- state_names[as.numeric(names(map_element))]
   return(map_element)
 }
 

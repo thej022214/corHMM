@@ -4,8 +4,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "logl1", lambda = 1, node.states = "marginal", fixed.nodes=FALSE, root.p="yang", ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL){
-  p <- NULL
+corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, node.states = "marginal", fixed.nodes=FALSE, root.p="maddfitz", ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL, p=NULL){
   
   # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
   if(is.null(node.states)){
@@ -83,8 +82,13 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "logl1", lambda = 1
   counts <- table(data.sort[,1])
   levels <- levels(as.factor(data.sort[,1]))
   cols <- as.factor(data.sort[,1])
-  cat("State distribution in data:\n")
-  cat("States:",levels,"\n",sep="\t")
+  if(collapse){
+    StateNames <- gsub("_", "|", CorData$ObservedTraits)
+  }else{
+    StateNames <- gsub("_", "|", CorData$PossibleTraits)
+  }
+  cat("\nState distribution in data:\n")
+  cat("States:",StateNames,"\n",sep="\t")
   cat("Counts:",counts,"\n",sep="\t")
   
   #Some initial values for use later
@@ -207,7 +211,17 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "logl1", lambda = 1
   
   # finalize the output
   solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
-  StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
+  if(collapse){
+    StateNames <- rep(gsub("_", "|", CorData$ObservedTraits), rate.cat)
+    RCNames <- rep(paste("R", 1:rate.cat, sep = ""), each = length(CorData$ObservedTraits))
+  }else{
+    StateNames <- rep(gsub("_", "|", CorData$PossibleTraits), rate.cat)
+    RCNames <- rep(paste("R", 1:rate.cat, sep = ""), each = length(CorData$PossibleTraits))
+  }
+  if(rate.cat > 1){
+    StateNames <- paste(RCNames, StateNames)
+  }
+  # StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
   rownames(solution) <- colnames(solution) <- StateNames
   AIC <- -2*loglik+2*model.set.final$np
   AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
@@ -235,7 +249,9 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "logl1", lambda = 1
              tip.states=tip.states,
              states.info = lik.anc$info.anc.states,
              iterations=out$iterations,
-             root.p=root.p)
+             root.p=root.p,
+             pen_type=pen_type,
+             lambda=lambda)
   class(obj)<-"corhmm"
   return(obj)
 }
@@ -249,7 +265,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "logl1", lambda = 1
 
 dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen_type="logl1",lambda=1) {
   p = exp(p)
-  pen_score <- get_penalty_score(exp(p), pen_type)
+  pen_score <- get_penalty_score(p, pen_type)
   cp_root.p <- root.p
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
@@ -384,28 +400,6 @@ get_penalty_score <- function(p, pen_type){
   }
   if(pen_type == "l2"){
     pen <- sum(p^2)
-  }
-  if(pen_type == "logl1"){
-    pen <- sum(log(p))
-  }
-  if(pen_type == "waiting"){
-    pen <- -sum(1/p)
-  }
-  if(pen_type == "varr"){
-    pen <- var(p)
-  }
-  if(pen_type == "varrlog"){
-    pen <- var(log(p)) + sum(log(p))
-  }
-  if(pen_type == "log_distance"){
-    differences <- abs(outer(log(p), log(p), "-"))
-    differences[upper.tri(differences)] <- NA
-    sum_of_differences <- sum(differences, na.rm = TRUE)
-    num_pairwise_differences <- choose(length(p), 2)
-    pen <- sum_of_differences / num_pairwise_differences
-  }
-  if(pen_type == "log_exp"){
-    pen <- -sum(dexp(p, rate = 1, log=TRUE))
   }
   return(pen)
 }

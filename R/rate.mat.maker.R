@@ -465,16 +465,13 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, 
       rate.mat[rate.mat > 0] <- 1:length(rate.mat[rate.mat > 0])
     }
   }
-  ## Caetano (May 4, 2023): Changing colnames below to fix when collapse == FALSE
+  legend <- paste0(colnames(data)[-1], collapse = "|")
   if(collapse){
-    colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:nObs, ")", sep ="")
-    legend <- CorData$ObservedTraits
-    names(legend) <- 1:nObs
+    StateNames <- gsub("_", "|", CorData$ObservedTraits)
   }else{
-    colnames(rate.mat) <- rownames(rate.mat) <- paste("(", 1:ncol(rate.mat), ")", sep ="")
-    legend <- CorData$PossibleTraits
-    names(legend) <- 1:ncol(rate.mat)
+    StateNames <- gsub("_", "|", CorData$PossibleTraits)
   }
+  colnames(rate.mat) <- rownames(rate.mat) <- StateNames
   res <- list(legend = legend, rate.mat = rate.mat)
   return(res)
 }
