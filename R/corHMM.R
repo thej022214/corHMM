@@ -90,14 +90,6 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     counts <- table(data.sort[,1])
     levels <- levels(as.factor(data.sort[,1]))
     cols <- as.factor(data.sort[,1])
-    if(collapse){
-      StateNames <- gsub("_", "|", CorData$ObservedTraits)
-    }else{
-      StateNames <- gsub("_", "|", CorData$PossibleTraits)
-    }
-    cat("State distribution in data:\n")
-    cat("States:",StateNames,"\n",sep="\t")
-    cat("Counts:",counts,"\n",sep="\t")
     
     #Some initial values for use later
     k=2
@@ -138,6 +130,17 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         }
         ###############################
     }
+    
+    if(collapse){
+      StateNames <- gsub("_", "|", CorData$ObservedTraits)
+    }else{
+      StateNames <- gsub("_", "|", CorData$PossibleTraits)
+    }
+    print_counts <- rep(0, length(StateNames))
+    print_counts[as.numeric(names(counts))] <- counts
+    cat("State distribution in data:\n")
+    cat("States:",StateNames,"\n",sep="\t")
+    cat("Counts:",print_counts,"\n",sep="\t")
     
     lower = rep(lb, model.set.final$np)
     upper = rep(ub, model.set.final$np)
