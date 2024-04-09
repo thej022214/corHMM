@@ -10,18 +10,20 @@ generate_log_points <- function(mle, range_factor, n_points = 10){
   return(log_space)
 }
 
-fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index, dredge, pen_type, lambda){
+fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index, 
+                         dredge, pen_type, lambda, corhmm_obj){
   pars <- rep(NA, length.out = length(c(par_free_0, par_fixed)))
   pars[par_fixed_index] <- exp(par_fixed)
   pars[-par_fixed_index] <- exp(par_free_0)
-  neglnLik <- compute_neglnlikelihood(pars,  corhmm_fit)
+  neglnLik <- compute_neglnlikelihood(pars,  corhmm_obj)
   if(dredge){
     neglnLik <- neglnLik + (get_penalty_score(pars, pen_type) * lambda)
   }
   return(neglnLik)
 }
 
-optimize_fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index, dredge, pen_type, lambda){
+optimize_fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index, 
+                                  dredge, pen_type, lambda, corhmm_obj){
   optim_result <- optim(par = log(par_free_0), 
                         fn = fixed_corhmm, 
                         method = "Nelder-Mead", 
@@ -29,19 +31,20 @@ optimize_fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index, dredge
                         par_fixed_index=par_fixed_index, 
                         dredge=dredge,
                         pen_type=pen_type,
-                        lambda=lambda)
+                        lambda=lambda,
+                        corhmm_obj=corhmm_obj)
   return(optim_result)
 }
 
-get_profile_lik <- function(par_free_0, par_fixed_values, par_fixed_index, 
-                            ncores=NULL, dredge=FALSE, pen_type=NULL, lambda=NULL){
+get_profile_lik <- function(par_free_0, par_fixed_values, par_fixed_index, ncores=NULL, 
+                            dredge=FALSE, pen_type=NULL, lambda=NULL, corhmm_obj=NULL){
   if(is.null(ncores)){
     optim_res_list <- lapply(par_fixed_values, function(x) 
-      optimize_fixed_corhmm(par_free_0, x, par_fixed_index, dredge, pen_type, lambda))
+      optimize_fixed_corhmm(par_free_0, x, par_fixed_index, dredge, pen_type, lambda, corhmm_obj))
   }else{
     ncores = min(parallel::detectCores()-1, ncores)
     optim_res_list <- parallel::mclapply(par_fixed_values, function(x) 
-      optimize_fixed_corhmm(par_free_0, x, par_fixed_index, dredge, pen_type, lambda), 
+      optimize_fixed_corhmm(par_free_0, x, par_fixed_index, dredge, pen_type, lambda, corhmm_obj), 
       mc.cores = ncores)
   }
   profile_table <- data.frame(par_value = par_fixed_values, 
@@ -70,7 +73,8 @@ get_batch_profile_lik <- function(corhmm_obj, range_factor, n_points, ncores=NUL
   for(i in seq_along(mle_pars)){
     param_name <- names(mle_pars)[i]
     par_fixed_values <- log_points_list[, i]
-    result <- get_profile_lik(mle_pars[-i], par_fixed_values, i, ncores, dredge, pen_type, lambda)
+    result <- get_profile_lik(mle_pars[-i], par_fixed_values, i, ncores, 
+                              dredge, pen_type, lambda, corhmm_obj)
     profile_lik_results[[param_name]] <- result
   }
   profile_lik_results$corhmm_obj = corhmm_obj

@@ -169,7 +169,7 @@ compute_neglnlikelihood <- function(par, corhmm.object) {
 
 	corhmm.object$order.test <- FALSE
 	corhmm.object$phy$node.label <- NULL
-	nObs <- length(corProcessData(corhmm.object$data)$ObservedTraits)
+	nObs <- dim(corhmm.object$index.mat)[1]/corhmm.object$rate.cat
 	model.set.final <- rate.cat.set.corHMM.JDB(phy = corhmm.object$phy, data = corhmm.object$data, rate.cat = corhmm.object$rate.cat, ntraits = nObs, model = "ARD")
 	rate.mat <- corhmm.object$index.mat
 	rate.mat[rate.mat == 0] <- NA

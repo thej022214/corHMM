@@ -4,7 +4,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, node.states = "marginal", fixed.nodes=FALSE, root.p="maddfitz", ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL, p=NULL){
+corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, node.states = "marginal", fixed.nodes=FALSE, root.p="maddfitz", drop.par = FALSE, drop.tol = 1e-9, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, p=NULL){
   
   # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
   if(is.null(node.states)){
@@ -111,6 +111,12 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
   model = "ARD"
   
     model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data,rate.cat=rate.cat,ntraits=nObs,model=model,rate.mat=rate.mat, collapse=collapse)
+    # adjusting the matrix for corhmm dredge which allows for independent rate classes
+    model.set.final$index.matrix[!is.na(model.set.final$index.matrix)] <- 1:length(model.set.final$index.matrix[!is.na(model.set.final$index.matrix)])
+    model.set.final$rate <- model.set.final$index.matrix
+    model.set.final$rate[is.na(model.set.final$rate)] <- max(model.set.final$rate, na.rm = TRUE) + 1
+    model.set.final$np <- max(model.set.final$index.matrix, na.rm = TRUE)
+    
   phy <- reorder(phy, "pruningwise")
   
   lower = rep(lb, model.set.final$np)
@@ -123,7 +129,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
     cat("Calculating likelihood from a set of fixed parameters", "\n")
     out<-NULL
     est.pars<-log(p)
-    out$objective<-dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias)
+    out$objective<-dev.corhmm.dredge(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen_type = pen_type, lambda = lambda)
     loglik <- -out$objective
     est.pars <- exp(est.pars)
   }else{
@@ -221,10 +227,20 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
   if(rate.cat > 1){
     StateNames <- paste(RCNames, StateNames)
   }
-  # StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
+  # return new reduced matrix
+  if(drop.par){
+    solution[solution < drop.tol] <- NA
+    np <- length(solution[!is.na(solution)])
+    index.matrix <- solution
+    index.matrix[!is.na(index.matrix)] <- 1:np
+  }else{
+    np <- model.set.final$np
+    index.matrix <- model.set.final$index.matrix
+  }
+  
   rownames(solution) <- colnames(solution) <- StateNames
-  AIC <- -2*loglik+2*model.set.final$np
-  AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
+  AIC <- -2*loglik+2*np
+  AICc <- -2*loglik+(2*np*(nb.tip/(nb.tip-np-1)))
   
   if (is.character(node.states)) {
     if (node.states == "marginal" || node.states == "scaled"){
@@ -241,7 +257,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
              AICc = AICc,
              rate.cat=rate.cat,
              solution=solution,
-             index.mat=model.set.final$index.matrix,
+             index.mat=index.matrix,
              data=input.data,
              data.legend = data.legend,
              phy=phy,
