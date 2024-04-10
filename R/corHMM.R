@@ -135,8 +135,11 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
       StateNames <- gsub("_", "|", CorData$ObservedTraits)
     }else{
       StateNames <- gsub("_", "|", CorData$PossibleTraits)
-    }
+    }  
     print_counts <- rep(0, length(StateNames))
+    if(length(grep("&", names(counts))) > 0){
+      counts <- counts[-grep("&", names(counts))]
+    }
     print_counts[as.numeric(names(counts))] <- counts
     cat("State distribution in data:\n")
     cat("States:",StateNames,"\n",sep="\t")
@@ -278,6 +281,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     tip.states=tip.states,
     states.info = lik.anc$info.anc.states,
     iterations=out$iterations,
+    collapse=collapse,
     root.p=root.p)
     class(obj)<-"corhmm"
     return(obj)

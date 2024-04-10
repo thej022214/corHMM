@@ -70,10 +70,10 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
     }
   }
   
-  if(any(phy$edge.length<=1e-5)){
-    warning("Branch lengths of 0 detected. Adding 1e-5 to these branches.", immediate. = TRUE)
+  if(any(phy$edge.length<=.Machine$double.eps)){
+    warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
     #   phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
-    phy$edge.length <- phy$edge.length + 1e-5 # changed to add 1e-5 based on suggestion from Hedvig Skirgård (github issue #27)
+    phy$edge.length <- phy$edge.length + sqrt(.Machine$double.eps) # changed to add 1e-5 based on suggestion from Hedvig Skirgård (github issue #27)
   }
   #Creates the data structure and orders the rows to match the tree.
   data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
@@ -117,6 +117,9 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
     StateNames <- gsub("_", "|", CorData$PossibleTraits)
   }  
   print_counts <- rep(0, length(StateNames))
+  if(length(grep("&", names(counts))) > 0){
+    counts <- counts[-grep("&", names(counts))]
+  }
   print_counts[as.numeric(names(counts))] <- counts
   cat("State distribution in data:\n")
   cat("States:",StateNames,"\n",sep="\t")
@@ -268,6 +271,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
              tip.states=tip.states,
              states.info = lik.anc$info.anc.states,
              iterations=out$iterations,
+             collapse=collapse,
              root.p=root.p,
              pen_type=pen_type,
              lambda=lambda)

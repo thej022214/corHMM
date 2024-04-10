@@ -167,10 +167,16 @@ HessianConfidence <- function(corhmm.object) {
 # simple function; returns log likelihood
 compute_neglnlikelihood <- function(par, corhmm.object) {
 
+  # legacy code. all previous verions of corhmm don't give the collapse as an output, but it's now needed to create the matrices correctly. 
+  if(is.null(corhmm.object$collapse)){
+    collapse = TRUE # default setting
+  }else{
+    collapse = corhmm.object$collapse
+  }
 	corhmm.object$order.test <- FALSE
 	corhmm.object$phy$node.label <- NULL
 	nObs <- dim(corhmm.object$index.mat)[1]/corhmm.object$rate.cat
-	model.set.final <- rate.cat.set.corHMM.JDB(phy = corhmm.object$phy, data = corhmm.object$data, rate.cat = corhmm.object$rate.cat, ntraits = nObs, model = "ARD")
+	model.set.final <- rate.cat.set.corHMM.JDB(phy = corhmm.object$phy, data = corhmm.object$data, rate.cat = corhmm.object$rate.cat, ntraits = nObs, model = "ARD", collapse=collapse)
 	rate.mat <- corhmm.object$index.mat
 	rate.mat[rate.mat == 0] <- NA
 	rate <- rate.mat
