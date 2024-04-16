@@ -204,14 +204,14 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
   }
   TIPS <- 1:nb.tip
   if (node.states == "marginal" || node.states == "scaled"){
-    lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, collapse = collapse)
+    lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=model.set.final$rate, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, collapse = collapse)
     pr<-apply(lik.anc$lik.anc.states,1,which.max)
     phy$node.label <- pr
     tip.states <- lik.anc$lik.tip.states
     row.names(tip.states) <- phy$tip.label
   }
   if (node.states == "joint"){
-    lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, collapse = collapse)
+    lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=model.set.final$rate, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, collapse = collapse)
     phy$node.label <- lik.anc$lik.anc.states
     tip.states <- lik.anc$lik.tip.states
   }
@@ -286,7 +286,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, pen_type = "l1", lambda = 1, n
 ######################################################################################################################################
 ######################################################################################################################################
 
-dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen_type="logl1",lambda=1) {
+dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen_type="l1",lambda=1) {
   p = exp(p)
   pen_score <- get_penalty_score(p, pen_type)
   cp_root.p <- root.p
