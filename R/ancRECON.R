@@ -7,7 +7,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, collapse = TRUE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, tip.fog=NULL, collapse = TRUE){
     
   # if(hasArg(corHMM_fit)){
   #   corHMM_fit$phy$node.label <- NULL
@@ -79,6 +79,15 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     #Makes a matrix of tip states and empty cells corresponding
     #to ancestral nodes during the optimization process.
     
+	if(!is.null(tip.fog)){
+	  if(is.numeric(tip.fog)){
+		for(tip.index in 1:Ntip(phy)){
+		  model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog/(dim(model.set.final$Q)[2]-1)
+		  model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - tip.fog
+		}
+	  }
+	}
+	
     x <- data.sort[,1]
     TIPS <- 1:nb.tip
     tranQ <- Q <- model.set.final$Q
