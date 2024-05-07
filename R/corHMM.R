@@ -565,7 +565,7 @@ print.corhmm<-function(x,...){
     
     ntips=Ntip(x$phy)
     output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
-    names(output)<-c("-lnL","AIC","AICc","Rate.cat","ntax")
+    names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
     cat("\nFit\n")
     print(output)
     cat("\n")

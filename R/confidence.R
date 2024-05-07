@@ -296,7 +296,7 @@ MatrixToPars <- function(corhmm.object) {
 
 	par <- rep(NA,max(index.mat, na.rm=TRUE))
 	for (i in seq_along(par)) {
-		par[i] <- raw.rates[which(index.mat==i)]
+		par[i] <- raw.rates[which(index.mat==i)][1]
 		relevant_indices <- multi.which(index.mat==i)[1,]
 		names(par)[i] <- paste0(rownames(raw.rates)[relevant_indices[1]]," -> ", colnames(raw.rates)[relevant_indices[2]])
 	}
