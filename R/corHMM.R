@@ -80,7 +80,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     if(any(phy$edge.length<=.Machine$double.eps)){
       warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
-    #   phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
+	  #phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
       phy$edge.length <- phy$edge.length + sqrt(.Machine$double.eps) # changed to add 1e-5 based on suggestion from Hedvig Skirgård (github issue #27)
     }
     #Creates the data structure and orders the rows to match the tree.
@@ -128,9 +128,14 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         drop.states <- col.sums[which(col.sums == row.sums)]
         if(length(drop.states > 0)){
             model.set.final$liks[,drop.states] <- 0
-        }
+			num.dropped.states <- length(drop.states)
+        }else{
+			num.dropped.states <- NULL
+		}
         ###############################
-    }
+    }else{
+		num.dropped.states <- NULL
+	}
     
     if(collapse){
       StateNames <- gsub("_", "|", CorData$ObservedTraits)
@@ -150,11 +155,19 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     upper = rep(ub, model.set.final$np)
     
 	if(!is.null(tip.fog)){
-	  if(is.numeric(tip.fog)){
-		for(tip.index in 1:Ntip(phy)){
-		  model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog
-		  model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - tip.fog
-		}
+		if(is.numeric(tip.fog)){
+			for(tip.index in 1:Ntip(phy)){
+				#Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+				if(num.zeros > 0){
+					if(!is.null(num.dropped.states)){
+						num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)]) - num.dropped.states
+					}else{
+						num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)])
+					}
+					model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog / num.zeros
+					model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - tip.fog
+				}
+			}
 	  }
 	  if(tip.fog == "estimate"){
 		ip <- c(ip, 0.01)
@@ -171,18 +184,18 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         cat("Calculating likelihood from a set of fixed parameters", "\n")
         out <- NULL
         est.pars <- log(p)
-        out$objective <- dev.corhmm(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog)
+        out$objective <- dev.corhmm(est.pars, phy=phy, liks=model.set.final$liks, Q=model.set.final$Q, rate=model.set.final$rate, root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog, num.dropped.states=num.dropped.states)
         loglik <- -out$objective
         est.pars <- exp(est.pars)
-		if(set.fog==TRUE){
-		  tip.fog.est <- est.pars[length(est.pars)]
-		  est.pars <- est.pars[-length(est.pars)]
+		if(set.fog == TRUE){
+			tip.fog.est <- est.pars[length(est.pars)]
+			est.pars <- est.pars[-length(est.pars)]
 		}else{
-		  if(is.numeric(tip.fog)){
-			fog.est <- tip.fog
-		  }else{
-			fog.est <- NULL
-		  }
+			if(is.numeric(tip.fog)){
+				fog.est <- tip.fog
+			}else{
+				fog.est <- NULL
+			}
 		}
     }else{
         if(is.null(ip)){
@@ -216,7 +229,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                 }
                 starts[starts < exp(lb)] <- exp(lb)
                 starts[starts > exp(ub)] <- exp(lb)
-                out = nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog)
+                out <- nloptr(x0=log(starts), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog, num.dropped.states = num.dropped.states)
                 tmp[,1] <- out$objective
 				if(set.fog == TRUE){
 					tmp[,2:(model.set.final$np+2)] <- out$solution
@@ -243,31 +256,31 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
             loglik <- -out$objective
             est.pars <- exp(out$solution)
 			if(set.fog == TRUE){
-			  tip.fog.est <- est.pars[length(est.pars)]
-			  est.pars <- est.pars[-length(est.pars)]
+				tip.fog.est <- est.pars[length(est.pars)]
+				est.pars <- est.pars[-length(est.pars)]
 			}else{
-			  if(is.numeric(tip.fog)){
-				fog.est <- tip.fog
-			  }else{
-				fog.est <- NULL
-			  }
+				if(is.numeric(tip.fog)){
+					fog.est <- tip.fog
+				}else{
+					fog.est <- NULL
+				}
 			}
         }else{
             # the user has specified initial params
             cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
             ip <- ip
-            out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog)
+            out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog, num.dropped.states=num.dropped.states)
             loglik <- -out$objective
             est.pars <- exp(out$solution)
 			if(set.fog == TRUE){
 			  tip.fog.est <- est.pars[length(est.pars)]
 			  est.pars <- est.pars[-length(est.pars)]
 			}else{
-			  if(is.numeric(tip.fog)){
-				fog.est <- tip.fog
-			  }else{
-				fog.est <- NULL
-			  }
+				if(is.numeric(tip.fog)){
+					fog.est <- tip.fog
+				}else{
+					fog.est <- NULL
+				}
 			}
         }
     }
@@ -278,14 +291,14 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     }
     TIPS <- 1:nb.tip
     if (node.states == "marginal" || node.states == "scaled"){
-        lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, tip.fog=fog.est, collapse = collapse)
+        lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, tip.fog = fog.est, collapse = collapse)
         pr <- apply(lik.anc$lik.anc.states,1,which.max)
         phy$node.label <- pr
         tip.states <- lik.anc$lik.tip.states
         row.names(tip.states) <- phy$tip.label
     }
     if (node.states == "joint"){
-        lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, tip.fog=fog.est, collapse = collapse)
+        lik.anc <- ancRECON(phy, input.data, est.pars, rate.cat, rate.mat=rate.mat, method=node.states, ntraits=NULL, root.p=root.p, model = model, get.tip.states = get.tip.states, tip.fog = fog.est, collapse = collapse)
         phy$node.label <- lik.anc$lik.anc.states
         tip.states <- lik.anc$lik.tip.states
     }
@@ -349,7 +362,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 ######################################################################################################################################
 ######################################################################################################################################
 
-dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewis.asc.bias, set.fog) {
+dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewis.asc.bias, set.fog, num.dropped.states) {
   
   p <- exp(p)
   cp_root.p <- root.p
@@ -363,12 +376,20 @@ dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewi
   if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
   
   if(set.fog == TRUE){
-	fog.est <- p[length(p)]
-	p <- p[-length(p)]
-	for(tip.index in 1:Ntip(phy)){
-	  liks[tip.index,which(liks[tip.index,]==0)] <- fog.est/(dim(Q)[2]-1)
-	  liks[tip.index,which(liks[tip.index,]==1)] <- 1 - fog.est
-	}
+	  fog.est <- p[length(p)]
+	  p <- p[-length(p)]
+	  for(tip.index in 1:Ntip(phy)){
+		  #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+		  if(num.zeros > 0){
+			  if(!is.null(num.dropped.states)){
+				  num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)]) - num.dropped.states
+			  }else{
+				  num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)])
+			  }
+			  liks[tip.index,which(liks[tip.index,]==0)] <- fog.est / num.zeros
+			  liks[tip.index,which(liks[tip.index,]==1)] <- 1 - fog.est
+		  }
+	  }
   }
   
   Q[] <- c(p, 0)[rate]

@@ -60,13 +60,20 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat = rate.mat, collapse = collapse)
         rate.mat <- model.set.final$index.matrix
         rate <- model.set.final$rate
+		num.dropped.states <- NULL
     }else{
         model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat=rate.mat, collapse = collapse)
         rate <- rate.mat
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
         drop.states <- col.sums[which(col.sums == row.sums)]
-        rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
+		if(length(drop.states > 0)){
+			model.set.final$liks[,drop.states] <- 0
+			num.dropped.states <- length(drop.states)
+		}else{
+			num.dropped.states <- NULL
+		}
+        rate[is.na(rate)] <- max(rate,na.rm=TRUE)+1
     }
     
     #if((max(na.omit(as.vector(rate)))-1) < length(p)){
@@ -80,12 +87,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
     #to ancestral nodes during the optimization process.
     
 	if(!is.null(tip.fog)){
-	  if(is.numeric(tip.fog)){
 		for(tip.index in 1:Ntip(phy)){
-		  model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog/(dim(model.set.final$Q)[2]-1)
-		  model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - tip.fog
+			if(num.zeros > 0){
+				if(!is.null(num.dropped.states)){
+					num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)]) - num.dropped.states
+				}else{
+					num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)])
+				}
+				model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog / num.zeros
+				model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - tip.fog
+			}
 		}
-	  }
 	}
 	
     x <- data.sort[,1]
@@ -420,7 +432,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
         }
         if(get.tip.states == TRUE){
             #Now get the states for the tips (will do, not available for general use):
-            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input, collapse = collapse)
+            liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input, collapse = collapse, tip.fog = tip.fog)
         }else{
             liks.final[TIPS,] <- liks.down[TIPS,]
         }
@@ -525,13 +537,14 @@ getInfoPerNode <- function(lik.anc.states, Q){
   return(Info)
 }
 
-GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p, collapse = TRUE){
+
+GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p, collapse = TRUE, tip.fog = NULL){
     
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     
     data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model, collapse = collapse)
-    
+	
     if(!is.null(rate.mat)){
         rate <- rate.mat
         data.for.likelihood.function$np <- max(rate, na.rm=TRUE)
@@ -542,12 +555,31 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
         col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
         row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
         drop.states <- col.sums[which(col.sums == row.sums)]
-        
         if(length(drop.states > 0)){
             data.for.likelihood.function$liks[,drop.states] <- 0
-        }
+			num.dropped.states <- length(drop.states
+        }else{
+			num.dropped.states <- NULL
+		}
         ###############################
-    }
+    }else{
+		num.dropped.states <- NULL
+	}
+	
+	if(!is.null(tip.fog)){
+		for(tip.index in 1:Ntip(phy)){
+			if(num.zeros > 0){
+				if(!is.null(num.dropped.states)){
+					num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)]) - num.dropped.states
+				}else{
+					num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
+				}
+				data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog / num.zeros
+				data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - tip.fog
+			}
+		}
+	}
+
     nodes <- unique(phy$edge[,1])
     marginal.probs <- matrix(0, nb.tip, dim(data.for.likelihood.function$Q)[2])
     for(taxon.index in 1:Ntip(phy)){
@@ -739,7 +771,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 ######################################################################################################################################
 
 #Marginal reconstruction function for our custom corHMM
-GetEdgeMarginal <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p, collapse = TRUE){
+GetEdgeMarginal <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, root.p, collapse = TRUE, tip.fog = NULL){
   
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
@@ -755,15 +787,33 @@ GetEdgeMarginal <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, ro
     col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
     row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
     drop.states <- col.sums[which(col.sums == row.sums)]
-    
     if(length(drop.states > 0)){
-      data.for.likelihood.function$liks[,drop.states] <- 0
-    }
+		data.for.likelihood.function$liks[,drop.states] <- 0
+		num.dropped.states <- length(drop.states
+    }else{
+		drop.states <- NULL
+		num.dropped.states <- NULL
+	}
     ###############################
   }else{
     drop.states <- NULL
+	num.dropped.states <- NULL
   }
   
+  if(!is.null(tip.fog)){
+	  for(tip.index in 1:Ntip(phy)){
+		  if(num.zeros > 0){
+			  if(!is.null(num.dropped.states)){
+				  num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)]) - num.dropped.states
+			  }else{
+				  num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
+			  }
+			  data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog / num.zeros
+			  data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - tip.fog
+		  }
+	  }
+  }
+
   phy <- reorder(phy, "pruningwise")
   nodes <- unique(phy$edge[,1])
   taxon.index <- grep("FakeyMcFakerson", x=phy$tip.label)
