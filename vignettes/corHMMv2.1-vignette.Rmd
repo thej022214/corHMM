@@ -24,6 +24,7 @@ The vignette is comprised of three sections, where we demonstrate all new extens
 * __Section 1 Default use of corHMM__
     * 1.1: No hidden rate categores
     * 1.2: Any number of hidden rate categories
+    * 1.3: Estimating "tip fog"
 
 * __Section 2 How to make and interpret custom models__
     * 2.1: Creating and using custom rate matrices
@@ -207,6 +208,82 @@ simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=2, nSim=1, nCore
 phytools::plotSimmap(simmap[[1]], fsize=.5)
 ```
 
+## 1.3: Estimating "tip fog"
+
+In a recent publication (O'Meara and Beaulieu 2024), we found that simple character misassignments create upward biases in rates, which becomes increasingly dramatic in short temporal intervals or as clade ages approach the present. We initially termed these misassignments as "errors". However, there are a variety of processes that could lead to a misassigned character. For example, some species may be observed as predominantly in a particular state but is also observed in the alternative state on occasion. In order to remain neutral with regards to the cause of the misassignments we coined the phrase "tip fog". 
+
+To demonstate the impact of tip fog on estimated transition rates, we will simulate a simple two state character on a balanced tree containing 64 taxa:
+```{r}
+set.seed(1980)
+phy <- read.tree("balanced.tree")
+markov.rate <- 0.05
+Q <- rbind(c(-markov.rate, markov.rate), c(markov.rate, -markov.rate))
+ages <- 7
+phy$edge.length <- phy$edge.length*ages/max(branching.times(phy))
+traits <- corHMM:::simMarkov(phy, Q=Q, root.freqs=c(1,0))
+phy$node.label <- NULL
+phydat <- data.frame(taxon=phy$tip.label, Reg=traits$TipStates)
+```
+
+and then estimate the transition rates using `corHMM`:
+```{r}
+pp.nofog <- corHMM(phy, phydat, model="ER", rate.cat=1, tip.fog=0)
+pp.nofog
+```
+
+Here when the rates are known perfectly we obtain a rate estimate of ~0.025 transitions per million years. Now let's see what happens when we choose 10% of the taxa and switch their observed state:
+
+```{r}
+error <- 0.10
+error.absolute <- round(dim(phydat)[1]*error)
+taxa.sample <- sample(1:dim(phydat)[1], error.absolute)
+		phydat.new <- phydat
+		for(index in 1:length(taxa.sample)){
+			state <- phydat[taxa.sample[index],2]
+			if(state == 1){
+				state <- 2
+			}else{
+				state <- 1
+			}
+			phydat.new[taxa.sample[index],2] <- state
+}
+```
+
+To see the effect of tip fog let's reestimate the transition rates:
+```{r}
+pp.fog <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=0)
+pp.fog
+```
+
+The transition rate increases by an order of magnitude. The new default is to assume a tip fog of 10%. Let's run the new default:
+```{r}
+pp.fixfog <- corHMM(phy, phydat.new, model="ER", rate.cat=1)
+pp.fixfog
+```
+
+We can also estimate the fog. To do this, the user must input a vector of the same length as the observed states in the data set that contains the number of free parameters the user wants to estaimte. For example, suppose we want to assume a single tip fog for both states, we'd input a vector of `c(1,1)` to correspond to a single parameter applied to both states:
+
+```{r}
+pp.estfog1 <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=c(1,1))
+pp.estfog1
+```
+
+Here the estimated fog value is 0.091, meaning that a given tip has about 9% change of being incorrectly assigned it's observed state. This is very close to the 10% we used in the simulation. Now, suppose we want to see if there are different tip fog values for each of hte observed sates, we'd input a vector of `c(1,2)`:
+
+```{r}
+pp.estfog2 <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=c(1,2))
+pp.estfog2
+```
+
+Under this model we see that state 1 has a slightly lower fog probability than state 2. However, looking at the AIC between the single fog versus and multiple fog estimates, the additional complexity does not improve the fit. 
+
+One last thing to note: for models that include hidden states, the tip fog values for each observed state are simply replicated across the different rate categories. Thus, a user only needs to include the vector for the free parameters for the observed state. For example, in the two tip fog model, but with two rate categories the input would be:
+
+```{r, eval=FALSE}
+pp.estfog2.2cat <- corHMM(phy, phydat.new, model="ER", rate.cat=2, tip.fog=c(1,2))
+```
+
+
 # Section 2: How to make and interpret custom models
 
 ## 2.1: Creating and using custom rate matrices
@@ -290,6 +367,8 @@ We may plot the resulting parameter estimates as before:
 ```{r, fig.width=10, fig.height=3}
 plotMKmodel(HMM_3state_custom, display = "row", text.scale = 0.7)
 ```
+
+As of 5/19 this functionality is still being tested thoroughly and subject to change. 
 
 ## 2.2: Biological examples
 

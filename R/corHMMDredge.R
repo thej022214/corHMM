@@ -228,7 +228,7 @@ corHMMDredge <- function(
 
 merge_pars <- function(corhmm.obj){
   index_mat <- corhmm.obj$index.mat
-  current_pars <- corHMM:::MatrixToPars(corhmm.obj)
+  current_pars <- MatrixToPars(corhmm.obj)
   dist_mat <- as.matrix(dist(current_pars))
   dist_mat[upper.tri(dist_mat)] <- 0
   focal_merger <- which(dist_mat == min(dist(current_pars)), arr.ind = TRUE)
@@ -748,8 +748,8 @@ split_data_k_folds <- function(phy, k=5){
 # Function to perform k-fold cross-validation
 kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE, save_model_dir=NULL, model_name=NULL) {
   scores <- numeric(k)  # Create an empty vector to store scores for each fold
-  folds <- corHMM:::split_data_k_folds(corhmm_obj$phy, k)
-  ip <- corHMM:::MatrixToPars(corhmm_obj)
+  folds <- split_data_k_folds(corhmm_obj$phy, k)
+  ip <- MatrixToPars(corhmm_obj)
   if(is.null(lambdas)){
     if(is.null(corhmm_obj$lambda)){
       lambdas <- 0
@@ -769,7 +769,7 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
       fold_data[folds == i, 2:ncol(fold_data)] <- "?"
       # Train the model on training data
       messages <- capture.output(
-        model <- corHMM:::corHMMDredgeBase(phy = corhmm_obj$phy,
+        model <- corHMMDredgeBase(phy = corhmm_obj$phy,
                                            data = fold_data,
                                            rate.cat = corhmm_obj$rate.cat, 
                                            pen.type = corhmm_obj$pen.type, 
@@ -792,7 +792,7 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
                                            p=NULL))
       
       # Evaluate the model on testing data
-      score <- corHMM:::evaluateModel(model, corhmm_obj)
+      score <- evaluateModel(model, corhmm_obj)
       scores[i+1] <- score  # Store the score for this fold
       if(return_model){
         model_list[[i+1]] <- model # Store the model for this fold
