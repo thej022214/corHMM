@@ -167,6 +167,95 @@ test_that("Simple tests of rayDISC vs. new corHMM",{
 ######################################################################################################################################
 ######################################################################################################################################
 
-# 1. Make sure estimated loglik == fixed log likelihood.
+test_that("Simple test of no fog vs fog estimates",{
+  skip_on_cran()
+  
+  set.seed(1980)
+  phy <- read.tree("balanced.tree")
+  markov.rate <- 0.05
+  Q <- rbind(c(-markov.rate, markov.rate), c(markov.rate, -markov.rate))
+  ages <- 7
+  phy$edge.length <- phy$edge.length*ages/max(branching.times(phy))
+  traits <- corHMM:::simMarkov(phy, Q=Q, root.freqs=c(1,0))
+  phy$node.label <- NULL
+  phydat <- data.frame(taxon=phy$tip.label, Reg=traits$TipStates)
 
-# 2. Make sure ER model for 2 rate cat = ER model for 1 rate cat -- should.
+  corHMM.nofog <- corHMM(phy, phydat, model="ER", rate.cat=1, tip.fog=0)
+  corHMM.fogest <- corHMM(phy, phydat, model="ER", rate.cat=1, tip.fog=c(1,1))
+
+  comparison <- identical(round(corHMM.nofog$loglik - corHMM.fogest$loglik, 4), 0)
+  expect_true(comparison)
+})
+
+
+test_that("Simple test of estimated fog vs fixed fog estimate",{
+  skip_on_cran()
+  
+  set.seed(1980)
+  phy <- read.tree("balanced.tree")
+  markov.rate <- 0.05
+  Q <- rbind(c(-markov.rate, markov.rate), c(markov.rate, -markov.rate))
+  ages <- 7
+  phy$edge.length <- phy$edge.length*ages/max(branching.times(phy))
+  traits <- corHMM:::simMarkov(phy, Q=Q, root.freqs=c(1,0))
+  phy$node.label <- NULL
+  phydat <- data.frame(taxon=phy$tip.label, Reg=traits$TipStates)
+
+  error <- 0.10
+  error.absolute <- round(dim(phydat)[1]*error)
+  taxa.sample <- sample(1:dim(phydat)[1], error.absolute)
+		  phydat.new <- phydat
+		  for(index in 1:length(taxa.sample)){
+			  state <- phydat[taxa.sample[index],2]
+			  if(state == 1){
+				  state <- 2
+			  }else{
+				  state <- 1
+			  }
+			  phydat.new[taxa.sample[index],2] <- state
+  }
+
+  corHMM.fogest <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=c(1,1))
+  corHMM.fogfixed <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=corHMM.fogest$tip.fog.probs)
+
+  comparison <- identical(round(corHMM.fogest$loglik - corHMM.fogfixed$loglik, 4), 0)
+  expect_true(comparison)
+})
+
+
+test_that("Test of ER model vs HRM ",{
+  skip_on_cran()
+  
+  set.seed(1980)
+  phy <- read.tree("balanced.tree")
+  markov.rate <- 0.05
+  Q <- rbind(c(-markov.rate, markov.rate), c(markov.rate, -markov.rate))
+  ages <- 7
+  phy$edge.length <- phy$edge.length*ages/max(branching.times(phy))
+  traits <- corHMM:::simMarkov(phy, Q=Q, root.freqs=c(1,0))
+  phy$node.label <- NULL
+  phydat <- data.frame(taxon=phy$tip.label, Reg=traits$TipStates)
+
+  error <- 0.10
+  error.absolute <- round(dim(phydat)[1]*error)
+  taxa.sample <- sample(1:dim(phydat)[1], error.absolute)
+		  phydat.new <- phydat
+		  for(index in 1:length(taxa.sample)){
+			  state <- phydat[taxa.sample[index],2]
+			  if(state == 1){
+				  state <- 2
+			  }else{
+				  state <- 1
+			  }
+			  phydat.new[taxa.sample[index],2] <- state
+  }
+
+  rate.mat <- corHMM:::rate.mat.maker(rate.cat=2, model="ER")
+  rate.mat[which(!is.na(rate.mat))] <- 1
+  
+  corHMM.fogest <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=c(1,1))
+  corHMM.fogest.hrm <- corHMM(phy, phydat.new, model="ER", rate.cat=2, rate.mat=rate.mat, tip.fog=c(1,1))
+
+  comparison <- identical(round(corHMM.fogest$loglik - corHMM.fogest.hrm$loglik, 4), 0)
+  expect_true(comparison)
+})
