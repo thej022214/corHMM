@@ -13,13 +13,13 @@ fitCorrelationTest <- function(phy, data, simplified_models=FALSE){
   corr_model_1 <- getStateMat4Dat(data, "ARD", collapse = FALSE, indep = FALSE)$rate.mat
   corr_model_2 <- getFullMat(list(corr_model_1, corr_model_1), RateClassMat = rate_cat_mat)
   cat("\nFitting an independent model...\n")
-  independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = indep_model_1))
+  independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = indep_model_1, collapse = FALSE))
   cat("Fitting a hidden Markov independent model...\n")
-  hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = indep_model_2))
+  hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = indep_model_2, collapse = FALSE))
   cat("Fitting a correlated model...\n")
-  correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = corr_model_1))
+  correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = corr_model_1, collapse = FALSE))
   cat("Fitting a hidden Markov correlated model...\n")
-  hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = corr_model_2))
+  hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = corr_model_2, collapse = FALSE))
   model_list <- list(independent_model_fit = independent_model_fit, hidden_Markov_independent_model_fit = hidden_independent_model_fit, correlated_model_fit = correlated_model_fit, hidden_Markov_correlated_model_fit = hidden_correlated_model_fit)
   if(simplified_models){
     simp_indep_model_1 <- equateStateMatPars(indep_model_1, list(c(1,3), c(2,4)))

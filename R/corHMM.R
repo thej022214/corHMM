@@ -410,7 +410,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 ######################################################################################################################################
 ######################################################################################################################################
 
-dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewis.asc.bias, set.fog, fog.vec) {
+dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewis.asc.bias, set.fog=FALSE, fog.vec) {
   
   p <- exp(p)
   cp_root.p <- root.p
