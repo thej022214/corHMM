@@ -6,7 +6,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=0.1, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=NULL, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL){
     
     # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
     if(is.null(node.states)){
@@ -41,11 +41,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
             root.p <- root.p/sum(root.p)
         }
     }
-    
-	if(is.null(tip.fog[1]) | sum(tip.fog) == 0){
-		warning(paste0("You have specified that tip.fog=0, which is a deprecated version. Note all comparable models must set tip.fog=0 as well."))
-	}
-	
+
     input.data <- data
     
     nCol <- dim(data)[2]
@@ -96,7 +92,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     cols <- as.factor(data.sort[,1])
     
     #Some initial values for use later
-    k=2
+    k <- 2
     if(upper.bound < lower.bound){
       cat("Your upper bound is smaller than your lower bound.\n")
     }
@@ -154,7 +150,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     upper = rep(ub, model.set.final$np)
     
 	if(!is.null(tip.fog)){
-		if(sum(tip.fog)< 1){
+		if(sum(tip.fog) < 1){
 			if(length(tip.fog) == 1){
 				#Default option, but need to replicate these values across the observed states
 				tip.fog <- rep(tip.fog, length(StateNames))
@@ -243,7 +239,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 					if(set.fog == TRUE){
 						starts <- c(rep(0.01, length(unique(model.set.final$fog.vec))), starts)
 						lower <- c(rep(lb, length(unique(model.set.final$fog.vec))), lower)
-						upper <- c(rep(log(0.25), length(unique(model.set.final$fog.vec))), upper)
+						upper <- c(rep(log(0.50), length(unique(model.set.final$fog.vec))), upper)
 						tmp <- matrix(,1,ncol=(1 + model.set.final$np + length(unique(model.set.final$fog.vec))))
 					}else{
 						tmp <- matrix(,1,ncol=(1 + model.set.final$np))
@@ -431,7 +427,7 @@ dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewi
 	  tip.fog[] <- c(tip.fog.tmp, 0)[fog.vec]
 	  if(rate.cat > 1){
 		  #Error only applies to observed states, but need to replicate across the rate categories:
-		  tip.fog <- rep(tip.fog, rate.cat)
+		  #tip.fog <- rep(tip.fog, rate.cat)
 		  for(tip.index in 1:Ntip(phy)){
 			  #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
 			  num.zeros <- length(liks[tip.index,which(liks[tip.index,]==0)])
