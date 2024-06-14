@@ -19,7 +19,7 @@ opts=NULL)
 \item{fixed.nodes}{specifies that states for nodes in the phylogeny are assumed fixed. These are supplied as node labels in the \dQuote{phylo} object.}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood (see Details).}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
-\item{tip.fog}{a fixed value or vector of free parameters to estimate the probability that an observed state is not actually in the state it is assigned. By default \code{tip.fog=NULL}. To estimate tip fog probabilities a vector of integers is needed designated the free parameters. See vignette for details on how to carry this out.}
+\item{tip.fog}{a fixed value or vector of free parameters to estimate the probability that an observed state is not actually in the state it is assigned. By default \code{tip.fog=NULL}. To estimate tip fog probabilities a vector of integers designating the number of free parameters is needed as input. See vignette for details on how to carry this out.}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
 \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
 \item{n.cores}{the number of processor cores to spread out the random restarts.}
