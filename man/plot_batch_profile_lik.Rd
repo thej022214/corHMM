@@ -46,6 +46,8 @@ plot_batch_profile_lik( corhmm_profile,
 \item{axis_tick_length}{length of the axis ticks, with negative values indicating ticks pointing inwards. Defaults to -0.2.}
 
 \item{label_cex}{character expansion size for labels, affecting the size of text labels. Defaults to 0.7.}
+
+\item{ylim}{a user-specified upper and lower limit to the y-axis.}
 }
 \details{
 This function generates a series of plots for the profile likelihood of each parameter in the input corHMM model object. It visualizes the log-likelihood across the range of parameter values, highlights the maximum likelihood estimate (MLE), and denotes the 95\% confidence interval with a horizontal dashed line. The function is designed to accommodate the batch analysis of multiple parameters, organizing the plots in a specified layout and allowing for extensive customization of plot aesthetics.

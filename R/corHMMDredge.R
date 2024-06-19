@@ -815,7 +815,7 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
         if(is.null(model_name)){
           model_name <- "corhmm.obj"
         }
-        saveRDS(model, file = paste0(save_model_dir, "/", model_name, "_lambda", lambda, "_fold", fold, ".RDS"))
+        saveRDS(model, file = paste0(save_model_dir, "/", model_name, "_lambda", lambda, "_fold", folds, ".RDS"))
       }
       cat("Fold", i, "Score:", score, "\n")  # Print the score for the fold
     }
@@ -909,7 +909,7 @@ get_MSF_from_corhm_obj <- function(corhmm_obj){
 }
 
 print.corhmm.kfold <- function(x,...){
-  score_table <- do.call(rbind, lapply(results, "[[", "scores"))
+  score_table <- do.call(rbind, lapply(x, "[[", "scores"))
   colnames(score_table) <- paste0("Fold:", 0:(dim(score_table)[2]-1))
   rownames(score_table) <- paste0("Lambda:", rownames(score_table))
   score_table <- t(score_table)

@@ -204,15 +204,15 @@ test_that("Simple test of estimated fog vs fixed fog estimate",{
   error <- 0.10
   error.absolute <- round(dim(phydat)[1]*error)
   taxa.sample <- sample(1:dim(phydat)[1], error.absolute)
-		  phydat.new <- phydat
-		  for(index in 1:length(taxa.sample)){
-			  state <- phydat[taxa.sample[index],2]
-			  if(state == 1){
-				  state <- 2
-			  }else{
-				  state <- 1
-			  }
-			  phydat.new[taxa.sample[index],2] <- state
+  phydat.new <- phydat
+  for(index in 1:length(taxa.sample)){
+	  state <- phydat[taxa.sample[index],2]
+	  if(state == 1){
+		  state <- 2
+	  }else{
+		  state <- 1
+	  }
+	  phydat.new[taxa.sample[index],2] <- state
   }
 
   corHMM.fogest <- corHMM(phy, phydat.new, model="ER", rate.cat=1, tip.fog=c(1,1))
@@ -223,7 +223,7 @@ test_that("Simple test of estimated fog vs fixed fog estimate",{
 })
 
 
-test_that("Test of ER model vs HRM ",{
+test_that("Test of ER model with fog vs HRM ER model with fog",{
   skip_on_cran()
   
   set.seed(1980)
