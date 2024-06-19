@@ -730,8 +730,20 @@ get_per_tip_faith_PD <- function(phy, fold_vec){
 #   return(fold_vec)
 # }
 
+get_weights <- function(phy){
+  # based on rholf 2001
+  C <- vcv.phylo(phy)
+  C_inv <- solve(C)
+  I <- matrix(0, dim(C)[1], dim(C)[2])
+  diag(I) <- 1
+  weights <- (t(I) %*% C_inv) %*% matrix(1, dim(C)[1], 1) 
+  weights <- c(weights/sum(weights))
+  return(weights)
+}
+
 split_data_k_folds <- function(phy, k=5){
-  weights <- rowSums(vcv.phylo(phy))
+  # weights <- rowSums(vcv.phylo(phy))
+  weights <- get_weights(phy)
   fold_vec <- setNames(rep(NA, length(phy$tip.label)), phy$tip.label)
   for(i in 1:(length(fold_vec)-1)){
     curr_k <- i %% k
