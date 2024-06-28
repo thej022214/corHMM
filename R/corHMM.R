@@ -249,7 +249,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 					if(set.fog == TRUE){
 						starts <- c(rep(0.01, length(unique(model.set.final$fog.vec))), starts)
 						lower <- c(rep(lb, length(unique(model.set.final$fog.vec))), lower)
-						upper <- c(rep(log(0.25), length(unique(model.set.final$fog.vec))), upper)
+						upper <- c(rep(log(0.50), length(unique(model.set.final$fog.vec))), upper)
 						tmp <- matrix(,1,ncol=(1 + model.set.final$np + length(unique(model.set.final$fog.vec))))
 					}else{
 						tmp <- matrix(,1,ncol=(1+model.set.final$np))
@@ -300,7 +300,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 			if(set.fog == TRUE){
 				ip <- c(rep(0.01, length(unique(model.set.final$fog.vec))), ip)
 				lower <- c(rep(lb, length(unique(model.set.final$fog.vec))), lower)
-				upper <- c(rep(log(0.25), length(unique(model.set.final$fog.vec))), upper)
+				upper <- c(rep(log(0.50), length(unique(model.set.final$fog.vec))), upper)
 			}
             out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, set.fog = set.fog, fog.vec = model.set.final$fog.vec)
             loglik <- -out$objective
