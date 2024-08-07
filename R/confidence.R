@@ -167,10 +167,16 @@ HessianConfidence <- function(corhmm.object) {
 # simple function; returns log likelihood
 compute_neglnlikelihood <- function(par, corhmm.object) {
 
+  # legacy code. all previous verions of corhmm don't give the collapse as an output, but it's now needed to create the matrices correctly. 
+  if(is.null(corhmm.object$collapse)){
+    collapse = TRUE # default setting
+  }else{
+    collapse = corhmm.object$collapse
+  }
 	corhmm.object$order.test <- FALSE
 	corhmm.object$phy$node.label <- NULL
-	nObs <- length(corProcessData(corhmm.object$data)$ObservedTraits)
-	model.set.final <- rate.cat.set.corHMM.JDB(phy = corhmm.object$phy, data = corhmm.object$data, rate.cat = corhmm.object$rate.cat, ntraits = nObs, model = "ARD")
+	nObs <- dim(corhmm.object$index.mat)[1]/corhmm.object$rate.cat
+	model.set.final <- rate.cat.set.corHMM.JDB(phy = corhmm.object$phy, data = corhmm.object$data, rate.cat = corhmm.object$rate.cat, ntraits = nObs, model = "ARD", collapse=collapse)
 	rate.mat <- corhmm.object$index.mat
 	rate.mat[rate.mat == 0] <- NA
 	rate <- rate.mat
@@ -290,7 +296,7 @@ MatrixToPars <- function(corhmm.object) {
 
 	par <- rep(NA,max(index.mat, na.rm=TRUE))
 	for (i in seq_along(par)) {
-		par[i] <- raw.rates[which(index.mat==i)]
+		par[i] <- raw.rates[which(index.mat==i)][1]
 		relevant_indices <- multi.which(index.mat==i)[1,]
 		names(par)[i] <- paste0(rownames(raw.rates)[relevant_indices[1]]," -> ", colnames(raw.rates)[relevant_indices[2]])
 	}

@@ -25,7 +25,8 @@ a data.frame. Each row of time_slice is the time period that was specified. node
 # phy <- multi2di(primates[[1]])
 # data <- primates[[2]]
 # corhmm.obj <- corHMM(phy = phy, data = data, rate.cat = 1)
-# test <- ancRECON_slice(corhmm.obj, time_slice = c(1, 10, 20, 30, 40, 49), collapse = TRUE, ncores = 4)
+# test <- ancRECON_slice(corhmm.obj, time_slice = c(1, 10, 20, 30, 40, 49), 
+#         collapse = TRUE, ncores = 4)
 # corHMM:::plot_slice_recon(phy, test, col = viridis(3))
 }
 }

@@ -4,13 +4,14 @@
 \description{Estimates hidden rates underlying the evolution of any number of multi-state characters}
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", 
-node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", ip=NULL, 
-nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, 
-collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL)
+node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", 
+tip.fog=NULL, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
+lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, 
+opts=NULL)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
-\item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.}
+\item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data. All columns are converted to class factor unless already is.factor. Order of states is determined by the levels of column. Unobserved levels may be modeled if collapse=FALSE.}
 \item{rate.cat}{specifies the number of hidden rate categories (if 1, there are no hidden states, see Details).}
 \item{rate.mat}{a user-supplied matrix containing indexes of parameters to be optimized (see Details).}
 \item{model}{One of "ARD", "SYM", or "ER". ARD: all rates differ. SYM: rates between any two states do not differ. ER: all rates are equal.} 
@@ -18,6 +19,7 @@ collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL)
 \item{fixed.nodes}{specifies that states for nodes in the phylogeny are assumed fixed. These are supplied as node labels in the \dQuote{phylo} object.}
 \item{p}{a vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to specified as fixed and calculate the likelihood (see Details).}
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
+\item{tip.fog}{a fixed value or vector of free parameters to estimate the probability that an observed state is not actually in the state it is assigned. By default \code{tip.fog=NULL}. To estimate tip fog probabilities a vector of integers designating the number of free parameters is needed as input. See vignette for details on how to carry this out.}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
 \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
 \item{n.cores}{the number of processor cores to spread out the random restarts.}

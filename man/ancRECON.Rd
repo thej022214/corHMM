@@ -5,7 +5,8 @@
 \usage{
 ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"),
 rate.cat, ntraits=NULL, rate.mat=NULL,
-model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, collapse = TRUE)
+model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE,
+tip.fog=NULL, collapse = TRUE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -19,6 +20,8 @@ model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, collapse
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{get.likelihood}{a logical indicating whether to obtain the likelihood of the rates and states. The default is \code{FALSE}.}
 \item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
+\item{tip.fog}{provides the probability that an observed state is not actually in the state it is assigned to the reconstruction algorithm. These values are assumed either optimized in \dQuote{corHMM} or supplied by the user.
+\code{tip.fog=NULL} when using this as a standalone function.}
 \item{collapse}{a boolean indicating whether to collapse multiple character combinations into only the observed states. For example, if true a two character dataset contained (0,0), (1,0), and (1,1), this would be collapsed into 1,2,3. However, if set to false it would 1,2,4. In combination with a custom rate matrix this allows for the estimation of transitions between the unobserved character combination. The default is \code{TRUE}}.
 }
 \details{
