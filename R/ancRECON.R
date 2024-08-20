@@ -86,7 +86,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	
 	#Makes a matrix of tip states and empty cells corresponding
 	#to ancestral nodes during the optimization process.
-	# removed by JDB since it breaks tip states. 
+	# removed by JDB since it breaks tip states.
 	# if(is.null(tip.fog)){
 	# 	tip.fog <- numeric(length(levels))
 	# }
@@ -586,7 +586,6 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 	}
 	
 	if(!is.null(tip.fog)){
-<<<<<<< HEAD
 		if(length(tip.fog) == 1){
 			#Default option, but need to replicate these values across the observed states
 			tip.fog <- rep(tip.fog, dim(data.for.likelihood.function$Q)[2])
@@ -612,37 +611,8 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 				}
 			}
 		}
-=======
-	  if(tip.fog == 0){
-	    if(length(tip.fog) == 1){
-	      #Default option, but need to replicate these values across the observed states
-	      tip.fog <- rep(tip.fog, dim(data.for.likelihood.function$Q)[2])
-	    }
-	    if(rate.cat > 1){
-	      #Error only applies to observed states, but need to replicate across the rate categories:
-	      tip.fog <- rep(tip.fog, rate.cat)
-	      for(tip.index in 1:Ntip(phy)){
-	        #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
-	        num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
-	        if(num.zeros > 0){
-	          data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - (sum(tip.fog[which(data.for.likelihood.function$liks[tip.index,]!=1)])/rate.cat)
-	          data.for.likelihood.function[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog[which(data.for.likelihood.function$liks[tip.index,]==0)]
-	        }
-	      }
-	    }else{
-	      for(tip.index in 1:Ntip(phy)){
-	        #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
-	        num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
-	        if(num.zeros > 0){
-	          data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - sum(tip.fog[which(data.for.likelihood.function$liks[tip.index,]!=1)])
-	          data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog[which(data.for.likelihood.function$liks[tip.index,]==0)]
-	        }
-	      }
-	    }
-	  }
->>>>>>> f6bafda9b49c0bcd01f4baeef6a0e8b3b694a4ab
 	}
-
+	
 	nodes <- unique(phy$edge[,1])
 	marginal.probs <- matrix(0, nb.tip, dim(data.for.likelihood.function$Q)[2])
 	total.state.space <- 1:dim(data.for.likelihood.function$Q)[2]
