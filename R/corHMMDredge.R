@@ -673,9 +673,8 @@ get_penalty_score <- function(Q, pen.type){
   if(pen.type == "l2"){
     pen <- sum(-diag(Q)^2)
   }
-  if(pen.type == "l3"){
-    p <- -diag(Q)/max(-diag(Q))
-    pen <- exp(mean(log(dist(p)))) + sum(p)
+  if(pen.type == "er"){
+    pen <- sd(-diag(Q))
   }
   return(pen)
 }

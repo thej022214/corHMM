@@ -488,6 +488,12 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, 
   }
   # there is a possibility that some states require dual transitions, in these cases we allow all transitions to occur.
   if(dual){
+    if (collapse) {
+      nObs <- length(CorData$ObservedTraits)
+    }
+    else {
+      nObs <- length(CorData$PossibleTraits)
+    }
     rate.mat <- getStateMat(nObs)
   }
   

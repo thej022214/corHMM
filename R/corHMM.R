@@ -371,6 +371,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     if (is.character(node.states)) {
         if (node.states == "marginal" || node.states == "scaled"){
             colnames(lik.anc$lik.anc.states) <- StateNames
+            colnames(tip.states) <- StateNames
         }
     }
     
