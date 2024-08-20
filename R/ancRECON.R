@@ -562,7 +562,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	
-	data.for.likelihood.function <- corHMM:::rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model, collapse = collapse)
+	data.for.likelihood.function <- rate.cat.set.corHMM.JDB(phy=phy, data=data, rate.cat=rate.cat, ntraits = ntraits, model = model, collapse = collapse)
 	
 	if(!is.null(rate.mat)){
 		rate <- rate.mat
@@ -635,7 +635,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 			for(state.index in setdiff(nstates, drop.states)){
 				data.for.likelihood.function$liks[taxon.index,] <- 0
 				data.for.likelihood.function$liks[taxon.index,c(index:(unique.state.space * count))] <- states.keep[1:unique.state.space]
-				marginal.probs.tmp[state.index] <- -corHMM:::dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
+				marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
 				count <- count + 1
 			}
 			data.for.likelihood.function$liks[taxon.index,] <- states.keep
