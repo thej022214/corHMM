@@ -6,7 +6,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=NULL, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL){
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=NULL, ip=NULL, fog.ip = 0.01, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL){
     
     # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
     if(is.null(node.states)){
@@ -237,7 +237,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                 if(mean.change==0){
                     starts <- rep(0.01 + exp(lb), model.set.final$np)
 					if(set.fog == TRUE){
-						starts <- c(rep(0.01, length(unique(model.set.final$fog.vec))), starts)
+						starts <- c(rep(fog.ip, length(unique(model.set.final$fog.vec))), starts)
 						lower <- c(rep(lb, length(unique(model.set.final$fog.vec))), lower)
 						upper <- c(rep(log(0.50), length(unique(model.set.final$fog.vec))), upper)
 						tmp <- matrix(,1,ncol=(1 + model.set.final$np + length(unique(model.set.final$fog.vec))))
@@ -247,7 +247,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
                 }else{
                     starts <- sort(rexp(model.set.final$np, 1/mean.change), decreasing = TRUE)
 					if(set.fog == TRUE){
-						starts <- c(rep(0.01, length(unique(model.set.final$fog.vec))), starts)
+						starts <- c(rep(fog.ip, length(unique(model.set.final$fog.vec))), starts)
 						lower <- c(rep(lb, length(unique(model.set.final$fog.vec))), lower)
 						upper <- c(rep(log(0.50), length(unique(model.set.final$fog.vec))), upper)
 						tmp <- matrix(,1,ncol=(1 + model.set.final$np + length(unique(model.set.final$fog.vec))))
