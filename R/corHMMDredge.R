@@ -3,12 +3,12 @@
 ### corHMM -- Generalized hidden Markov Models
 ######################################################################################################################################
 ######################################################################################################################################
-# this makes the automatic fitting a lot easier for me
+# automatic fitting 
 corHMMDredge <- function(
     phy, data, max.rate.cat, root.p="maddfitz",
-    pen.type = "l1", lambda = 1, drop.par = TRUE, drop.tol = 1e-9, 
-    threshold=2, criterion="AIC", merge.params=TRUE, 
-    rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL){
+    pen.type = "l1", lambda = 1, drop.par = TRUE, drop.threshold = 1e-9, 
+    info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0,
+    rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
   
   if((is.null(p) & !is.null(rate.cat))){
     print("A rate category was given without specifying a parameter vector (p)")
@@ -24,15 +24,12 @@ corHMMDredge <- function(
     if(verbose){
       cat("Evaluating fixed parameters p =", p, "\n")
     }
-    messages <- capture.output(
     fixd_fit <- corHMMDredgeBase(phy=phy, 
                                  data=data, 
                                  rate.cat=rate.cat, 
                                  root.p=root.p,
                                  pen.type = pen.type, 
                                  lambda = lambda, 
-                                 drop.par = drop.par, 
-                                 drop.tol = drop.tol, 
                                  rate.mat=rate.mat, 
                                  node.states = node.states, 
                                  fixed.nodes=fixed.nodes, 
@@ -45,202 +42,155 @@ corHMMDredge <- function(
                                  lower.bound = lower.bound, 
                                  upper.bound = upper.bound, 
                                  opts=opts, 
-                                 p=p)
-    )
+                                 p=p,
+                                 grad=FALSE)
     return(fixd_fit)
   }
   
-  # INIT REGULARIZATION
   # automatic search starting at rate cat 1
-  cat("Begining search...\n")
+  curr_index_mat <- rate.mat
+  fit_set <- list()
+  model_improved <- TRUE
+  count <- 1
   current_rate_category <- 1
-  messages <- capture.output(
-  curr_fit <- corHMMDredgeBase(phy=phy, 
-                               data=data, 
-                               rate.cat=current_rate_category, 
-                               root.p=root.p,
-                               pen.type = pen.type, 
-                               lambda = lambda, 
-                               drop.par = drop.par, 
-                               drop.tol = drop.tol, 
-                               rate.mat=rate.mat, 
-                               node.states = node.states, 
-                               fixed.nodes=fixed.nodes, 
-                               ip=NULL, 
-                               nstarts=nstarts, 
-                               n.cores=n.cores, 
-                               get.tip.states = get.tip.states, 
-                               lewis.asc.bias = lewis.asc.bias, 
-                               collapse = collapse, 
-                               lower.bound = lower.bound, 
-                               upper.bound = upper.bound, 
-                               opts=opts, 
-                               p=NULL)
-  )
-  best_info_criterion <- curr_fit[[criterion]]
-  
-  # RATE CAT SEARCH AND REGULARIZATION
-  if(!merge.params){
-    if(max.rate.cat == 1){
-      return(curr_fit)
-    }else{
-      fit_set <- list(curr_fit)
-      model_improved <- TRUE
-      current_rate_category <- 2
-      while(model_improved){
-        if(verbose){
-          cat("Evaluating rate category ", current_rate_category, "...\n")
+  cat("Begining dredge...\n")
+  while(model_improved){
+    curr_fit <- corHMMDredgeBase(phy=phy, 
+                                 data=data, 
+                                 rate.cat=current_rate_category, 
+                                 root.p=root.p,
+                                 pen.type = pen.type, 
+                                 lambda = lambda, 
+                                 rate.mat=curr_index_mat, 
+                                 node.states = node.states, 
+                                 fixed.nodes=fixed.nodes, 
+                                 ip=ip, 
+                                 nstarts=nstarts, 
+                                 n.cores=n.cores, 
+                                 get.tip.states = get.tip.states, 
+                                 lewis.asc.bias = lewis.asc.bias, 
+                                 collapse = collapse, 
+                                 lower.bound = lower.bound, 
+                                 upper.bound = upper.bound, 
+                                 opts=opts, 
+                                 p=NULL,
+                                 grad=grad)
+    curr_info_criterion <- curr_fit[[criterion]]
+    fit_set[[count]] <- curr_fit
+    cat("\n")
+    cat("AIC:", curr_info_criterion)
+    cat("\nMapping matrix:\n")
+    print(curr_fit$index.mat)
+    best_info_criterion <- get_best_info_criterion(fit_set, criterion, current_rate_category)
+    model_improved <- diff(c(best_info_criterion, curr_info_criterion)) < info.threshold
+    count <- count + 1
+    if(model_improved | current_rate_category < max.rate.cat){
+      # try dropping pars
+      curr_index_mat <- drop_pars(curr_fit, drop.threshold)
+      if(is.null(curr_index_mat)){
+        # try merging pars
+        curr_index_mat <- merge_pars(curr_fit, merge.threshold)
+        if(is.null(curr_index_mat)){
+          current_rate_category <- current_rate_category + 1
+          model_improved <- TRUE
+          if(current_rate_category > max.rate.cat){
+            model_improved <- FALSE
+          }else{
+            cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+          }
+        }else{
+          cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
         }
-        messages <- capture.output(
-        curr_fit <- corHMMDredgeBase(phy=phy,
-                                     data=data,
-                                     rate.cat=current_rate_category,
-                                     root.p=root.p,
-                                     pen.type = pen.type,
-                                     lambda = lambda,
-                                     drop.par = drop.par,
-                                     drop.tol = drop.tol,
-                                     rate.mat=rate.mat,
-                                     node.states = node.states,
-                                     fixed.nodes=fixed.nodes,
-                                     ip=NULL,
-                                     nstarts=nstarts,
-                                     n.cores=n.cores,
-                                     get.tip.states = get.tip.states,
-                                     lewis.asc.bias = lewis.asc.bias,
-                                     collapse = collapse,
-                                     lower.bound = lower.bound,
-                                     upper.bound = upper.bound,
-                                     opts=opts,
-                                     p=NULL)
-        )
-        fit_set[[current_rate_category]] <- curr_fit
-        curr_info_criterion <- curr_fit[[criterion]]
-        model_improved <- curr_info_criterion - best_info_criterion > threshold
-        cat("\tBest model", "(Rate Cat", current_rate_category-1, "):",
-            best_info_criterion, criterion, "\n",
-            "\tCurrent model", "(Rate Cat", current_rate_category, "):",
-            curr_info_criterion, criterion, "\n")
-        current_rate_category <- current_rate_category + 1
-        best_info_criterion <- curr_fit[[criterion]]
+      }else{
+        cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
       }
-      class(fit_set) <- "corhmm.dredge"
-      return(fit_set)
     }
   }
-  
-  # PARAMTER SHARING, RATE CAT SEARCH, AND REGULARIZATION
-  if(merge.params){
-    fit_set <- list(curr_fit)
-    model_improved_merge <-  model_improved_rate_cat <- TRUE
-    count <- 2
-    curr_index_mat <- merge_pars(curr_fit)
-    current_rate_category <- 1
-    best_rate_cat_criterion <- -Inf
-    best_merge_criterion <- best_info_criterion
-    while(model_improved_rate_cat){
-      if(verbose){
-        cat("Proceeding to rate category ", current_rate_category, "...\n")
-      }
-      ip <- NULL
-      while(model_improved_merge){
-        if(verbose){
-          cat("\tMerging parameters...\n")
-        }
-        messages <- capture.output(
-        curr_fit <- corHMMDredgeBase(phy=phy, 
-                                     data=data, 
-                                     rate.cat=current_rate_category, 
-                                     root.p=root.p,
-                                     pen.type = pen.type, 
-                                     lambda = lambda, 
-                                     drop.par = drop.par, 
-                                     drop.tol = drop.tol, 
-                                     rate.mat=curr_index_mat, 
-                                     node.states = node.states, 
-                                     fixed.nodes=fixed.nodes, 
-                                     ip=ip, 
-                                     nstarts=nstarts, 
-                                     n.cores=n.cores, 
-                                     get.tip.states = get.tip.states, 
-                                     lewis.asc.bias = lewis.asc.bias, 
-                                     collapse = collapse, 
-                                     lower.bound = lower.bound, 
-                                     upper.bound = upper.bound, 
-                                     opts=opts, 
-                                     p=NULL)
-        )
-        fit_set[[count]] <- curr_fit
-        count <- count + 1
-        curr_merge_criterion <- curr_fit[[criterion]]
-        model_improved_merge <- diff(c(best_merge_criterion,
-                                       curr_merge_criterion)) < threshold
-        if(verbose){
-          cat("\t\tBest model:",
-              best_merge_criterion, criterion, "\n",
-              "\t\tCurrent model:",
-              curr_merge_criterion, criterion, "\n")
-        }
-        if(current_rate_category > 1){
-          col_index <- grep(paste0("R", current_rate_category), 
-                            colnames(curr_fit$solution))
-          row_index <- grep(paste0("R", current_rate_category), 
-                            rownames(curr_fit$solution))
-          col_na_test <- all(is.na(curr_fit$solution[,col_index]))
-          row_na_test <- all(is.na(curr_fit$solution[row_index,]))
-          if(col_na_test & row_na_test){
-            if(verbose){
-              cat("All rates associated with Rate Classes", current_rate_category, 
-                  "were dropped. Stopping.\n")
-            }
-            class(fit_set) <- "corhmm.dredge"
-            return(fit_set)
-          }
-        }
-        if(model_improved_merge){
-          best_merge_criterion <- curr_merge_criterion
-          if(max(curr_fit$index.mat, na.rm = TRUE) == 1){
-            break
-          }
-          curr_index_mat <- merge_pars(curr_fit)
-        }
-      }
-      # starting a new rate category
-      curr_rate_cat_criterion <- best_merge_criterion
-      model_improved_rate_cat <-  diff(c(best_rate_cat_criterion,
-                                         curr_rate_cat_criterion)) > threshold
-      if(model_improved_rate_cat){
-        best_rate_cat_criterion <- curr_rate_cat_criterion
-      }
-      current_rate_category <- current_rate_category + 1
-      curr_index_mat <- NULL
-      best_merge_criterion <- Inf
-      model_improved_merge <- TRUE
-      if(current_rate_category > max.rate.cat){
-        class(fit_set) <- "corhmm.dredge"
-        return(fit_set)
-      }
-    }
-    class(fit_set) <- "corhmm.dredge"
-    return(fit_set)
-  }
+  cat("\nDone.\n")
+  class(fit_set) <- "corhmm.dredge"
+  return(fit_set)
 }
 
-merge_pars <- function(corhmm.obj){
+get_best_info_criterion <- function(corhmm.obj.list, criterion, rate.cat){
+  if(length(corhmm.obj.list) == 1){
+    return(Inf)
+  }
+  info_criteria <- unlist(lapply(corhmm.obj.list, "[[", criterion))
+  rate_cats <- unlist(lapply(corhmm.obj.list, "[[", "rate.cat"))
+  if(any(rate_cats == rate.cat)){
+    best_info_criterion <- min(info_criteria[rate_cats == rate.cat])
+  }else{
+    return(Inf)
+  }
+  return(best_info_criterion)
+}
+
+drop_pars <- function(corhmm.obj, drop.threshold){
+  Q <- corhmm.obj$solution
+  Q[is.na(Q)] <- Inf
+  to_drop <- unique(corhmm.obj$index.mat[which(Q < drop.threshold)])
+  if(length(to_drop) == 0){
+    return(NULL)
+  }
+  index_mat <- dropStateMatPars(corhmm.obj$index.mat, to_drop)
+  return(index_mat)
+}
+
+merge_pars <- function(corhmm.obj, merge.threshold){
   index_mat <- corhmm.obj$index.mat
-  current_pars <- MatrixToPars(corhmm.obj)
-  dist_mat <- as.matrix(dist(current_pars))
-  dist_mat[upper.tri(dist_mat)] <- 0
-  focal_merger <- which(dist_mat == min(dist(current_pars)), arr.ind = TRUE)
-  index_mat_merged <- equateStateMatPars(index_mat, c(focal_merger))
+  if(corhmm.obj$rate.cat > 1){
+    current_pars <- MatrixToPars(corhmm.obj)
+    rate_classes <- paste("R", 1:corhmm.obj$rate.cat, sep = "")
+    par_list <- vector("list", corhmm.obj$rate.cat+1)
+    index_list <- vector("list", corhmm.obj$rate.cat+1)
+    for(i in seq(corhmm.obj$rate.cat)){
+      search_string <- paste0(rate_classes[i], " .* -> ", rate_classes[i])
+      index_list[[i]] <- grep(search_string, names(current_pars))
+      par_list[[i]] <- current_pars[index_list[[i]]]
+    }
+    index_list[[corhmm.obj$rate.cat+1]] <- (1:length(current_pars))[-unlist(index_list)]
+    par_list[[corhmm.obj$rate.cat+1]] <- current_pars[index_list[[corhmm.obj$rate.cat+1]]]
+    er_test <- all(unlist(lapply(index_list, function(x) length(x) <= 1)))
+    if(er_test){
+      return(NULL)
+    }
+    potential_mergers <- lapply(par_list, 
+      function(x) merge_current_pars(x, merge.threshold))
+    diffs <- mapply(function(x,y){abs(diff(y[x]))}, x=potential_mergers, y=par_list)
+    focal_merger <- index_list[[which.min(diffs)]][potential_mergers[[which.min(diffs)]]]
+    index_mat_merged <- equateStateMatPars(index_mat, focal_merger)
+  }else{
+    current_pars <- MatrixToPars(corhmm.obj)
+    focal_merger <- merge_current_pars(current_pars, merge.threshold)
+    if(is.null(focal_merger)){
+      return(NULL)
+    }
+    index_mat_merged <- equateStateMatPars(index_mat, focal_merger)
+  }
   return(index_mat_merged)
 }
 
+merge_current_pars <- function(current_pars, merge.threshold){
+  if(length(current_pars) <= 1){
+    return(NULL)
+  }
+  dist_mat <- as.matrix(dist(current_pars))
+  dist_mat[upper.tri(dist_mat)] <- 0
+  focal_merger <- which(dist_mat == min(dist(current_pars)), arr.ind = TRUE)
+  avg_par <- mean(current_pars[focal_merger])
+  additional_mergers <- which(abs(current_pars - avg_par) < merge.threshold)
+  if(length(additional_mergers) > length(focal_merger)){
+    focal_merger <- additional_mergers
+  }
+  return(focal_merger)
+}
+
 # this is the function that does most of the heavy lifting
-corHMMDredgeBase <- function(
-    phy, data, rate.cat, root.p="maddfitz",
-    pen.type = "l1", lambda = 1, drop.par = FALSE, drop.tol = 1e-9, 
-    rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, p=NULL){
+corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz",
+  pen.type = "l1", lambda = 1, rate.mat=NULL, node.states = "marginal", 
+  fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
+  lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, 
+  opts=NULL, p=NULL, grad=FALSE){
   
   # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
   if(is.null(node.states)){
@@ -316,7 +266,7 @@ corHMMDredgeBase <- function(
   if(any(phy$edge.length<=.Machine$double.eps)){
     warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
     #   phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
-    phy$edge.length <- phy$edge.length + sqrt(.Machine$double.eps) # changed to add 1e-5 based on suggestion from Hedvig Skirgård (github issue #27)
+    phy$edge.length <- phy$edge.length + sqrt(.Machine$double.eps) 
   }
   #Creates the data structure and orders the rows to match the tree.
   data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
@@ -333,7 +283,7 @@ corHMMDredgeBase <- function(
   }
   lb <- log(lower.bound)
   ub <- log(upper.bound)
-  order.test <- TRUE
+  order.test <- FALSE
   
   obj <- NULL
   nb.tip <- length(phy$tip.label)
@@ -363,15 +313,19 @@ corHMMDredgeBase <- function(
     counts <- counts[-grep("&", names(counts))]
   }
   print_counts[as.numeric(names(counts))] <- counts
-  cat("State distribution in data:\n")
-  cat("States:",StateNames,"\n",sep="\t")
-  cat("Counts:",print_counts,"\n",sep="\t")
+  # cat("State distribution in data:\n")
+  # cat("States:",StateNames,"\n",sep="\t")
+  # cat("Counts:",print_counts,"\n",sep="\t")
   
   lower = rep(lb, model.set.final$np)
   upper = rep(ub, model.set.final$np)
   
   if(is.null(opts)){
-    opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
+    if(grad){
+      opts <- list("algorithm"="NLOPT_LD_MMA", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
+    }else{
+      opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
+    }
   }
   if(!is.null(p)){
     cat("Calculating likelihood from a set of fixed parameters", "\n")
@@ -386,7 +340,7 @@ corHMMDredgeBase <- function(
       #If a user-specified starting value(s) is not supplied this begins loop through a set of randomly chosen starting values:
       #Sets parameter settings for random restarts by taking the parsimony score and dividing
       #by the total length of the tree
-      cat("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
+      # cat("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
       taxa.missing.data.drop <- which(is.na(data.sort[,1]))
       if(length(taxa.missing.data.drop) != 0){
         tip.labs <- names(taxa.missing.data.drop)
@@ -414,7 +368,7 @@ corHMMDredgeBase <- function(
         }
         starts[starts < exp(lb)] = exp(lb)
         starts[starts > exp(ub)] = exp(lb)
-        out = nloptr(x0=log(starts), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda)
+        out = nloptr(x0=log(starts), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda, grad=grad)
         tmp[,1] = out$objective
         tmp[,2:(model.set.final$np+1)] = out$solution
         tmp
@@ -435,9 +389,9 @@ corHMMDredgeBase <- function(
       est.pars <- exp(out$solution)
     }else{
       # the user has specified initial params
-      cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
+      # cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
       ip=ip
-      out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda)
+      out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda, grad=grad)
       loglik <- -out$objective
       est.pars <- exp(out$solution)
     }
@@ -445,7 +399,7 @@ corHMMDredgeBase <- function(
   
   #Starts the ancestral state reconstructions:
   if(node.states != "none") {
-    cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
+    # cat("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
   }
   TIPS <- 1:nb.tip
   if (node.states == "marginal" || node.states == "scaled"){
@@ -478,18 +432,10 @@ corHMMDredgeBase <- function(
   if(rate.cat > 1){
     StateNames <- paste(RCNames, StateNames)
   }
-  # return new reduced matrix
-  if(drop.par){
-    index.matrix <- model.set.final$index.matrix
-    index.matrix <- dropStateMatPars(index.matrix, 
-                                     unique(na.omit(index.matrix[solution < drop.tol])))
-    solution[solution < drop.tol] <- NA
-    np <- max(index.matrix, na.rm = TRUE)
-  }else{
-    np <- model.set.final$np
-    index.matrix <- model.set.final$index.matrix
-  }
+  np <- model.set.final$np
+  index.matrix <- model.set.final$index.matrix
   rownames(solution) <- colnames(solution) <- StateNames
+  rownames(index.matrix) <- colnames(index.matrix) <- StateNames
   # rescale phylogeny
   solution <- solution/H
   solution[solution < lower.bound] <- lower.bound
@@ -535,7 +481,7 @@ corHMMDredgeBase <- function(
 ######################################################################################################################################
 ######################################################################################################################################
 
-dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type="l1",lambda=1) {
+dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type="l1",lambda=1,grad=FALSE){
   p = exp(p)
   cp_root.p <- root.p
   nb.tip <- length(phy$tip.label)
@@ -549,7 +495,7 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
   
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
-  pen_score <- get_penalty_score(Q, pen.type)
+  pen_score <- get_penalty_score(Q, p, pen.type, rate, rate.cat)
   # # if the q matrix has columns not estimated, remove them
   # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
   # col2rm <- apply(rate, 2, function(x) all(x == max(rate)))
@@ -656,7 +602,24 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
     dummy.liks.vec <- getLewisLikelihood(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = cp_root.p, rate.cat = rate.cat)
     loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
   }
-  return(loglik + (pen_score * lambda))
+  if(grad){
+    epsilon <- 1e-6
+    base_log_likelihood <- -(loglik + (pen_score * lambda))
+    gradient <- numeric(length(p))
+    for (i in seq_along(p)) {
+      p_plus <- log(p)
+      p_plus[i] <- p_plus[i] + epsilon
+      log_likelihood_plus <- -dev.corhmm.dredge(p_plus,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type,lambda,grad=FALSE)
+      gradient[i] <- (log_likelihood_plus - base_log_likelihood) / epsilon
+    }
+    cat("\rlnLik:", paste0(base_log_likelihood, "..."))
+    # print(-gradient)
+    return(list(
+      objective = -base_log_likelihood,
+      gradient = -gradient))
+  }else{
+    return(loglik + (pen_score * lambda))
+  }
 }
 
 
@@ -666,15 +629,46 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
 ######################################################################################################################################
 ######################################################################################################################################
 
-get_penalty_score <- function(Q, pen.type){
-  if(pen.type == "l1"){
-    pen <- sum(-diag(Q))
-  }
-  if(pen.type == "l2"){
-    pen <- sum(-diag(Q)^2)
-  }
-  if(pen.type == "er"){
-    pen <- sd(-diag(Q))
+get_penalty_score <- function(Q, p, pen.type, index.mat, rate.cat){
+  if(rate.cat == 1){
+    if(pen.type == "l1"){
+      pen <- mean(-diag(Q))
+    }
+    if(pen.type == "l2"){
+      pen <- mean(diag(Q)^2)
+    }
+    if(pen.type == "er"){
+      # pen <- sd(-diag(Q))
+      if(length(p) < 1){
+        pen <- mean(dist(p))
+      }else{
+        pen <- 0
+      }
+    }
+  }else{
+    rate_class_names <- paste0("R", 1:rate.cat)
+    pen_by_rc <- numeric(rate.cat)
+    diag(Q) <- 0
+    for(i in seq_along(rate_class_names)){
+      rc_index <- grep(rate_class_names[i], colnames(index.mat))
+      if(pen.type == "l1"){
+        pen_by_rc[i] <- mean(Q[rc_index, rc_index])
+      }
+      if(pen.type == "l2"){
+        pen_by_rc[i] <- mean(Q[rc_index, rc_index]^2)
+      }
+      if(pen.type == "er"){
+        rates <- Q[rc_index, rc_index]
+        rates <- rates[rates>0]
+        # pen_by_rc[i] <- sd(rates)
+        if(length(rates) < 1){
+          pen_by_rc[i] <- mean(dist(rates))
+        }else{
+          pen_by_rc[i] <- 0
+        }
+      }
+    }
+    pen <- sum(pen_by_rc)
   }
   return(pen)
 }
@@ -737,6 +731,7 @@ get_weights <- function(phy){
   diag(I) <- 1
   weights <- (t(I) %*% C_inv) %*% matrix(1, dim(C)[1], 1) 
   weights <- c(weights/sum(weights))
+  weights <- setNames(weights, colnames(C))
   return(weights)
 }
 
@@ -779,28 +774,26 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
       # Split data into training and testing sets for the current fold
       fold_data[folds == i, 2:ncol(fold_data)] <- "?"
       # Train the model on training data
-      messages <- capture.output(
-        model <- corHMMDredgeBase(phy = corhmm_obj$phy,
-                                           data = fold_data,
-                                           rate.cat = corhmm_obj$rate.cat, 
-                                           pen.type = corhmm_obj$pen.type, 
-                                           lambda = lambda, 
-                                           rate.mat = corhmm_obj$index.mat, 
-                                           node.states = "marginal", 
-                                           fixed.nodes=FALSE, 
-                                           root.p=corhmm_obj$root.p, 
-                                           drop.par = FALSE, 
-                                           drop.tol = 1e-9, 
-                                           ip=ip, 
-                                           nstarts=0, 
-                                           n.cores=1, 
-                                           get.tip.states = TRUE, 
-                                           lewis.asc.bias = FALSE, 
-                                           collapse = corhmm_obj$collapse, 
-                                           lower.bound = 1e-10, 
-                                           upper.bound = 100, 
-                                           opts=NULL, 
-                                           p=NULL))
+      model <- corHMMDredgeBase(phy = corhmm_obj$phy,
+                                         data = fold_data,
+                                         rate.cat = corhmm_obj$rate.cat, 
+                                         pen.type = corhmm_obj$pen.type, 
+                                         lambda = lambda, 
+                                         rate.mat = corhmm_obj$index.mat, 
+                                         node.states = "marginal", 
+                                         fixed.nodes=FALSE, 
+                                         root.p=corhmm_obj$root.p, 
+                                         ip=ip, 
+                                         nstarts=0, 
+                                         n.cores=1, 
+                                         get.tip.states = TRUE, 
+                                         lewis.asc.bias = FALSE, 
+                                         collapse = corhmm_obj$collapse, 
+                                         lower.bound = 1e-10, 
+                                         upper.bound = 100, 
+                                         opts=NULL, 
+                                         p=NULL,
+                                         grad=corhmm_obj$grad)
       
       # Evaluate the model on testing data
       score <- evaluateModel(model, corhmm_obj)
@@ -919,5 +912,6 @@ print.corhmm.kfold <- function(x,...){
   cat("Average Scores:\n")
   print(avg_scores)
   cat("\n")
+  invisible(x)
 }
 

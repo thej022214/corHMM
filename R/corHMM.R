@@ -80,8 +80,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     if(any(phy$edge.length<=.Machine$double.eps)){
       warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
-	  #phy$edge.length[phy$edge.length<=1e-5] <- 1e-5
-	  phy$edge.length <- phy$edge.length + sqrt(.Machine$double.eps) # changed to add 1e-5 based on suggestion from Hedvig Skirgård (github issue #27)
+      phy$edge.length <- phy$edge.length + sqrt(.Machine$double.eps) 
     }
     #Creates the data structure and orders the rows to match the tree.
     data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
