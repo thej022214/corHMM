@@ -86,7 +86,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	
 	#Makes a matrix of tip states and empty cells corresponding
 	#to ancestral nodes during the optimization process.
-	# removed by JDB since it breaks tip states. 
+	# removed by JDB since it breaks tip states.
 	# if(is.null(tip.fog)){
 	# 	tip.fog <- numeric(length(levels))
 	# }
@@ -586,50 +586,77 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 	}
 	
 	if(!is.null(tip.fog)){
-	  if(tip.fog == 0){
-	    if(length(tip.fog) == 1){
-	      #Default option, but need to replicate these values across the observed states
-	      tip.fog <- rep(tip.fog, dim(data.for.likelihood.function$Q)[2])
-	    }
-	    if(rate.cat > 1){
-	      #Error only applies to observed states, but need to replicate across the rate categories:
-	      tip.fog <- rep(tip.fog, rate.cat)
-	      for(tip.index in 1:Ntip(phy)){
-	        #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
-	        num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
-	        if(num.zeros > 0){
-	          data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - (sum(tip.fog[which(data.for.likelihood.function$liks[tip.index,]!=1)])/rate.cat)
-	          data.for.likelihood.function[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog[which(data.for.likelihood.function$liks[tip.index,]==0)]
-	        }
-	      }
-	    }else{
-	      for(tip.index in 1:Ntip(phy)){
-	        #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
-	        num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
-	        if(num.zeros > 0){
-	          data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - sum(tip.fog[which(data.for.likelihood.function$liks[tip.index,]!=1)])
-	          data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog[which(data.for.likelihood.function$liks[tip.index,]==0)]
-	        }
-	      }
-	    }
-	  }
+		if(length(tip.fog) == 1){
+			#Default option, but need to replicate these values across the observed states
+			tip.fog <- rep(tip.fog, dim(data.for.likelihood.function$Q)[2])
+		}
+		if(rate.cat > 1){
+			#Error only applies to observed states, but need to replicate across the rate categories:
+			tip.fog <- rep(tip.fog, rate.cat)
+			for(tip.index in 1:Ntip(phy)){
+				#Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+				num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
+				if(num.zeros > 0){
+					data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - (sum(tip.fog[which(data.for.likelihood.function$liks[tip.index,]!=1)])/rate.cat)
+					data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog[which(data.for.likelihood.function$liks[tip.index,]==0)]
+				}
+			}
+		}else{
+			for(tip.index in 1:Ntip(phy)){
+				#Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+				num.zeros <- length(data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)])
+				if(num.zeros > 0){
+					data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==1)] <- 1 - sum(tip.fog[which(data.for.likelihood.function$liks[tip.index,]!=1)])
+					data.for.likelihood.function$liks[tip.index,which(data.for.likelihood.function$liks[tip.index,]==0)] <- tip.fog[which(data.for.likelihood.function$liks[tip.index,]==0)]
+				}
+			}
+		}
 	}
-
+	
 	nodes <- unique(phy$edge[,1])
 	marginal.probs <- matrix(0, nb.tip, dim(data.for.likelihood.function$Q)[2])
+	total.state.space <- 1:dim(data.for.likelihood.function$Q)[2]
+	unique.state.space <- dim(data.for.likelihood.function$Q)[2] / rate.cat
+
 	for(taxon.index in 1:Ntip(phy)){
-		marginal.probs.tmp <- numeric(dim(data.for.likelihood.function$Q)[2])
-		nstates = which(!data.for.likelihood.function$liks[taxon.index,] == 0)
-		states.keep = data.for.likelihood.function$liks[taxon.index,]
-		for(state.index in setdiff(1:dim(data.for.likelihood.function$Q)[2], drop.states)){
-			data.for.likelihood.function$liks[taxon.index,] = 0
-			data.for.likelihood.function$liks[taxon.index,state.index] = 1
-			marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
+		if(!is.null(tip.fog)){
+			marginal.probs.tmp <- numeric(dim(data.for.likelihood.function$Q)[2])
+			states.keep <- data.for.likelihood.function$liks[taxon.index,]
+			nstate.index <- total.state.space[total.state.space%%unique.state.space == 1]
+			count <- 1
+			nstates <- c()
+			for(index in nstate.index){
+				tmp.location <- c(index:(unique.state.space * count))
+				tmp.state <- which.max(data.for.likelihood.function$liks[taxon.index,tmp.location])
+				nstates <- c(nstates, tmp.location[tmp.state])
+				count <- count + 1
+			}
+			count <- 1
+			for(state.index in setdiff(nstates, drop.states)){
+				data.for.likelihood.function$liks[taxon.index,] <- 0
+				data.for.likelihood.function$liks[taxon.index,c(index:(unique.state.space * count))] <- states.keep[1:unique.state.space]
+				marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
+				count <- count + 1
+			}
+			data.for.likelihood.function$liks[taxon.index,] <- states.keep
+			best.probs = max(marginal.probs.tmp[nstates])
+			marginal.probs.rescaled = marginal.probs.tmp[nstates] - best.probs
+			marginal.probs[taxon.index,nstates] = exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
+			
+		}else{
+			marginal.probs.tmp <- numeric(dim(data.for.likelihood.function$Q)[2])
+			nstates <- which(!data.for.likelihood.function$liks[taxon.index,] == 0)
+			states.keep <- data.for.likelihood.function$liks[taxon.index,]
+			for(state.index in setdiff(nstates, drop.states)){
+				data.for.likelihood.function$liks[taxon.index,] <- 0
+				data.for.likelihood.function$liks[taxon.index,state.index] = 1
+				marginal.probs.tmp[state.index] <- -dev.corhmm(p=log(p), phy=phy, liks=data.for.likelihood.function$liks, Q=data.for.likelihood.function$Q, rate=data.for.likelihood.function$rate, root.p=root.p, rate.cat = rate.cat, order.test = FALSE, lewis.asc.bias = FALSE)
+			}
+			data.for.likelihood.function$liks[taxon.index,] <- states.keep
+			best.probs = max(marginal.probs.tmp[nstates])
+			marginal.probs.rescaled = marginal.probs.tmp[nstates] - best.probs
+			marginal.probs[taxon.index,nstates] = exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
 		}
-		data.for.likelihood.function$liks[taxon.index,] = states.keep
-		best.probs = max(marginal.probs.tmp[nstates])
-		marginal.probs.rescaled = marginal.probs.tmp[nstates] - best.probs
-		marginal.probs[taxon.index,nstates] = exp(marginal.probs.rescaled) / sum(exp(marginal.probs.rescaled))
 	}
 	tip.states <- marginal.probs[1:nb.tip,]
 	rownames(tip.states) <- phy$tip.label

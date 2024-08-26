@@ -5,9 +5,9 @@
 \usage{
 corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD", 
 node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", 
-tip.fog=NULL, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
-lewis.asc.bias = FALSE, collapse = TRUE, lower.bound = 1e-9, upper.bound = 100, 
-opts=NULL)
+tip.fog=NULL, ip=NULL, fog.ip=0.01, nstarts=0, n.cores=1, 
+get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, 
+lower.bound = 1e-9, upper.bound = 100, opts=NULL)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -21,6 +21,7 @@ opts=NULL)
 \item{root.p}{a vector used to fix the probabilities at the root, but \dQuote{yang} and \dQuote{maddfitz} can also be supplied to use the method of Yang (2006) and FitzJohn et al (2009) respectively (see details).}
 \item{tip.fog}{a fixed value or vector of free parameters to estimate the probability that an observed state is not actually in the state it is assigned. By default \code{tip.fog=NULL}. To estimate tip fog probabilities a vector of integers designating the number of free parameters is needed as input. See vignette for details on how to carry this out.}
 \item{ip}{initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip=1}.}
+\item{fog.ip}{initial values used for the likelihood search of tip fog. It is always a single value. The default is \code{fog.ip=0.01}.}
 \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
 \item{n.cores}{the number of processor cores to spread out the random restarts.}
 \item{get.tip.states}{a boolean indicating whether tip reconstructions should be output. The default is \code{FALSE}.}
