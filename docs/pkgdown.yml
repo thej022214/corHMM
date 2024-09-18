@@ -1,7 +1,6 @@
-pandoc: 3.1.11.1
-pkgdown: 2.0.7
+pandoc: '3.3'
+pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
   corHMMv2.1-vignette: corHMMv2.1-vignette.html
-last_built: 2024-01-31T18:46Z
-
+last_built: 2024-09-18T21:00Z
