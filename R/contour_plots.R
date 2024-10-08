@@ -19,8 +19,8 @@ fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index,
   if(dredge){
     # the dredge algorithm rescales trees to H=1, so the pars are actually H times faster
     H <- max(node.depth.edgelength(corhmm_obj$phy))
-    Q = best_model$solution
-    Q[] <- pars[best_model$index.mat]*H
+    Q = corhmm_obj$solution
+    Q[] <- pars[corhmm_obj$index.mat]*H
     Q[is.na(Q)] <- 0
     diag(Q) <- -rowSums(Q)
     pen_score <- get_penalty_score(Q, pars*H, corhmm_obj$pen.type, corhmm_obj$index.mat, corhmm_obj$rate.cat)
@@ -33,13 +33,15 @@ optimize_fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index,
                                   dredge, pen_type, lambda, corhmm_obj){
   optim_result <- optim(par = log(par_free_0), 
                         fn = fixed_corhmm, 
-                        method = "Nelder-Mead", 
+                        method = "Brent", 
                         par_fixed = log(par_fixed), 
                         par_fixed_index=par_fixed_index, 
                         dredge=dredge,
                         pen_type=pen_type,
                         lambda=lambda,
-                        corhmm_obj=corhmm_obj)
+                        corhmm_obj=corhmm_obj, 
+                        lower=log(1e-10),
+                        upper=log(1e10))
   return(optim_result)
 }
 
