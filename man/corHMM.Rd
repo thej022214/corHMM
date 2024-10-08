@@ -64,6 +64,8 @@ Ancestral states can be estimated using marginal, joint, scaled, or none approac
 \item{$states.info}{a vector containing the amount of information (in bits) that the tip states and model gives to each node.}
 \item{$iterations}{The number of iterations used by the optimization routine.}
 \item{$root.p}{The root prior used in model estimation.}
+\item{pen.type}{The penalty type used in model estimation.}
+\item{lambda}{The hyperparameter that adjusts penalty severity used in model estimation.}
 }
 \examples{
 \donttest{

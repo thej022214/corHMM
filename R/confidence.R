@@ -177,6 +177,7 @@ compute_neglnlikelihood <- function(par, corhmm.object) {
 	corhmm.object$phy$node.label <- NULL
 	nObs <- dim(corhmm.object$index.mat)[1]/corhmm.object$rate.cat
 	model.set.final <- rate.cat.set.corHMM.JDB(phy = corhmm.object$phy, data = corhmm.object$data, rate.cat = corhmm.object$rate.cat, ntraits = nObs, model = "ARD", collapse=collapse)
+	phy <- reorder(corhmm.object$phy, "pruningwise")
 	rate.mat <- corhmm.object$index.mat
 	rate.mat[rate.mat == 0] <- NA
 	rate <- rate.mat
@@ -194,14 +195,16 @@ compute_neglnlikelihood <- function(par, corhmm.object) {
 	}
 	result <- dev.corhmm(
 		p = log(par), 
-		phy = corhmm.object$phy, 
+		phy = phy, 
 		liks = model.set.final$liks, 
 		Q = model.set.final$Q, 
 		rate = model.set.final$rate, 
 		root.p = corhmm.object$root.p, 
 		rate.cat = corhmm.object$rate.cat, 
 		order.test = corhmm.object$order.test, 
-		lewis.asc.bias = ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE)
+		lewis.asc.bias = ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE),
+	  set.fog = FALSE, 
+	  fog.vec = model.set.final$fog.vec
 	)
 
 	#return(dev.corhmm(log(par), corhmm_object$phy, liks=42, Q=42, rate=42, root.p=corhmm.object$root.p, rate.cat=42, order.test=42, lewis.asc.bias=ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE)))

@@ -1,14 +1,6 @@
-######################################################################################################################################
-######################################################################################################################################
 ### corHMM -- Generalized hidden Markov Models
-######################################################################################################################################
-######################################################################################################################################
 # automatic fitting 
-corHMMDredge <- function(
-    phy, data, max.rate.cat, root.p="maddfitz",
-    pen.type = "l1", lambda = 1, drop.par = TRUE, drop.threshold = 1e-9, 
-    info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0,
-    rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
+corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, drop.par = TRUE, drop.threshold = 1e-7,  info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
   
   if((is.null(p) & !is.null(rate.cat))){
     print("A rate category was given without specifying a parameter vector (p)")
@@ -53,9 +45,11 @@ corHMMDredge <- function(
   model_improved <- TRUE
   count <- 1
   current_rate_category <- 1
-  cat("Begining dredge...\n")
+  if(verbose){
+    cat("Begining dredge...\n")
+  }
   while(model_improved){
-    curr_fit <- corHMMDredgeBase(phy=phy, 
+    curr_fit <- try(corHMMDredgeBase(phy=phy, 
                                  data=data, 
                                  rate.cat=current_rate_category, 
                                  root.p=root.p,
@@ -74,13 +68,21 @@ corHMMDredge <- function(
                                  upper.bound = upper.bound, 
                                  opts=opts, 
                                  p=NULL,
-                                 grad=grad)
+                                 grad=grad))
+    if(inherits(curr_fit, "try-error")){
+      warning("Model fitting failed. Stopping dredge.")
+      model_improved <- FALSE
+      fit_set[[count]] <- curr_fit
+      next
+    }
     curr_info_criterion <- curr_fit[[criterion]]
     fit_set[[count]] <- curr_fit
-    cat("\n")
-    cat("AIC:", curr_info_criterion)
-    cat("\nMapping matrix:\n")
-    print(curr_fit$index.mat)
+    if(verbose){
+      cat("\n")
+      cat("AIC:", curr_info_criterion)
+      cat("\nMapping matrix:\n")
+      print(curr_fit$index.mat)
+    }
     best_info_criterion <- get_best_info_criterion(fit_set, criterion, current_rate_category)
     model_improved <- diff(c(best_info_criterion, curr_info_criterion)) < info.threshold
     count <- count + 1
@@ -96,17 +98,25 @@ corHMMDredge <- function(
           if(current_rate_category > max.rate.cat){
             model_improved <- FALSE
           }else{
-            cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+            if(verbose){
+              cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+            }
           }
         }else{
-          cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+          if(verbose){
+            cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+          }
         }
       }else{
-        cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+        if(verbose){
+          cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+        }
       }
     }
   }
-  cat("\nDone.\n")
+  if(verbose){
+    cat("\nDone.\n")
+  }
   class(fit_set) <- "corhmm.dredge"
   return(fit_set)
 }
@@ -186,11 +196,7 @@ merge_current_pars <- function(current_pars, merge.threshold){
 }
 
 # this is the function that does most of the heavy lifting
-corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz",
-  pen.type = "l1", lambda = 1, rate.mat=NULL, node.states = "marginal", 
-  fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
-  lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, 
-  opts=NULL, p=NULL, grad=FALSE){
+corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE,lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, p=NULL, grad=FALSE){
   
   # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
   if(is.null(node.states)){
@@ -224,6 +230,10 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz",
     if(!is.character(root.p)){
       root.p <- root.p/sum(root.p)
     }
+  }
+  
+  if(pen.type == "unreg"){
+    lambda <- 0
   }
   
   # rescale phy to height of one
@@ -475,11 +485,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz",
 }
 
 
-######################################################################################################################################
-######################################################################################################################################
 ### The function used to optimize parameters:
-######################################################################################################################################
-######################################################################################################################################
 
 dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type="l1",lambda=1,grad=FALSE){
   p = exp(p)
@@ -623,11 +629,7 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
 }
 
 
-######################################################################################################################################
-######################################################################################################################################
 ### The function used to calculate the penalty:
-######################################################################################################################################
-######################################################################################################################################
 
 get_penalty_score <- function(Q, p, pen.type, index.mat, rate.cat){
   if(rate.cat == 1){
@@ -673,12 +675,7 @@ get_penalty_score <- function(Q, p, pen.type, index.mat, rate.cat){
   return(pen)
 }
 
-
-######################################################################################################################################
-######################################################################################################################################
 ### Functions for leave one out cross validation:
-######################################################################################################################################
-######################################################################################################################################
 
 get_per_tip_faith_PD <- function(phy, fold_vec){
   fold_hist <- setNames(rep(NA, length(unique(fold_vec))), sort(unique(fold_vec)))

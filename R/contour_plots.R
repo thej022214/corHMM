@@ -17,7 +17,14 @@ fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index,
   pars[-par_fixed_index] <- exp(par_free_0)
   neglnLik <- compute_neglnlikelihood(pars,  corhmm_obj)
   if(dredge){
-    neglnLik <- neglnLik + (get_penalty_score(pars, pen_type) * lambda)
+    # the dredge algorithm rescales trees to H=1, so the pars are actually H times faster
+    H <- max(node.depth.edgelength(corhmm_obj$phy))
+    Q = best_model$solution
+    Q[] <- pars[best_model$index.mat]*H
+    Q[is.na(Q)] <- 0
+    diag(Q) <- -rowSums(Q)
+    pen_score <- get_penalty_score(Q, pars*H, corhmm_obj$pen.type, corhmm_obj$index.mat, corhmm_obj$rate.cat)
+    neglnLik <- neglnLik + pen_score
   }
   return(neglnLik)
 }
@@ -57,20 +64,23 @@ get_profile_lik <- function(par_free_0, par_fixed_values, par_fixed_index, ncore
 # Assuming generate_log_points is defined elsewhere and works as intended
 
 # Wrapper function to perform profile likelihood analysis for multiple parameters
-get_batch_profile_lik <- function(corhmm_obj, range_factor, n_points, ncores=NULL, dredge=FALSE) {
+get_batch_profile_lik <- function(corhmm_obj, range_factor, n_points, verbose=FALSE, ncores=NULL, dredge=FALSE) {
   # Generate logarithmically spaced points for all parameters
   # mle_pars is expected to be a named list or vector of MLEs for each parameter
   mle_pars <- MatrixToPars(corhmm_obj)
   log_points_list <- generate_log_points(mle_pars, range_factor, n_points)
   profile_lik_results <- list()
   if(dredge){
-    pen_type <- corhmm_obj$pen_type
+    pen_type <- corhmm_obj$pen.type
     lambda <- corhmm_obj$lambda
   }else{
     pen_type <- NULL
     lambda <- NULL
   }
   for(i in seq_along(mle_pars)){
+    if(verbose){
+      cat("\n", i, "of", length(mle_pars), "...")
+    }
     param_name <- names(mle_pars)[i]
     par_fixed_values <- log_points_list[, i]
     result <- get_profile_lik(mle_pars[-i], par_fixed_values, i, ncores, 
@@ -111,7 +121,7 @@ plot_batch_profile_lik <- function(corhmm_profile, n_cols = NULL, n_rows = NULL,
   
   for (i in 1:n_params) {
     plot(corhmm_profile[[i]]$profile_table, type = "n", log = "x", bty = "n", axes = FALSE,
-         main = param_names[i], xlab = "", ylab = "", ylim = c(y_min, y_max), xaxt="n")
+         main = bquote(theta[.(i)]), xlab = "", ylab = "", ylim = c(y_min, y_max), xaxt="n")
     grid()
     axis(side = 2, las = 1, tcl = axis_tick_length) # User-defined tick length
     title(xlab = "Parameter Value", ylab = "Log-Likelihood", line = 2.5)
