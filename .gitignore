@@ -1,2 +1,3 @@
 inst/doc
 *.Rhistory
+.DS_Store
