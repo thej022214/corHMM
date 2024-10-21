@@ -6,7 +6,7 @@
 ancRECON(phy,data, p, method=c("joint", "marginal", "scaled"),
 rate.cat, ntraits=NULL, rate.mat=NULL,
 model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE,
-tip.fog=NULL, collapse = TRUE)
+tip.fog=NULL, get.info=FALSE, collapse = TRUE)
 }       
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -22,6 +22,7 @@ tip.fog=NULL, collapse = TRUE)
 \item{get.tip.states}{a logical indicating whether just tip reconstructions should be output. The default is \code{FALSE}.}
 \item{tip.fog}{provides the probability that an observed state is not actually in the state it is assigned to the reconstruction algorithm. These values are assumed either optimized in \dQuote{corHMM} or supplied by the user.
 \code{tip.fog=NULL} when using this as a standalone function.}
+\item{get.info}{Whether to return information measures at nodes (Boyko and Beaulieu 2021).}
 \item{collapse}{a boolean indicating whether to collapse multiple character combinations into only the observed states. For example, if true a two character dataset contained (0,0), (1,0), and (1,1), this would be collapsed into 1,2,3. However, if set to false it would 1,2,4. In combination with a custom rate matrix this allows for the estimation of transitions between the unobserved character combination. The default is \code{TRUE}}.
 }
 \details{

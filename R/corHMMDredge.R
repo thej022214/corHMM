@@ -790,7 +790,7 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
                                          upper.bound = 100, 
                                          opts=NULL, 
                                          p=NULL,
-                                         grad=corhmm_obj$grad)
+                                         grad=FALSE)
       
       # Evaluate the model on testing data
       score <- evaluateModel(model, corhmm_obj)
@@ -897,18 +897,18 @@ get_MSF_from_corhm_obj <- function(corhmm_obj){
   return(model.set.final)
 }
 
-print.corhmm.kfold <- function(x,...){
+getCVTable <- function(x){
   score_table <- do.call(rbind, lapply(x, "[[", "scores"))
   colnames(score_table) <- paste0("Fold:", 0:(dim(score_table)[2]-1))
   rownames(score_table) <- paste0("Lambda:", rownames(score_table))
   score_table <- t(score_table)
   avg_scores <- colMeans(score_table)
-  cat("\nScores per fold:\n")
-  print(score_table)
-  cat("\n")
-  cat("Average Scores:\n")
-  print(avg_scores)
-  cat("\n")
-  invisible(x)
+  # cat("\nScores per fold:\n")
+  # print(score_table)
+  # cat("\n")
+  # cat("Average Scores:\n")
+  # print(avg_scores)
+  # cat("\n")
+  return(list(score_table=score_table, avg_scores=avg_scores))
 }
 

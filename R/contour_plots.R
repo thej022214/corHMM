@@ -33,7 +33,7 @@ optimize_fixed_corhmm <- function(par_free_0, par_fixed, par_fixed_index,
                                   dredge, pen_type, lambda, corhmm_obj){
   optim_result <- optim(par = log(par_free_0), 
                         fn = fixed_corhmm, 
-                        method = "Brent", 
+                        method = "Nelder-Mead", 
                         par_fixed = log(par_fixed), 
                         par_fixed_index=par_fixed_index, 
                         dredge=dredge,

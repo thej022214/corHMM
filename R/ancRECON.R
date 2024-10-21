@@ -7,7 +7,7 @@
 
 #written by Jeremy M. Beaulieu and Jeffrey C. Oliver
 
-ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, tip.fog=NULL, collapse = TRUE){
+ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, tip.fog=NULL, get.info=FALSE, collapse = TRUE){
 	
   # if(hasArg(corHMM_fit)){
   #   corHMM_fit$phy$node.label <- NULL
@@ -471,7 +471,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			#Outputs likeliest node states
 			obj$lik.anc.states <- liks.final[-TIPS,]
 			#Outputs the information gained (in bits) per node
-			obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
+			if(get.info){
+			  obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
+			}else{
+			  obj$info.anc.states <- NULL
+			}
 			return(obj)
 		}
 	}
