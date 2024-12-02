@@ -136,11 +136,13 @@ prune_redundant <- function(model_list){
   model_table <- getModelTable(model_list)
   duplicated_lnLik <- duplicated(model_table$lnLik) | duplicated(model_table$lnLik, fromLast = TRUE)
   duplicates <- model_table[duplicated_lnLik, ]
+  remove_indices <- unlist(
     lapply(split(duplicates, duplicates$lnLik), function(group) {
-      group <- group[order(group$np), ]
-      group_indices <- as.numeric(rownames(group))
-      group_indices[-1] 
+      group <- group[order(group$np), ]  # Sort by number of parameters (np)
+      group_indices <- as.numeric(rownames(group))  # Get row indices
+      group_indices[-1]  # Keep only the redundant models (all except the first)
     })
+  )
   pruned_model_list <- model_list[setdiff(seq_along(model_list), remove_indices)]
   return(pruned_model_list)
 }
