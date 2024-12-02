@@ -5,7 +5,7 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-#written by Jeremy M. Beaulieu and Jeffrey C. Oliver
+#written by James Boyko
 
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, tip.fog=NULL, get.info=FALSE, collapse = TRUE){
 	
