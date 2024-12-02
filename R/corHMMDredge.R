@@ -141,7 +141,6 @@ prune_redundant <- function(model_list){
       group_indices <- as.numeric(rownames(group))
       group_indices[-1] 
     })
-  )
   pruned_model_list <- model_list[setdiff(seq_along(model_list), remove_indices)]
   return(pruned_model_list)
 }
