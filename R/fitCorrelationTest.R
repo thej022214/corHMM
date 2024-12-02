@@ -45,12 +45,13 @@ fitCorrelationTest <- function(phy, data, simplified_models=FALSE){
 getModelTable <- function(model_list, type="AIC"){
   # checks
   ParCount <- unlist(lapply(model_list, function(x) max(x$index.mat, na.rm = TRUE)))
+  rate.cat <- unlist(lapply(model_list, function(x) x$rate.cat))
   nTip <- length(model_list[[1]]$phy$tip.label)
   AIC <- simplify2array(lapply(model_list, "[[", type))
   dAIC <- AIC - min(AIC)
   AICwt <- exp(-0.5 * dAIC)/sum(exp(-0.5 * dAIC))
   LogLik <- simplify2array(lapply(model_list, "[[", "loglik"))
-  out <- data.frame(np = ParCount, lnLik = LogLik, AIC = AIC, dAIC = dAIC, AICwt = AICwt)
+  out <- data.frame(np = ParCount, nRateCat = rate.cat, lnLik = LogLik, AIC = AIC, dAIC = dAIC, AICwt = AICwt)
   colnames(out) <- gsub("AIC", type, colnames(out))
   return(out)
 }

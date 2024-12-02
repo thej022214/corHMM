@@ -97,7 +97,7 @@ plot_batch_profile_lik <- function(corhmm_profile, n_cols = NULL, n_rows = NULL,
                                    mar = c(5, 4, 4, 1) + 0.1, ci_level = 1.96, 
                                    polygon_col = "lightgrey", line_col = "black", line_type = "l", 
                                    mle_col = "blue", ci_line_col = "black", ci_line_type = "dashed", 
-                                   axis_tick_length = -0.2, label_cex = 0.7, ylim=NULL){
+                                   axis_tick_length = -0.2, label_cex = 0.7, ylim=NULL, xlab="Parameter Value", ...){
   # Calculate the number of parameters and adjust layout if not manually specified
   n_params <- length(corhmm_profile) - 1
   if(is.null(n_cols) || is.null(n_rows)) {
@@ -123,17 +123,21 @@ plot_batch_profile_lik <- function(corhmm_profile, n_cols = NULL, n_rows = NULL,
   
   for (i in 1:n_params) {
     plot(corhmm_profile[[i]]$profile_table, type = "n", log = "x", bty = "n", axes = FALSE,
-         main = bquote(theta[.(i)]), xlab = "", ylab = "", ylim = c(y_min, y_max), xaxt="n")
+         main = bquote(theta[.(i)]), xlab = "", ylab = "", ylim = c(y_min, y_max), xaxt="n", ...)
     grid()
-    axis(side = 2, las = 1, tcl = axis_tick_length) # User-defined tick length
-    title(xlab = "Parameter Value", ylab = "Log-Likelihood", line = 2.5)
+    axis(side = 2, las = 1, tcl = axis_tick_length, ...) # User-defined tick length
+    title(xlab = xlab, ylab = "Log-Likelihood", line = 2.5, ...)
+    bottom <- par("usr")[3]
     
     profile_data = corhmm_profile[[i]]$profile_table
     
-    polygon(c(min(profile_data$par_value), profile_data$par_value, max(profile_data$par_value)), 
-            c(y_min, profile_data$lnLik, y_min), col = polygon_col, border = NA)
+    polygon(
+      x = c(profile_data$par_value, rev(profile_data$par_value)),
+      y = c(profile_data$lnLik, rep(bottom, length(profile_data$par_value))),
+      col = polygon_col, border = NA
+    )
     
-    lines(profile_data$par_value, profile_data$lnLik, type = line_type, col = line_col)
+    lines(profile_data$par_value, profile_data$lnLik, type = line_type, col = line_col, ...)
     
     points(mle_pars[i], loglik, pch = 19, col = mle_col)
     text(x = mle_pars[i] * 1.1, y = loglik, labels = paste("MLE =", round(mle_pars[i], 3)), pos = 4, cex = label_cex, col = line_col)

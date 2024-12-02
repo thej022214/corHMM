@@ -43,6 +43,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = 
   curr_index_mat <- rate.mat
   fit_set <- list()
   model_improved <- TRUE
+  hmm_valid <- TRUE
   count <- 1
   current_rate_category <- 1
   if(verbose){
@@ -98,8 +99,17 @@ corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = 
           if(current_rate_category > max.rate.cat){
             model_improved <- FALSE
           }else{
-            if(verbose){
-              cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+            if(curr_fit$rate.cat > 1){
+              # test the current rate category
+              hmm_valid <- test_validity_hmm(curr_fit)
+              if(all(hmm_valid)){
+                cat("\n", "No unique parameters in rate class. Halting dredge", "\n")
+                model_improved <- FALSE
+              }
+            }else{
+              if(verbose){
+                cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+              }
             }
           }
         }else{
@@ -117,8 +127,23 @@ corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = 
   if(verbose){
     cat("\nDone.\n")
   }
+  fit_set <- prune_redundant(fit_set)
   class(fit_set) <- "corhmm.dredge"
   return(fit_set)
+}
+
+prune_redundant <- function(model_list){
+  model_table <- getModelTable(model_list)
+  duplicated_lnLik <- duplicated(model_table$lnLik) | duplicated(model_table$lnLik, fromLast = TRUE)
+  duplicates <- model_table[duplicated_lnLik, ]
+    lapply(split(duplicates, duplicates$lnLik), function(group) {
+      group <- group[order(group$np), ]
+      group_indices <- as.numeric(rownames(group))
+      group_indices[-1] 
+    })
+  )
+  pruned_model_list <- model_list[setdiff(seq_along(model_list), remove_indices)]
+  return(pruned_model_list)
 }
 
 get_best_info_criterion <- function(corhmm.obj.list, criterion, rate.cat){
@@ -178,6 +203,19 @@ merge_pars <- function(corhmm.obj, merge.threshold){
     index_mat_merged <- equateStateMatPars(index_mat, focal_merger)
   }
   return(index_mat_merged)
+}
+
+test_validity_hmm <- function(corhmm_obj){
+  index_mat <- corhmm_obj$index.mat
+  rate_cat <- corhmm_obj$rate.cat
+  rate_cat_tests <- vector(length = rate_cat)
+  rate_class_labels <- paste0("R", 1:rate_cat)
+  for(i in 1:length(rate_cat_tests)){
+    to_rc <- index_mat[,grep(rate_class_labels[i], colnames(index_mat))]
+    from_rc <- index_mat[grep(rate_class_labels[i], rownames(index_mat)),]
+    rate_cat_tests[i]<- !all(is.na(to_rc)) | !all(is.na(from_rc))
+  }
+  return(rate_cat_tests)
 }
 
 merge_current_pars <- function(current_pars, merge.threshold){
