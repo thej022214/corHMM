@@ -12,6 +12,7 @@ corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = 
   }
   
   # FIXED FIT
+  init.root.p <- root.p
   if(!is.null(p) & !is.null(rate.cat)){
     if(verbose){
       cat("Evaluating fixed parameters p =", p, "\n")
@@ -50,6 +51,9 @@ corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = 
     cat("Begining dredge...\n")
   }
   while(model_improved){
+    if(!inherits(root.p, "character")){
+      root.p <- rep(init.root.p, current_rate_category)
+    }
     curr_fit <- try(corHMMDredgeBase(phy=phy, 
                                  data=data, 
                                  rate.cat=current_rate_category, 
