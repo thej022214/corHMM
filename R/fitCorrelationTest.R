@@ -5,7 +5,7 @@ silence <- function(x){
   invisible(force(x))
 }
 
-fitCorrelationTest <- function(phy, data, root.p="yang", simplified_models=FALSE){
+fitCorrelationTest <- function(phy, data, root.p="yang", nstarts=0, n.cores=1, simplified_models=FALSE){
   cat("Begining test of correlation...\n")
   rate_cat_mat <- getRateCatMat(2)
   indep_model_1 <- getStateMat4Dat(data, "ARD", collapse = FALSE, indep = TRUE)$rate.mat
@@ -13,30 +13,34 @@ fitCorrelationTest <- function(phy, data, root.p="yang", simplified_models=FALSE
   corr_model_1 <- getStateMat4Dat(data, "ARD", collapse = FALSE, indep = FALSE)$rate.mat
   corr_model_2 <- getFullMat(list(corr_model_1, corr_model_1), RateClassMat = rate_cat_mat)
   cat("\nFitting an independent model...\n")
-  independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = indep_model_1, collapse = FALSE, root.p=root.p))
+  independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = indep_model_1, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
   cat("Fitting a hidden Markov independent model...\n")
-  hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = indep_model_2, collapse = FALSE, root.p=root.p))
+  hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = indep_model_2, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
   cat("Fitting a correlated model...\n")
-  correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = corr_model_1, collapse = FALSE, root.p=root.p))
+  correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = corr_model_1, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
   cat("Fitting a hidden Markov correlated model...\n")
-  hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = corr_model_2, collapse = FALSE, root.p=root.p))
+  hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = corr_model_2, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+  
   model_list <- list(independent_model_fit = independent_model_fit, hidden_Markov_independent_model_fit = hidden_independent_model_fit, correlated_model_fit = correlated_model_fit, hidden_Markov_correlated_model_fit = hidden_correlated_model_fit)
+  
   if(simplified_models){
     simp_indep_model_1 <- equateStateMatPars(indep_model_1, list(c(1,3), c(2,4)))
     simp_indep_model_2 <- getFullMat(list(simp_indep_model_1, simp_indep_model_1), rate_cat_mat)
     simp_corr_model_1 <- equateStateMatPars(corr_model_1, list(c(1,3),c(2,5), c(4,7), c(6,8)))
     simp_corr_model_2 <- getFullMat(list(simp_corr_model_1, simp_corr_model_1), rate_cat_mat)
     cat("\nFitting an simplified independent model...\n")
-    simplified_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = simp_indep_model_1, root.p=root.p))
+    simplified_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = simp_indep_model_1, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
     cat("Fitting a simplified hidden Markov independent model...\n")
-    simplified_hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_indep_model_2, root.p=root.p))
+    simplified_hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_indep_model_2, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
     cat("Fitting a simplified correlated model...\n")
-    simplified_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = simp_corr_model_1, root.p=root.p))
+    simplified_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = simp_corr_model_1, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
     cat("Fitting a simplified hidden Markov correlated model...\n")
-    simplified_hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_corr_model_2, root.p=root.p))
+    simplified_hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_corr_model_2, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+    
     simplified_model_list <- list(simplified_independent_model_fit = simplified_independent_model_fit, simplified_hidden_Markov_independent_model_fit = simplified_hidden_independent_model_fit, simplified_correlated_model_fit = simplified_correlated_model_fit, simplified_hidden_Markov_correlated_model_fit = simplified_hidden_correlated_model_fit)
     model_list <- c(simplified_model_list, model_list)
   }
+  
   cat("Done.\n")
   class(model_list) <- "corhmm_list"
   return(model_list)
