@@ -35,6 +35,11 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
         }
     }
     
+    if(!inherits(data, "data.frame")){
+      data <- as.data.frame(data)
+      cat("Input data is required to be of class 'data.frame' - converting now.\n")
+    }
+  
     #Ensures that weird root state probabilities that do not sum to 1 are input:
     if(!is.null(root.p)){
         if(!is.character(root.p)){
