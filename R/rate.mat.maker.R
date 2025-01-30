@@ -433,12 +433,16 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, 
     for (j in 1:nrow(poss_states)) {
       if (i != j && can_transition(poss_states[i, ], poss_states[j, ])) {
         if(indep){
-          transition_key <- get_transition_key(poss_states[i, ], poss_states[j, ])
+          is_changing <- which(poss_states[i,] != poss_states[j,])
+          type <- paste(c(poss_states[i,is_changing], poss_states[j,is_changing]), collapse = "_")
+          transition_key <- paste0("s", is_changing, "_t", type)
           if (!transition_key %in% names(transition_counts)) {
             transition_counts[[transition_key]] <- count
             count <- count + 1
           }
           index_mat[i, j] <- transition_counts[[transition_key]]
+          
+          
         }else{
           index_mat[i, j] <- count
           count <- count + 1
