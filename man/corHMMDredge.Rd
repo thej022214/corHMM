@@ -5,7 +5,12 @@
 \code{corHMMDredge} fits a series of hidden Markov models (HMMs) to a given phylogenetic tree and discrete character data to automatically find the optimal model structure. It offers additional options for penalization and optimization compared to the standard \code{corHMM} function.
 }
 \usage{
-corHMMDredge(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, drop.par = TRUE, drop.threshold = 1e-7,  info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE)
+corHMMDredge(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, 
+drop.par = TRUE, drop.threshold = 1e-7,  info.threshold=2, criterion="AIC", 
+merge.params=TRUE, merge.threshold=0, rate.mat=NULL, 
+node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, 
+get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
+upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE)
 }
 \arguments{
   \item{phy}{
@@ -118,7 +123,8 @@ The \code{grad} option employs a numerical gradient for the optimization. This i
 data(primates)
 phy <- multi2di(primates[[1]])
 data <- primates[[2]]
-dredge_fits <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", root.p = "maddfitz", lambda = 1)
+dredge_fits <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", 
+	root.p = "maddfitz", lambda = 1)
 getModelTable(dredge_fits)
 }
 }

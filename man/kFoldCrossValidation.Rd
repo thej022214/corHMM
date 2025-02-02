@@ -5,7 +5,8 @@
   This function performs k-fold cross-validation on a given \code{corHMM} model by dividing the data into k equally sized subsets. The function evaluates model performance across multiple lambda regularization values, if provided. Optionally, it can save the trained models for each fold and return the cross-validation results.
 }
 \usage{
-kFoldCrossValidation(corhmm_obj, k, lambdas = NULL, return_model = TRUE, save_model_dir = NULL, model_name = NULL)
+kFoldCrossValidation(corhmm_obj, k, lambdas = NULL, return_model = TRUE, 
+save_model_dir = NULL, model_name = NULL)
 }
 \arguments{
   \item{corhmm_obj}{A \code{corHMM} object that contains a fitted model.}
@@ -31,7 +32,8 @@ kFoldCrossValidation(corhmm_obj, k, lambdas = NULL, return_model = TRUE, save_mo
 data(primates)
 phy <- multi2di(primates[[1]])
 data <- primates[[2]]
-dredge_fits <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", root.p = "maddfitz", lambda = 1, nstarts = 10, n.cores = 10)
+dredge_fits <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", 
+	root.p = "maddfitz", lambda = 1, nstarts = 10, n.cores = 10)
 model_table <- getModelTable(dredge_fits)
 dredge_model <- dredge_fits[[which.min(model_table$dAIC)]]
 k_fold_res <- kFoldCrossValidation(dredge_model, k = 5, lambdas = c(0,0.25,0.5,0.75,1))

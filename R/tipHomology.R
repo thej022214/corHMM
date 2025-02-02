@@ -28,6 +28,8 @@ get_desc <- function(phy, node){
 #written by James Boyko
 tipHomology <- function(corhmm_obj, type="strict", node=NULL, return.likelihoods = FALSE){
   
+  phy=corhmm_obj$phy
+  data=corhmm_obj$data
   # some prereqs
   p = sapply(1:max(corhmm_obj$index.mat, na.rm = TRUE), function(x) 
     na.omit(c(corhmm_obj$solution))[na.omit(c(corhmm_obj$index.mat) == x)][1])
@@ -76,6 +78,8 @@ tipHomology <- function(corhmm_obj, type="strict", node=NULL, return.likelihoods
 
 
 dev.tip_homology <- function(phy, corData, p, rate.cat, tip, node, type, rate.mat=NULL, root.p=NULL, collapse = TRUE, p_mat_by_edge, model.set.final){
+	
+	data <- corData
 	
 	#Ensures that weird root state probabilities that do not sum to 1 are input:
 	if(!is.null(root.p)){
