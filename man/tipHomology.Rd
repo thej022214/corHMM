@@ -35,18 +35,6 @@ To build intuition, consider the probability of homology as being similar to anc
 
 One could use a likelihood ratio test (LRT) to evaluate evidence for at least one change (using \code{chisq} with one degree of freedom). However, since the null hypothesis assumes no change, the LRT can only fail to reject strict homology; it cannot provide evidence for significant homology.
 }
-\examples{
-data(primates)
-phy <- multi2di(primates[[1]])
-data <- primates[[2]]
-MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
-
-# Calculate homology probabilities for all tips
-homol_p <- tipHomology(MK_3state, type = "strict")
-
-# Specify a particular node to calculate probabilities for its descendants
-homol_p_node <- tipHomology(MK_3state, type = "strict", node = 63)
-}
 \author{
 James D. Boyko
 }

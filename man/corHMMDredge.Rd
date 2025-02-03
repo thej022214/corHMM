@@ -5,7 +5,7 @@
 \code{corHMMDredge} fits a series of hidden Markov models (HMMs) to a given phylogenetic tree and discrete character data to automatically find the optimal model structure. It offers additional options for penalization and optimization compared to the standard \code{corHMM} function.
 }
 \usage{
-corHMMDredge(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, 
+corHMMDredge(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 0, 
 drop.par = TRUE, drop.threshold = 1e-7,  info.threshold=2, criterion="AIC", 
 merge.params=TRUE, merge.threshold=0, rate.mat=NULL, 
 node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, 
@@ -29,7 +29,7 @@ upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE)
     The type of penalization applied to the model. Options include \code{"l1"}, \code{"l2"}, \code{"er"}, and \code{"unreg"}. See Details.
   }
   \item{lambda}{
-    A hyper-parameter that adjusts the severity of the penalty, ranging from 0 (no regularization) to 1 (full penalization). Default is 1.
+    A hyper-parameter that adjusts the severity of the penalty, ranging from 0 (no regularization) to 1 (full penalization). Default is 0 which makes likleihoods directly comparable to corHMM.
   }
   \item{drop.par}{
     Logical. Whether to drop parameters during optimization based on a threshold. Default is \code{TRUE}.
@@ -123,13 +123,20 @@ The \code{grad} option employs a numerical gradient for the optimization. This i
 data(primates)
 phy <- multi2di(primates[[1]])
 data <- primates[[2]]
-dredge_fits <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", 
-	root.p = "maddfitz", lambda = 1)
-getModelTable(dredge_fits)
+# fit the models following the same input style as corHMM. here we are NOT going to look for multiple rate classes (max.rate.cat=1)
+dredge_fits <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", root.p = "maddfitz", lambda = 1)
+# produce a model table
+mod_table <- getModelTable(dredge_fits)
+print(mod_table)
+# which ever model is best is the one used for downstream analysis
+best_fit <- dredge_fits[[which.min(mod_table$dAIC)]]
+best_fit
+# you can also fit dredge without any penalization. this will make the likelihoods directly comparable with corHMM- just set lambda to 0
+dredge_fits_og <- corHMMDredge(phy = phy, data = data, max.rate.cat = 1, pen.type = "l1", root.p = "maddfitz", lambda = 0)
 }
 }
 \references{
-Boyko, J. D. 2024. Automatic Discovery of Optimal Discrete Character Models through Regularization. In prep.
+Boyko, J. D. 2024. Automatic Discovery of Optimal Discrete Character Models through Regularization.
 
 Zhou, Y., Gao, M., Chen, Y., Shi, X., 2024. Adaptive Penalized Likelihood method for Markov Chains. 
 }

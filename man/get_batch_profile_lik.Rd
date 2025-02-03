@@ -5,8 +5,7 @@
 \code{get_batch_profile_lik} is a wrapper function that performs profile likelihood analysis for multiple parameters of a fitted \code{corHMM} object. It allows exploration of the likelihood surface by evaluating the likelihood at various points along the parameter space.
 }
 \usage{
-get_batch_profile_lik(corhmm_obj, range_factor, n_points, verbose=FALSE, ncores = NULL, 
-dredge = FALSE)
+get_batch_profile_lik(corhmm_obj, range_factor, n_points, verbose=FALSE, ncores=NULL, dredge=FALSE)
 }
 \arguments{
   \item{corhmm_obj}{

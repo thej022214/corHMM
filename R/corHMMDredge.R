@@ -1,6 +1,6 @@
 ### corHMM -- Generalized hidden Markov Models
 # automatic fitting 
-corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, drop.par = TRUE, drop.threshold = 1e-7,  info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
+corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 0, drop.par = TRUE, drop.threshold = 1e-7,  info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
   
   if((is.null(p) & !is.null(rate.cat))){
     print("A rate category was given without specifying a parameter vector (p)")

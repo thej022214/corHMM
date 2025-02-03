@@ -3,11 +3,14 @@
 \title{Test for correlation}
 \description{Automatically fits a set of independent and dependent models to test for correlation between characters.}
 \usage{
-  fitCorrelationTest(phy, data, simplified_models=FALSE)
+  fitCorrelationTest(phy, data, root.p="yang", nstarts=0, n.cores=1, simplified_models=FALSE)
 }
 \arguments{
   \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
   \item{data}{a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.}
+  \item{root.p}{The root prior being used. Default is "yang", but see corHMM documentation for more details.}
+  \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
+  \item{n.cores}{the number of processor cores to spread out the random restarts.}
   \item{simplified_models}{A boolean which indicates whether to include simplified independent and dependent models (currently only works for two binary-state characters; see Details).}
 }
 \details{
@@ -36,6 +39,7 @@ data <- primates[[2]]
 }
 }
 \references{
-Maddison W.P., FitzJohn R.G. 2015. The Unsolved Challenge to Phylogenetic Correlation Tests for Categorical Characters. Syst Biol. 64:127-136.
+Maddison W.P., FitzJohn R.G. 2015. The Unsolved Challenge to Phylogenetic Correlation Tests for Categorical Characters. Systematic Biology. 64:127-136.
+Boyko J.D., Beaulieu J.M. 2023. Reducing the Biases in False Correlations Between Discrete Characters. Systematic Biology. 72:476-488.
 }
 \author{James D. Boyko}

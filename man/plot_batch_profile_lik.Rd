@@ -5,10 +5,11 @@
 Plots profile likelihoods for each parameter in a batch from the output of a profile corHMM object, displaying the log-likelihoods across parameter values and indicating the maximum likelihood estimate (MLE) and the 95\% confidence interval.
 }
 \usage{
-plot_batch_profile_lik(corhmm_profile, n_cols = NULL, n_rows = NULL, 
-mar = c(5, 4, 4, 1) + 0.1, ci_level = 1.96, polygon_col = "lightgrey", line_col = "black",
-line_type = "l", mle_col = "blue", ci_line_col = "black", ci_line_type = "dashed", 
-axis_tick_length = -0.2, label_cex = 0.7, ylim=NULL)
+plot_batch_profile_lik(corhmm_profile, n_cols = NULL, n_rows = NULL,
+                                   mar = c(5, 4, 4, 1) + 0.1, ci_level = 1.96, 
+                                   polygon_col = "lightgrey", line_col = "black", line_type = "l", 
+                                   mle_col = "blue", ci_line_col = "black", ci_line_type = "dashed", 
+                                   axis_tick_length = -0.2, label_cex = 0.7, ylim=NULL, xlab="Parameter Value", ...)
 }
 \arguments{
 \item{corhmm_profile}{a list containing profile likelihood tables for each parameter and the corHMM object with MLE and loglik attributes.}
@@ -38,6 +39,11 @@ axis_tick_length = -0.2, label_cex = 0.7, ylim=NULL)
 \item{label_cex}{character expansion size for labels, affecting the size of text labels. Defaults to 0.7.}
 
 \item{ylim}{a user-specified upper and lower limit to the y-axis.}
+
+\item{xlab}{user-specified x label}
+  
+\item{...}{Additional arugments to be passed to plot.}
+
 }
 \details{
 This function generates a series of plots for the profile likelihood of each parameter in the input corHMM model object. It visualizes the log-likelihood across the range of parameter values, highlights the maximum likelihood estimate (MLE), and denotes the 95\% confidence interval with a horizontal dashed line. The function is designed to accommodate the batch analysis of multiple parameters, organizing the plots in a specified layout and allowing for extensive customization of plot aesthetics.
