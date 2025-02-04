@@ -3,7 +3,12 @@
 \title{Test for correlation}
 \description{Automatically fits a set of independent and dependent models to test for correlation between characters.}
 \usage{
-  fitCorrelationTest(phy, data, root.p="yang", nstarts=0, n.cores=1, simplified_models=FALSE)
+fitCorrelationTest(phy, 
+  data, 
+  root.p="yang", 
+  nstarts=0, 
+  n.cores=1, 
+  simplified_models=FALSE)
 }
 \arguments{
   \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}

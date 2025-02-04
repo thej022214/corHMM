@@ -33,11 +33,10 @@ A data frame with the following columns:
 \examples{
 \donttest{
 # Assuming you have a list of fitted corHMM models:
-models <- list(model1, model2, model3)
-getModelTable(models)
-
+#models <- list(model1, model2, model3)
+#getModelTable(models)
 # To use BIC instead of AIC:
-getModelTable(models, type = "BIC")
+#getModelTable(models, type = "BIC")
 }
 }
 \seealso{
