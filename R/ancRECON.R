@@ -55,7 +55,6 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
 	
-	k <- ntraits <- length(corData$ObservedTraits)
 	drop.states <- NULL
 	if(is.null(rate.mat)){
 		model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=input.data, rate.cat=rate.cat, ntraits = ntraits, model = model, rate.mat = rate.mat, collapse = collapse)
@@ -76,6 +75,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		}
 		rate[is.na(rate)] <- max(rate,na.rm=TRUE)+1
 	}
+	k <- ntraits <- ncol(model.set.final$liks)/model.set.final$rate.cat
 	
 	#if((max(na.omit(as.vector(rate)))-1) < length(p)){
 	#    return(cat("You have given a vector of transition rates greater than the number of parameters in the model."))
