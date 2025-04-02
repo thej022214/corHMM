@@ -350,12 +350,24 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	        v <- v * liks[desNodes[desIndex],]
 	        L <- Pij %*% v
 	        #liks: rows are taxa + internal nodes, cols are # states
-	        if(is.na(known.state.vector[focal])){
-	          pupko.L[desNodes[desIndex],] <- L
-	          pupko.C[desNodes[desIndex],] <- which.is.max(L==max(L))
+	        if(rate.cat > 1){
+	          if(is.na(known.state.vector[focal])){
+	            chosen <- sample(seq_along(L), 1, prob = L * v)
+	            pupko.L[desNodes[desIndex],] <- L[chosen]
+	            pupko.C[desNodes[desIndex],] <- chosen
+	          }else{
+	            chosen <- sample(seq_along(L), 1, prob = L * v)
+	            pupko.L[desNodes[desIndex],] <- L[chosen]
+	            pupko.C[desNodes[desIndex],] <- chosen
+	          }
 	        }else{
-	          pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
-	          pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
+	          if(is.na(known.state.vector[focal])){
+	            pupko.L[desNodes[desIndex],] <- L
+	            pupko.C[desNodes[desIndex],] <- which.is.max(L==max(L))
+	          }else{
+	            pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
+	            pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
+	          }
 	        }
 	      }
 	    }

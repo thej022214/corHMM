@@ -455,6 +455,12 @@ dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewi
   
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
+  
+  # an error check for rates that are really weird
+  test_mat <- expm(Q, method=c("Ward77"))
+  if(any(round(rowSums(test_mat))> 2)){
+    return(1000000)
+  }
 
   # # if the q matrix has columns not estimated, remove them
   # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
