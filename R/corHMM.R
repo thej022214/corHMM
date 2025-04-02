@@ -667,10 +667,12 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
   LevelList <- StateMats <- vector("list", nCol-1)
   # detect the number of states in each column. & is treated as indicating polymorphism. ? is treated as unknown data.
   for(i in 2:nCol){
-    if(!is.factor(data[,i])){
-      data[,i] <- as.factor(data[,i])
+    # 4/2/25 - Caetano: Working with "data[,i]" below fails to create factor and "States_i" becomes NULL. Using "data_tmp" as a temporary object for bug fix.
+    data_tmp <- data[,i]
+    if(!is.factor(data_tmp)){
+      data_tmp <- as.factor(data_tmp)
     }
-    States_i <- levels(data[,i])
+    States_i <- levels(data_tmp)
     if(any(States_i == "?")){
       States_i <- States_i[!States_i == "?"]
     }
