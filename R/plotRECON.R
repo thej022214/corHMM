@@ -2,22 +2,34 @@
 #   plot.recons   #
 ###################
 
-plotRECON <- function(phy, likelihoods, piecolors=NULL, cex=0.5, pie.cex=0.25, file=NULL, height=11, width=8.5, show.tip.label=TRUE, title=NULL, ...){
+plotRECON <- function(phy, likelihoods, piecolors=NULL, cex=0.5, pie.cex=0.25, file=NULL, height=11, width=8.5, show.tip.label=TRUE, show.legend = T, label.offset = 0.05, title=NULL, 
+                      no.margin = F,text.x = NULL, text.pos = NULL, text.cex = NULL, tip_states = NULL,...){
 	if(is.null(piecolors)){
 		piecolors=c("white","black","red","yellow","forestgreen","blue","coral","aquamarine","darkorchid","gold","grey","yellow","#3288BD","#E31A1C")
 	}
 	if(!is.null(file)){
 		pdf(file, height=height, width=width,useDingbats=FALSE)
 	}
-	plot(phy, cex=cex, show.tip.label=show.tip.label, ...)
+  ape::plot.phylo(phy, cex=cex, show.tip.label=show.tip.label, label.offset = label.offset, no.margin = no.margin,...)
 
-	if(!is.null(title)){
-		title(main=title)
+	if(!is.null(title) & no.margin == T){
+		text(labels=title, x = text.x, pos = text.pos, cex = text.cex)
 	}
+  
+  if(!is.null(title)& no.margin == F){
+    title(main=title)
+  }
+  
 	nodelabels(pie=likelihoods,piecol=piecolors, cex=pie.cex)
+	
+	if(!is.null(tip_states)){
+	tiplabels(pie= to.matrix(tip_states, sort(unique(tip_states))), piecol=piecolors, cex =  0.13, offset = 0.002)
+	}
+	
 	states <- colnames(likelihoods)
-	legend(x="topleft", states, cex=0.8, pt.bg=piecolors,col="black",pch=21);
-
+	
+	if(show.legend == T){
+	  legend(x="topleft", states, cex=0.8, pt.bg=piecolors,col="black",pch=21)}
 	if(!is.null(file)){
 		dev.off()
 	}
