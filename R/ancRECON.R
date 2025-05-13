@@ -5,8 +5,6 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-#written by James Boyko
-
 ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, tip.fog=NULL, get.info=FALSE, collapse = TRUE){
 	
   # if(hasArg(corHMM_fit)){
@@ -736,6 +734,477 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	}
 }
 
+######################################################################################################################################
+######################################################################################################################################
+### An internal ancestral state reconstruction which uses precalcualted expm so it's faster on repeted calcuations. 
+######################################################################################################################################
+######################################################################################################################################
+
+ancRECON_internal <- function(phy, data, corData, model.set.final, p_mat, p, method=c("joint", "marginal", "scaled"), rate.cat, ntraits=NULL, rate.mat=NULL, model="ARD", root.p=NULL, get.likelihood=FALSE, get.tip.states = FALSE, tip.fog=NULL, get.info=FALSE, collapse = TRUE){
+  
+  # because we overwrite root.p below and i need it later
+  root.p_input <- root.p
+  if (is.null(rate.cat)){
+    rate.cat <- 1
+  }
+  
+  #data consistency stuff
+  input.data <- data
+  data <- corData$corData
+  
+  matching <- match.tree.data(phy,data)
+  data <- matching$data
+  phy <- matching$phy
+  
+  #Note: Does not like zero branches at the tips. Here I extend these branches by just a bit:
+  phy$edge.length[phy$edge.length<=1e-5]=1e-5
+  data.sort <- data.frame(data[,2], data[,2],row.names=data[,1])
+  data.sort <- data.sort[phy$tip.label,]
+  levels <- levels(as.factor(data.sort[,1]))
+  
+  #Some initial values for use later
+  obj <- NULL
+  nb.tip <- length(phy$tip.label)
+  nb.node <- phy$Nnode
+  
+  drop.states <- NULL
+  if(is.null(rate.mat)){
+    rate.mat <- model.set.final$index.matrix
+    rate <- model.set.final$rate
+    num.dropped.states <- NULL
+  }else{
+    rate <- rate.mat
+    col.sums <- which(colSums(rate.mat, na.rm=TRUE) == 0)
+    row.sums <- which(rowSums(rate.mat, na.rm=TRUE) == 0)
+    drop.states <- col.sums[which(col.sums == row.sums)]
+    if(length(drop.states > 0)){
+      model.set.final$liks[,drop.states] <- 0
+      num.dropped.states <- length(drop.states)
+    }else{
+      num.dropped.states <- NULL
+    }
+    rate[is.na(rate)] <- max(rate,na.rm=TRUE)+1
+  }
+  k <- ntraits <- ncol(model.set.final$liks)/model.set.final$rate.cat
+  
+  if(sum(tip.fog) != 0){
+    if(length(tip.fog) == 1){
+      #Default option, but need to replicate these values across the observed states
+      tip.fog <- rep(tip.fog, dim(model.set.final$Q)[2])
+    }
+    if(rate.cat > 1){
+      #Error only applies to observed states, but need to replicate across the rate categories:
+      tip.fog <- rep(tip.fog, rate.cat)
+      for(tip.index in 1:Ntip(phy)){
+        #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+        num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)])
+        if(num.zeros > 0){
+          model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - (sum(tip.fog[which(model.set.final$liks[tip.index,]!=1)])/rate.cat)
+          model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog[which(model.set.final$liks[tip.index,]==0)]
+        }
+      }
+    }else{
+      for(tip.index in 1:Ntip(phy)){
+        #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+        num.zeros <- length(model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)])
+        if(num.zeros > 0){
+          model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==1)] <- 1 - sum(tip.fog[which(model.set.final$liks[tip.index,]!=1)])
+          model.set.final$liks[tip.index,which(model.set.final$liks[tip.index,]==0)] <- tip.fog[which(model.set.final$liks[tip.index,]==0)]
+        }
+      }
+    }
+  }
+  
+  x <- data.sort[,1]
+  TIPS <- 1:nb.tip
+  tranQ <- Q <- model.set.final$Q
+  liks <- model.set.final$liks
+  
+  if(length(drop.states > 0)){
+    liks[,drop.states] <- 0
+  }
+  
+  p[p==0] = exp(-21)
+  Q[] <- c(p, 0)[rate]
+  diag(Q) <- -rowSums(Q)
+  phy <- reorder(phy, "pruningwise")
+  TIPS <- 1:nb.tip
+  anc <- unique(phy$edge[,1])
+
+  if(method=="joint"){
+    if(!is.null(phy$node.label)){
+      tip.state.vector <- rep(NA, Ntip(phy))
+      #We remove the first, because the root state probability comes in through root.p:
+      known.state.vector <- phy$node.label
+      known.state.vector <- c(tip.state.vector, known.state.vector)
+    }else{
+      tip.state.vector <- rep(NA, Ntip(phy))
+      known.state.vector <- rep(NA, Nnode(phy))
+      known.state.vector <- c(tip.state.vector, known.state.vector)
+    }
+    lik.states<-numeric(nb.tip + nb.node)
+    pupko.L <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
+    pupko.C <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
+    for (i  in seq(from = 1, length.out = nb.node)) {
+      #The ancestral node at row i is called focal:
+      focal <- anc[i]
+      #Get descendant information of focal:
+      desRows<-which(phy$edge[,1]==focal)
+      #Get node information for each descendant:
+      desNodes<-phy$edge[desRows,2]
+      
+      #Initiates a loop to check if any nodes are tips:
+      for (desIndex in sequence(length(desRows))){
+        #If a tip calculate C_y(i) for the tips and stores in liks matrix:
+        if(any(desNodes[desIndex]==phy$edge[,1])==FALSE){
+          v <- c(rep(1, k*rate.cat))
+          Pij <- p_mat[,,desRows[desIndex]]
+            # expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+          #Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
+          v <- v * liks[desNodes[desIndex],]
+          L <- Pij %*% v
+          #liks: rows are taxa + internal nodes, cols are # states
+          if(is.na(known.state.vector[focal])){
+            pupko.L[desNodes[desIndex],] <- L
+            pupko.C[desNodes[desIndex],] <- which.is.max(L==max(L))
+          }else{
+            pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
+            pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
+          }
+        }
+      }
+      #Collects t_z, or the branch subtending focal:
+      tz <- phy$edge.length[which(phy$edge[,2] == focal)]
+      if(length(tz)==0){
+        #The focal node is the root, calculate P_k:
+        root.state=1
+        for (desIndex in sequence(length(desRows))){
+          #This is the basic marginal calculation:
+          root.state <- root.state * pupko.L[desNodes[desIndex],]
+        }
+        if(is.na(known.state.vector[focal])){
+          equil.root <- NULL
+          for(i in 1:ncol(Q)){
+            posrows <- which(Q[,i] >= 0)
+            rowsum <- sum(Q[posrows,i])
+            poscols <- which(Q[i,] >= 0)
+            colsum <- sum(Q[i,poscols])
+            equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+          }
+          if (is.null(root.p)){
+            if(is.na(known.state.vector[focal])){
+              flat.root = equil.root
+              k.rates <- 1/length(which(!is.na(equil.root)))
+              flat.root[!is.na(flat.root)] = k.rates
+              flat.root[is.na(flat.root)] = 0
+              #root.p <- c(.6,.4)
+              root.p <- flat.root
+              pupko.L[focal, ] <- root.state
+            }else{
+              root.p <- rep(0, dim(Q)[2])
+              root.p[known.state.vector[focal]] <- 1
+              pupko.L[focal, ] <- root.state
+            }
+          }
+          else{
+            if(is.character(root.p)){
+              # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+              if(root.p == "yang"){
+                root.p <- Null(Q)
+                root.p <- c(root.p/sum(root.p))
+                pupko.L[focal, ] <- root.state
+              }else{
+                # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                root.p <- (root.state / sum(root.state))[ ]
+                pupko.L[focal,] <- root.state
+              }
+            }
+            # root.p!==NULL will fix root probabilities based on user supplied vector:
+            else{
+              root.p <- root.p
+              pupko.L[focal, ] <- root.state
+            }
+          }
+        }else{
+          root.p = rep(0, dim(Q)[1])
+          root.p[known.state.vector[focal]] <- 1
+          pupko.L[focal, ] <- root.state
+        }
+      }
+      #All other internal nodes, except the root:
+      else{
+        #Calculates P_ij(t_z):
+        Pij <- p_mat[,,which(phy$edge[,2] == focal)]
+          # expm(Q * tz, method=c("Ward77"))
+        #Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
+        #Calculates L_z(i):
+        v <- c(rep(1, k*rate.cat))
+        if(is.na(known.state.vector[focal])){
+          for (desIndex in sequence(length(desRows))){
+            v <- v * pupko.L[desNodes[desIndex],]
+          }
+          focalRow <- which(phy$edge[,2]==focal)
+          motherRow <- which(phy$edge[,1]==phy$edge[focalRow,1])
+          motherNode <- phy$edge[focalRow,1]
+          if(is.na(known.state.vector[motherNode])){
+            for(row.index in 1:dim(Pij)[1]){
+              L <- Pij[row.index,] * v
+              pupko.L[focal, row.index] <- max(L)
+              pupko.C[focal, row.index] <- which.is.max(L)
+            }
+          }else{
+            L <- Pij[known.state.vector[motherNode],] * v
+            pupko.L[focal,] <- L
+            pupko.C[focal,] <- which.is.max(L)
+          }
+        }else{
+          for (desIndex in sequence(length(desRows))){
+            v <- v * pupko.L[desNodes[desIndex],]
+          }
+          focalRow <- which(phy$edge[,2] == focal)
+          motherRow <- which(phy$edge[,1] == phy$edge[focalRow,1])
+          motherNode <- phy$edge[focalRow,1]
+          if(is.na(known.state.vector[motherNode])){
+            for(row.index in 1:dim(Pij)[1]){
+              L <- Pij[row.index,] * v
+              pupko.L[focal, row.index] <- L[known.state.vector[focal]]
+              pupko.C[focal, row.index] <- known.state.vector[focal]
+            }
+          }else{
+            L <- Pij[known.state.vector[motherNode],] * v
+            pupko.L[focal,] <- L[known.state.vector[focal]]
+            pupko.C[focal,] <- known.state.vector[focal]
+          }
+        }
+        if(sum(pupko.L[focal,])<1e-200){
+          cat("Kicking in arbitrary precision package Rmpfr due to very low probabilities.\n")
+          #Kicks in arbitrary precision calculations:
+          pupko.L <- mpfr(pupko.L, 15)
+        }
+      }
+    }
+    root <- nb.tip + 1L
+    if(get.likelihood == TRUE){
+      loglik <- log(sum(exp(log(root.p)+log(pupko.L[root, ]))))
+      return(as.numeric(loglik))
+    }else{
+      root <- nb.tip + 1L
+      if(is.na(known.state.vector[root])){
+        pupko.L[root, ] <- log(root.p)+log(pupko.L[root, ])
+        lik.states[root] <- which(pupko.L[root,] == max(pupko.L[root,]))[1]
+      }else{
+        lik.states[root] <- known.state.vector[root]
+      }
+      N <- dim(phy$edge)[1]
+      for(i in N:1){
+        anc <- phy$edge[i,1]
+        des <- phy$edge[i,2]
+        lik.states[des] <- pupko.C[des,lik.states[anc]]
+      }
+      #Outputs likeliest tip states
+      obj$lik.tip.states <- lik.states[TIPS]
+      #Outputs likeliest node states
+      obj$lik.anc.states <- lik.states[-TIPS]
+      #Outputs the information gained (in bits) per node
+      obj$info.anc.states <- NULL
+      return(obj)
+    }
+  }
+  
+  if(method=="joint_unc"){
+    if(!is.null(phy$node.label)){
+      tip.state.vector <- rep(NA, Ntip(phy))
+      #We remove the first, because the root state probability comes in through root.p:
+      known.state.vector <- phy$node.label
+      known.state.vector <- c(tip.state.vector, known.state.vector)
+    }else{
+      tip.state.vector <- rep(NA, Ntip(phy))
+      known.state.vector <- rep(NA, Nnode(phy))
+      known.state.vector <- c(tip.state.vector, known.state.vector)
+    }
+    lik.states<-numeric(nb.tip + nb.node)
+    pupko.L <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
+    pupko.C <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
+    for (i  in seq(from = 1, length.out = nb.node)) {
+      #The ancestral node at row i is called focal:
+      focal <- anc[i]
+      #Get descendant information of focal:
+      desRows<-which(phy$edge[,1]==focal)
+      #Get node information for each descendant:
+      desNodes<-phy$edge[desRows,2]
+      
+      #Initiates a loop to check if any nodes are tips:
+      for (desIndex in sequence(length(desRows))){
+        #If a tip calculate C_y(i) for the tips and stores in liks matrix:
+        if(any(desNodes[desIndex]==phy$edge[,1])==FALSE){
+          v <- c(rep(1, k*rate.cat))
+          Pij <- p_mat[,,desRows[desIndex]]
+            # expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+          #Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
+          v <- v * liks[desNodes[desIndex],]
+          L <- Pij %*% v
+          #liks: rows are taxa + internal nodes, cols are # states
+          if(rate.cat > 1){
+            if(is.na(known.state.vector[focal])){
+              chosen <- sample(seq_along(L), 1, prob = L * v)
+              pupko.L[desNodes[desIndex],] <- L[chosen]
+              pupko.C[desNodes[desIndex],] <- chosen
+            }else{
+              chosen <- sample(seq_along(L), 1, prob = L * v)
+              pupko.L[desNodes[desIndex],] <- L[chosen]
+              pupko.C[desNodes[desIndex],] <- chosen
+            }
+          }else{
+            if(is.na(known.state.vector[focal])){
+              pupko.L[desNodes[desIndex],] <- L
+              pupko.C[desNodes[desIndex],] <- which.is.max(L==max(L))
+            }else{
+              pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
+              pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
+            }
+          }
+        }
+      }
+      #Collects t_z, or the branch subtending focal:
+      tz <- phy$edge.length[which(phy$edge[,2] == focal)]
+      if(length(tz)==0){
+        #The focal node is the root, calculate P_k:
+        root.state=1
+        for (desIndex in sequence(length(desRows))){
+          #This is the basic marginal calculation:
+          root.state <- root.state * pupko.L[desNodes[desIndex],]
+        }
+        if(is.na(known.state.vector[focal])){
+          equil.root <- NULL
+          for(i in 1:ncol(Q)){
+            posrows <- which(Q[,i] >= 0)
+            rowsum <- sum(Q[posrows,i])
+            poscols <- which(Q[i,] >= 0)
+            colsum <- sum(Q[i,poscols])
+            equil.root <- c(equil.root,rowsum/(rowsum+colsum))
+          }
+          if (is.null(root.p)){
+            if(is.na(known.state.vector[focal])){
+              flat.root = equil.root
+              k.rates <- 1/length(which(!is.na(equil.root)))
+              flat.root[!is.na(flat.root)] = k.rates
+              flat.root[is.na(flat.root)] = 0
+              #root.p <- c(.6,.4)
+              root.p <- flat.root
+              pupko.L[focal, ] <- root.state
+            }else{
+              root.p <- rep(0, dim(Q)[2])
+              root.p[known.state.vector[focal]] <- 1
+              pupko.L[focal, ] <- root.state
+            }
+          }
+          else{
+            if(is.character(root.p)){
+              # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
+              if(root.p == "yang"){
+                root.p <- Null(Q)
+                root.p <- c(root.p/sum(root.p))
+                pupko.L[focal, ] <- root.state
+              }else{
+                # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
+                root.p <- (root.state / sum(root.state))[ ]
+                pupko.L[focal,] <- root.state
+              }
+            }
+            # root.p!==NULL will fix root probabilities based on user supplied vector:
+            else{
+              root.p <- root.p
+              pupko.L[focal, ] <- root.state
+            }
+          }
+        }else{
+          root.p = rep(0, dim(Q)[1])
+          root.p[known.state.vector[focal]] <- 1
+          pupko.L[focal, ] <- root.state
+        }
+      }
+      #All other internal nodes, except the root:
+      else{
+        #Calculates P_ij(t_z):
+        Pij <- p_mat[,,which(phy$edge[,2] == focal)]
+          # expm(Q * tz, method=c("Ward77"))
+        #Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
+        #Calculates L_z(i):
+        v <- c(rep(1, k*rate.cat))
+        if(is.na(known.state.vector[focal])){
+          for (desIndex in sequence(length(desRows))){
+            v <- v * pupko.L[desNodes[desIndex],]
+          }
+          focalRow <- which(phy$edge[,2]==focal)
+          motherRow <- which(phy$edge[,1]==phy$edge[focalRow,1])
+          motherNode <- phy$edge[focalRow,1]
+          if(is.na(known.state.vector[motherNode])){
+            for(row.index in 1:dim(Pij)[1]){
+              L <- Pij[row.index,] * v # father is row_index
+              chosen <- sample(seq_along(L), 1, prob = L)
+              pupko.L[focal, row.index] <- L[chosen]
+              pupko.C[focal, row.index] <- chosen
+            }
+          }else{
+            L <- Pij[known.state.vector[motherNode],] * v
+            pupko.L[focal,] <- L
+            pupko.C[focal,] <- which.is.max(L)
+          }
+        }else{
+          for (desIndex in sequence(length(desRows))){
+            v <- v * pupko.L[desNodes[desIndex],]
+          }
+          focalRow <- which(phy$edge[,2] == focal)
+          motherRow <- which(phy$edge[,1] == phy$edge[focalRow,1])
+          motherNode <- phy$edge[focalRow,1]
+          if(is.na(known.state.vector[motherNode])){
+            for(row.index in 1:dim(Pij)[1]){
+              L <- Pij[row.index,] * v
+              pupko.L[focal, row.index] <- L[known.state.vector[focal]]
+              pupko.C[focal, row.index] <- known.state.vector[focal]
+            }
+          }else{
+            L <- Pij[known.state.vector[motherNode],] * v
+            pupko.L[focal,] <- L[known.state.vector[focal]]
+            pupko.C[focal,] <- known.state.vector[focal]
+          }
+        }
+        if(sum(pupko.L[focal,])<1e-200){
+          cat("Kicking in arbitrary precision package Rmpfr due to very low probabilities.\n")
+          #Kicks in arbitrary precision calculations:
+          pupko.L <- mpfr(pupko.L, 15)
+        }
+      }
+    }
+    root <- nb.tip + 1L
+    if(get.likelihood == TRUE){
+      loglik <- log(sum(exp(log(root.p)+log(pupko.L[root, ]))))
+      return(as.numeric(loglik))
+    }else{
+      root <- nb.tip + 1L
+      if(is.na(known.state.vector[root])){
+        pupko.L[root, ] <- log(root.p)+log(pupko.L[root, ])
+        lik.states[root] <- which(pupko.L[root,] == max(pupko.L[root,]))[1]
+      }else{
+        lik.states[root] <- known.state.vector[root]
+      }
+      N <- dim(phy$edge)[1]
+      for(i in N:1){
+        anc <- phy$edge[i,1]
+        des <- phy$edge[i,2]
+        lik.states[des] <- pupko.C[des,lik.states[anc]]
+      }
+      #Outputs likeliest tip states
+      obj$lik.tip.states <- lik.states[TIPS]
+      #Outputs likeliest node states
+      obj$lik.anc.states <- lik.states[-TIPS]
+      #Outputs the information gained (in bits) per node
+      obj$info.anc.states <- NULL
+      return(obj)
+    }
+  }
+  
+}
 
 ######################################################################################################################################
 ######################################################################################################################################
