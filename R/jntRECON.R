@@ -1,5 +1,5 @@
 ############################################ compute uncertainty by sampling
-compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, delta = 1.96, break_threshold = 0, remove_outliers = TRUE, ncores = 1){
+compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_threshold = 0, remove_outliers = TRUE, ncores = 1){
   p <- corHMM:::MatrixToPars(res)
   phy <- res$phy
   phy$node.label <- NULL
@@ -42,8 +42,8 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, delta = 
     new_joints_filtered <- new_joints[!duplicated(unlist(lapply(new_joints, "[[", "lnlik")))]
     unique_joints <- c(unique_joints, new_joints_filtered)
     lnliks <- c(lnliks, new_lnliks[!duplicated(new_lnliks)])
-    break_ratio <- sum(new_lnliks[!duplicated(new_lnliks)] >= (best_lnlik - delta))/length(new_lnliks)
-    if (break_ratio < break_threshold) {
+    break_ratio <- length(new_lnliks[!duplicated(new_lnliks)])/length(new_lnliks)
+    if (break_ratio <= break_threshold) {
       break
     }
   }
