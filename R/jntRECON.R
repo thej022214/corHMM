@@ -1,6 +1,6 @@
 ############################################ compute uncertainty by sampling
 compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_threshold = 0, remove_outliers = TRUE, ncores = 1){
-  p <- corHMM:::MatrixToPars(res)
+  p <- MatrixToPars(res)
   phy <- res$phy
   phy$node.label <- NULL
   
@@ -34,30 +34,38 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_th
   unique_joints <- list()
   lnliks <- c()
   total_samples <- 0
-  
+  break_ratio <- Inf
   while (total_samples < max_samples) {
     new_joints <- parallel::mclapply(1:batch_size, function(x) sample_joint(res, corData, model.set.final, p_mat, x), mc.cores = ncores)
     total_samples <- total_samples + batch_size
     new_lnliks <- sapply(new_joints, function(x) x$lnlik)
     new_joints_filtered <- new_joints[!duplicated(unlist(lapply(new_joints, "[[", "lnlik")))]
+    init_number <- length(new_joints_filtered)
     unique_joints <- c(unique_joints, new_joints_filtered)
     lnliks <- c(lnliks, new_lnliks[!duplicated(new_lnliks)])
-    break_ratio <- length(new_lnliks[!duplicated(new_lnliks)])/length(new_lnliks)
+    added_number <- length(unique_joints)
+    unique_joints <- unique_joints[!duplicated(lnliks)]
+    lnliks <- lnliks[!duplicated(lnliks)]
+    final_number <- length(unique_joints)
+    if(total_samples > batch_size){
+      break_ratio <- (added_number - final_number)/init_number
+    }
     if (break_ratio <= break_threshold) {
       break
     }
   }
-  unique_joints <- unique_joints[!duplicated(lnliks)]
-  lnliks <- lnliks[!duplicated(lnliks)]
   
   unique_joints <- unique_joints[!lnliks == -Inf]
   lnliks <- lnliks[!lnliks == -Inf]
   
   if(remove_outliers){
     # remove bad recons for increased consistency
-    iqr_index <- match(boxplot(lnliks, plot = FALSE)$out, lnliks)
-    unique_joints <- unique_joints[-iqr_index]
-    lnliks <- lnliks[-iqr_index]
+    outliers <- boxplot(lnliks, plot = FALSE)$out
+    if(length(outliers) > 0){
+      iqr_index <- match(outliers, lnliks)
+      unique_joints <- unique_joints[-iqr_index]
+      lnliks <- lnliks[-iqr_index]
+    }
   }
   
   state_df <- as.data.frame(do.call(rbind, lapply(unique_joints, "[[", "anc.states")))
@@ -77,7 +85,7 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_th
 }
 
 sample_joint <- function(res, corData, model.set.final, p_mat, x){
-  p <- corHMM:::MatrixToPars(res)
+  p <- MatrixToPars(res)
   res$phy$node.label <- NULL
   states_1 <- ancRECON_internal(phy = res$phy, data = res$data, corData = corData, 
     model.set.final = model.set.final, 
