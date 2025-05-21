@@ -181,7 +181,9 @@ node_importance_by_cluster <- function(state_df, clusters) {
         modal_state = modal_state,
         within_match = within_match,
         other_match = other_match,
-        importance = within_match * (1 - other_match)  # High when consistent in cluster but different outside
+        # importance = within_match * (1 - other_match)
+        importance = (within_match^2) * ((1 - other_match)^2)  # High when consistent in cluster but different outside
+        # importance = exp((within_match-1)) * exp(-other_match)
       )
     })
     
