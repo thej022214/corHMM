@@ -208,16 +208,16 @@ plot_stacked_densities <- function(lnliks, clusters, cols, ...) {
   clusters <- factor(clusters, levels = 1:n_clusters)
   
   plot(NULL, xlim = x_range, ylim = c(0, n_clusters), 
-    xlab = "Log Likelihood", ylab = "Cluster", yaxt = "n", ...)
+    axes = FALSE, ...)
   
-  axis(2, at = seq(0.5, n_clusters-0.5, 1), labels = levels(clusters))
+  axis(1, cex.axis = 0.5)
   
   for(i in seq_along(levels(clusters))) {
     cluster_data <- lnliks[clusters == levels(clusters)[i]]
     if(length(cluster_data) > 0) {
       d <- density(cluster_data)
       scaled_y <- (d$y/max(d$y)) * 0.9
-      polygon(d$x, scaled_y + i - 1, col = cols[i], border = cols[i])
+      polygon(d$x, scaled_y + i - 1, col = cols[i], border = "black")
     }
   }
 }
