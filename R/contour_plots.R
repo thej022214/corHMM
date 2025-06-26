@@ -155,6 +155,73 @@ plot_batch_profile_lik <- function(corhmm_profile, n_cols = NULL, n_rows = NULL,
   par(mar = c(5, 4, 4, 2) + 0.1) # Reset default margins
 }
 
+get_profile_confidence_intervals <- function(corhmm_profile, ci_level = 1.96) {
+  mle_pars <- MatrixToPars(corhmm_profile$corhmm_obj)
+  loglik <- corhmm_profile$corhmm_obj$loglik
+  ci_limit <- loglik - ci_level  
+  
+  n_params <- length(corhmm_profile) - 1
+  ci_results <- list()
+  
+  for (i in 1:n_params) {
+    profile_data <- corhmm_profile[[i]]$profile_table
+    above_threshold <- profile_data$lnLik >= ci_limit
+    
+    if (sum(above_threshold) == 0) {
+      ci_lower <- NA
+      ci_upper <- NA
+    } else {
+      valid_params <- profile_data$par_value[above_threshold]
+      ci_lower <- min(valid_params)
+      ci_upper <- max(valid_params)
+      crossings <- which(diff(above_threshold) != 0)
+      
+      if (length(crossings) >= 2) {
+        idx_lower <- crossings[1]
+        if (profile_data$lnLik[idx_lower] < ci_limit) {
+          x1 <- profile_data$par_value[idx_lower]
+          x2 <- profile_data$par_value[idx_lower + 1]
+          y1 <- profile_data$lnLik[idx_lower]
+          y2 <- profile_data$lnLik[idx_lower + 1]
+          ci_lower <- x1 + (ci_limit - y1) * (x2 - x1) / (y2 - y1)
+        } else {
+          x1 <- profile_data$par_value[idx_lower - 1]
+          x2 <- profile_data$par_value[idx_lower]
+          y1 <- profile_data$lnLik[idx_lower - 1]
+          y2 <- profile_data$lnLik[idx_lower]
+          ci_lower <- x1 + (ci_limit - y1) * (x2 - x1) / (y2 - y1)
+        }
+        
+        idx_upper <- crossings[length(crossings)]
+        if (profile_data$lnLik[idx_upper] < ci_limit) {
+          x1 <- profile_data$par_value[idx_upper - 1]
+          x2 <- profile_data$par_value[idx_upper]
+          y1 <- profile_data$lnLik[idx_upper - 1]
+          y2 <- profile_data$lnLik[idx_upper]
+          ci_upper <- x1 + (ci_limit - y1) * (x2 - x1) / (y2 - y1)
+        } else {
+          x1 <- profile_data$par_value[idx_upper]
+          x2 <- profile_data$par_value[idx_upper + 1]
+          y1 <- profile_data$lnLik[idx_upper]
+          y2 <- profile_data$lnLik[idx_upper + 1]
+          ci_upper <- x1 + (ci_limit - y1) * (x2 - x1) / (y2 - y1)
+        }
+      }
+    }
+    
+    ci_results[[i]] <- data.frame(
+      parameter = paste0("theta_", i),
+      mle = mle_pars[i],
+      ci_lower = ci_lower,
+      ci_upper = ci_upper,
+      ci_level = ci_level
+    )
+  }
+  ci_table <- do.call(rbind, ci_results)
+  rownames(ci_table) <- NULL
+  return(ci_table)
+}
+
   # library(corHMM)
   # data(primates)
   # phy <- multi2di(primates[[1]])
