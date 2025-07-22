@@ -1,5 +1,9 @@
 # exported function for use
 makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 1000, collapse=TRUE){
+  if(any(tree$edge.length<=.Machine$double.eps)){
+    warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
+    tree$edge.length <- tree$edge.length + sqrt(.Machine$double.eps) 
+  }
   model[is.na(model)] <- 0
   diag(model) <- 0
   diag(model) <- -rowSums(model)
