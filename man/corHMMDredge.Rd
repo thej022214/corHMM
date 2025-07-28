@@ -1,149 +1,84 @@
 \name{corHMMDredge}
 \alias{corHMMDredge}
-\title{Automatic search for optimal discrete character model with regularization with Penalization Options}
+\title{Automatic Discovery of Optimal Discrete Character Models via Simulated Annealing}
 \description{
-\code{corHMMDredge} fits a series of hidden Markov models (HMMs) to a given phylogenetic tree and discrete character data to automatically find the optimal model structure. It offers additional options for penalization and optimization compared to the standard \code{corHMM} function.
+This function automates the search for the best-fitting model of discrete character evolution. It uses a combination of simulated annealing and regularization to explore a vast space of possible model structures. This approach helps to identify optimal models without requiring the user to manually specify and compare a large set of candidate models, which is often impractical for complex datasets with multiple characters or hidden rate categories.
 }
 \usage{
-corHMMDredge(phy, 
-  data, 
-  max.rate.cat, 
-  root.p="maddfitz", 
-  pen.type = "l1", 
-  lambda = 0, 
-  drop.par = TRUE, 
-  drop.threshold = 1e-7,  
-  info.threshold=2, 
-  criterion="AIC", 
-  merge.params=TRUE, 
-  merge.threshold=0, 
-  rate.mat=NULL, 
-  node.states = "marginal", 
-  fixed.nodes=FALSE, 
-  ip=NULL, 
-  nstarts=0, 
-  n.cores=1, 
-  get.tip.states = FALSE, 
-  lewis.asc.bias = FALSE, 
-  collapse = FALSE, 
-  lower.bound = 1e-10, 
-  upper.bound = 100, 
-  opts=NULL, 
-  verbose=TRUE, 
-  p=NULL, 
-  rate.cat=NULL, 
-  grad=FALSE)
+corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1, 
+  root.p="maddfitz", pen.type = "l1", lambda = 0, drop.threshold = 1e-7, 
+  criterion="AIC", merge.threshold=0, index_mat=NULL, node.states = "marginal", 
+  fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
+  lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
+  upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE, 
+  max.iterations = 200, initial.temp = 2, cooling.rate = 0.95, 
+  temp.schedule = "exponential", seed = NULL, return.all=FALSE)
 }
 \arguments{
-  \item{phy}{
-    An object of class \code{phylo}, representing the phylogenetic tree.
-  }
-  \item{data}{
-    A data frame containing character states for the tips of the phylogeny. The first column should match the tip labels in \code{phy}, and the second onwards column should contain the observed states.
-  }
-  \item{max.rate.cat}{
-    The maximum number of rate categories to try.
-  }
-  \item{root.p}{
-    A vector of probabilities for the root states or a method to estimate them. The default is the \code{"maddfitz"} method.
-  }
-  \item{pen.type}{
-    The type of penalization applied to the model. Options include \code{"l1"}, \code{"l2"}, \code{"er"}, and \code{"unreg"}. See Details.
-  }
-  \item{lambda}{
-    A hyper-parameter that adjusts the severity of the penalty, ranging from 0 (no regularization) to 1 (full penalization). Default is 0 which makes likleihoods directly comparable to corHMM.
-  }
-  \item{drop.par}{
-    Logical. Whether to drop parameters during optimization based on a threshold. Default is \code{TRUE}.
-  }
-  \item{drop.threshold}{
-    A numeric value determining the threshold below which parameters should be dropped. Default is \code{1e-7}.
-  }
-  \item{info.threshold}{
-    A numeric value specifying the threshold for the amount of information required for parameter estimation. Default is \code{2}.
-  }
-  \item{criterion}{
-    The model selection criterion to use. Options are \code{"AIC"}, \code{"AICc"}, or \code{"BIC"}. Default is \code{"AIC"}.
-  }
-  \item{merge.params}{
-    Logical. Whether to merge similar parameters during the model search. Default is \code{TRUE}.
-  }
-  \item{merge.threshold}{
-    A numeric threshold to determine when parameters should be merged. Default is \code{0}.
-  }
-  \item{rate.mat}{
-    A user-supplied matrix containing indexes of parameters to be optimized. If NULL, an all-rates-different model is estimated.
-  }
-  \item{node.states}{
-    A method for estimating node states. Options include \code{"marginal"}, \code{"joint"}, and \code{"none"}.
-  }
-  \item{fixed.nodes}{
-    Logical. Specifies whether the states for nodes in the phylogeny are assumed fixed. These are supplied as node labels in the \code{phylo} object. Default is \code{FALSE}.
-  }
-  \item{ip}{
-    Initial values used for the likelihood search. Can be a single value or a vector of unique values for each parameter. The default is \code{ip = 1}.
-  }
-  \item{nstarts}{
-    The number of random restarts to be performed. Default is \code{nstarts = 0}.
-  }
-  \item{n.cores}{
-    The number of processor cores to spread out the random restarts. Default is \code{n.cores = 1}.
-  }
-  \item{get.tip.states}{
-    Logical. Indicates whether tip reconstructions should be output. Default is \code{FALSE}.
-  }
-  \item{lewis.asc.bias}{
-    Logical. Indicates whether to correct for observing a dataset that is not univariate. Default is \code{FALSE}.
-  }
-  \item{collapse}{
-    Logical. Indicates whether to collapse branches with no variation in states. Default is \code{FALSE}.
-  }
-  \item{lower.bound}{
-    The lower bound for the rate parameters during optimization. Default is \code{1e-10}.
-  }
-  \item{upper.bound}{
-    The upper bound for the rate parameters during optimization. Default is \code{100}.
-  }
-  \item{opts}{
-    A list of options to pass to \code{nloptr} for controlling optimization behavior.
-  }
-  \item{verbose}{
-    Logical. If \code{TRUE}, detailed messages about the model fitting process will be printed. Default is \code{TRUE}.
-  }
-  \item{p}{
-    A vector of transition rates. Allows the user to calculate the likelihood given a specified set of parameter values to be fixed and calculate the likelihood.
-  }
-  \item{rate.cat}{
-    An integer specifying the number of rate categories in the model. Only useful if fitting a fixed value \code{p}.
-  }
-  \item{grad}{
-    Logical. If \code{TRUE}, numerical gradient-based optimization will be used. Default is \code{FALSE}. This is useful for highly parameterized models, but because it is a numerical gradient it is slow. 
-  }
+  \item{phy}{A phylogenetic tree of class 'phylo'.}
+  \item{data}{A data frame with two or more columns: the first containing species names and the second onwards containing the discrete character states.}
+  \item{max.rate.cat}{The maximum number of hidden rate categories to explore. The dredge will run sequentially from \code{init.rate.cat} up to this value.}
+  \item{init.rate.cat}{The initial number of hidden rate categories to begin the search. Defaults to 1.}
+  \item{root.p}{Specifies the prior on the root state probabilities. Can be "maddfitz", "yang", a vector of probabilities, or NULL (see \code{\link{corHMM}}).}
+  \item{pen.type}{The type of regularization penalty to apply. Options are "l1" (lasso), "l2" (ridge), and "er" (equal rates penalty). Defaults to "l1".}
+  \item{lambda}{A hyper-parameter (from 0 to 1) that controls the severity of the regularization penalty. A value of 0 means no penalization.}
+  \item{drop.threshold}{The rate value below which a parameter becomes a candidate for being dropped (set to 0) during a "drop" move in the simulated annealing search.}
+  \item{criterion}{The information criterion to use for model evaluation during the search. "AIC" (Akaike Information Criterion) or "AICc" (AIC corrected for small sample sizes). Defaults to "AIC".}
+  \item{merge.threshold}{The absolute difference between two rate estimates below which they become candidates for being merged (constrained to be equal) during a "merge" move.}
+  \item{index_mat}{An optional, user-specified rate matrix to begin the search. If NULL, the search starts with a fully parameterized (all rates different) model.}
+  \item{node.states}{The method for ancestral state reconstruction. Options are "marginal", "joint", "scaled", or "none".}
+  \item{fixed.nodes}{Logical, indicating whether to fix the states of nodes with labels in the provided phylogeny.}
+  \item{ip}{Initial parameter values for the optimization routine.}
+  \item{nstarts}{The number of random restarts to perform during optimization for each model visited. Helps in finding the global likelihood peak.}
+  \item{n.cores}{The number of cores to use for parallel processing of random restarts.}
+  \item{get.tip.states}{Logical, whether to estimate the marginal probabilities of states at the tips (useful for cross-validation).}
+  \item{lewis.asc.bias}{Logical, whether to correct for ascertainment bias as described by Lewis (2001).}
+  \item{collapse}{Logical, whether to collapse character states that are not observed in the data.}
+  \item{lower.bound, upper.bound}{The lower and upper bounds for rate parameter estimates.}
+  \item{opts}{A list of control options for the \code{nloptr} optimization routine.}
+  \item{verbose}{Logical, whether to print progress of the search to the console.}
+  \item{p, rate.cat}{Used to fit a single, fixed model. If \code{p} (a vector of parameters) and \code{rate.cat} are provided, the function will not perform the dredge search and instead will return a single model fit.}
+  \item{grad}{Logical, whether to use the gradient-based optimizer "NLOPT_LD_MMA".}
+  \item{max.iterations}{The maximum number of iterations for the simulated annealing search within each rate category.}
+  \item{initial.temp}{The starting "temperature" for the simulated annealing algorithm. Higher values allow the search to more freely explore the model space, accepting worse models with a higher probability.}
+  \item{cooling.rate}{The rate at which the temperature decreases in the simulated annealing search (e.g., T_new = T_old * cooling.rate). Must be between 0 and 1. Defaults to 0.95.}
+  \item{temp.schedule}{The cooling schedule for the temperature. Currently only "exponential" is implemented.}
+  \item{seed}{An integer to set the random seed for reproducibility.}
+  \item{return.all}{Logical. If TRUE, returns a detailed list including all visited models and search diagnostics, not just the pruned final set.}
 }
 \details{
-\code{corHMMDredge} will automatically search different model structures dropping parameters which are estimated near 0 and/or equating parameter values which are near one another. This can be combined with a regularization term (see below) to encrouage lower rate values and thus lead to more parameters being dropped. It will do this iteratively until a stopping criterion is met. The stopping criteria is currently a dAIC of 2, meaning if the next step has made the model worse as indicated by dAIC > 2, the dredge will stop. No model averaging is conducted and only the best model should be used from a dredge search. I explain this in more detail in Boyko (2024), but by dredging we are not specifying a model set ourselves of distinct hypotheses. Model averaging is useful in that case, but not in the dredge case, because each model as it relates to a hypothesis provides unique information about the system, but the dredge model fits can be very similar to one another, differing in only one or two parameters. These do not really provide unique information and are just minor variations of essentially the same model. 
+This function implements an automated model discovery framework for phylogenetic comparative methods based on the work of Boyko (2025). The core of the method is a simulated annealing heuristic search algorithm combined with regularization.
 
-There are 3 penalty types available for users (though this may be expanded in the future). They are \code{l1}, \code{l2}, and \code{er}. The first two penalty types are analagous to lasso and ridge regression. Whereas the \code{er} penalization is analagous to Zhou et al.'s (2024) McLasso and penalizes the distance between rate values (i.e., it prefers rate matrices that are closer to an equal-rates model).
+The algorithm explores the vast space of possible model structures by iteratively proposing modifications to the current model. Three types of moves are used:
+\enumerate{
+  \item \strong{Drop:} A rate parameter is removed from the model (i.e., fixed to zero). Smaller rates are more likely to be dropped.
+  \item \strong{Merge:} Two rate parameters are constrained to be equal. Pairs with more similar estimated rates are more likely to be merged.
+  \item \strong{Free:} A currently constrained (dropped or merged) parameter is freed, allowing it to be estimated independently.
+}
 
-Under an \code{l1} regularization scheme, the likelihood is penalized by the mean transition rate. The mean is used instead of the sum because a sum would overly penalize more complex models by virtue of them having more parameters. This leads to scenarios where simpler models have much better likelihoods than more complex models
+The decision to accept a new model is probabilistic. A proposed model that improves the information criterion score (e.g., lower AIC) is always accepted. A model that is worse may still be accepted with a probability that depends on the current "temperature" of the system. The temperature starts high, allowing broad exploration, and is gradually lowered according to a cooling schedule. As the temperature approaches zero, the algorithm behaves like a greedy hill-climbing search, converging on an optimal solution. To avoid getting stuck in local optima, a restart mechanism is included.
 
-Under an \code{l2} regularization scheme, the likleihood is penalized by the squared mean transition rate. 
-
-Under an \code{er} regularization scheme, the likleihood is penalized by the average distance between parameters. If all the parameters were the same (an equal rates model), the penalty would be 0. 
-
-A user can also set \code{pen.type = 'unreg'} for an unpenalized likelihood which would be identical to the original implementation of \code{corHMM}. More work needs to be done to determine when to use each type of penalization, but generally using any penalization will be good for smaller datasets which tend to be high variance. \code{l2} is the most aggresive penalization, shrinking paramaters more quickly than other methods and leading to more dropped (and potentially finding more unecessary) parameters. \code{er} is the most similar to an unregularized model as it does not necessarily penalize high parameter values. It will however penalize a model that has one parameter that is much higher than the rest unless there is significant evidence that this outlier parameter is needed. In practice, \code{er}, behaves very similarly to unregularized models. \code{l1} regularization is an intermediate penalization between \code{l2} and \code{er}.
-
-The \code{grad} option employs a numerical gradient for the optimization. This is a particularly inefficient way to find a gradient as it will require at least \code{k} iterations per likelihood calculation. However, I have found that this improves the search stability and speed as the number of iterations is greatly reduced when a gradient is provided. This is also important in cases where there are a lot of parameters (\code{k} is large). In these cases the parameter space is so highly dimensional that many search algorithms struggle. In the future I hope to implement a more efficient gradient calculation and combine a gradient based local optimizaiton with a global optimization scheme. 
-
-*Note: Many details of \code{corHMMDredgeBase} and \code{corHMM} are the same and will not be repeated here. If an arguement is unclear check the Details section of \code{corHMM}. The focus of these details will be on the unique aspects of the dredge fitting approach.
+Regularization (L1 or L2) is incorporated into the likelihood calculation. This adds a penalty term for model complexity (either the magnitude or squared magnitude of rate parameters), which helps to prevent overfitting and improve the generalizability of the final model. The \code{lambda} parameter tunes the strength of this penalty.
 }
 \value{
-\code{fit_set} returns an object of class \code{corhmm.dredge}. This is a list of the models being fit. Each element of that list is of class \code{corhmm}.
+By default, an object of class \code{corhmm.dredge}, which is a list containing all unique models that were accepted during the simulated annealing search. The models are pruned to remove redundant entries (i.e., models with identical likelihoods and parameter counts but different rate structures). Each element of the list is a standard \code{corhmm} object. The list is sorted by the information criterion, with the best model first.
+
+If \code{return.all=TRUE}, a list containing two elements:
+  \item{all_models}{The pruned \code{corhmm.dredge} object described above.}
+  \item{sa_fits}{A detailed list containing the raw output from the simulated annealing search for each rate category explored.}
+}
+\author{
+James D. Boyko
+}
+\seealso{
+\code{\link{corHMM}}, \code{\link{kFoldCrossValidation}}
 }
 \examples{
 \donttest{
+library(corHMM)
 data(primates)
 phy <- multi2di(primates[[1]])
+phy$edge.length <- phy$edge.length + 1e-6
 data <- primates[[2]]
 # fit the models following the same input style as corHMM. 
 # here we are NOT going to look for multiple rate classes (max.rate.cat=1)
@@ -152,16 +87,20 @@ dredge_fits <- corHMMDredge(phy = phy,
   max.rate.cat = 1, 
   pen.type = "l1", 
   root.p = "maddfitz", 
-  lambda = 1)
+  lambda = 1, 
+  return.all=TRUE)
+# return.all must be true to get the trace plot
+plotDredgeTrace(dredge_fits)
 # produce a model table
-mod_table <- getModelTable(dredge_fits)
+mod_table <- getModelTable(dredge_fits$all_models)
 print(mod_table)
 # which ever model is best is the one used for downstream analysis
 best_fit <- dredge_fits[[which.min(mod_table$dAIC)]]
 best_fit
+
 # you can also fit dredge without any penalization. 
 # this will make the likelihoods directly comparable with corHMM- just set lambda to 0
-dredge_fits_og <- corHMMDredge(phy = phy, 
+dredge_fits_no_penalty <- corHMMDredge(phy = phy, 
   data = data, 
   max.rate.cat = 1, 
   pen.type = "l1", 
@@ -170,9 +109,11 @@ dredge_fits_og <- corHMMDredge(phy = phy,
 }
 }
 \references{
-Boyko, J. D. 2024. Automatic Discovery of Optimal Discrete Character Models through Regularization.
+Boyko, J.D. (2025). Automatic Discovery of Optimal Discrete Character Models.
+
+Pagel, M., & Meade, A. (2006). Bayesian analysis of correlated evolution of discrete characters by reversible-jump Markov chain Monte Carlo. The American Naturalist, 167(6), 808-825.
+
+Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel inference: a practical information-theoretic approach. Springer-Verlag.
 
 Zhou, Y., Gao, M., Chen, Y., Shi, X., 2024. Adaptive Penalized Likelihood method for Markov Chains. 
 }
-\author{James D. Boyko}
-\keyword{models}

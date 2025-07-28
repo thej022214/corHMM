@@ -1,154 +1,8 @@
 ### corHMM -- Generalized hidden Markov Models
 # automatic fitting 
-corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", 
-  pen.type = "l1", lambda = 0, drop.par = TRUE, drop.threshold = 1e-7,  
-  info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, 
-  rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, 
-  nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, 
-  collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, 
-  verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
-  
-  if((is.null(p) & !is.null(rate.cat))){
-    print("A rate category was given without specifying a parameter vector (p)")
-    return(NULL)
-  }
-  if((!is.null(p) & is.null(rate.cat))){
-    print("A parameter vector (p) was given without specifying a rate category")
-    return(NULL)
-  }
-  
-  # FIXED FIT
-  init.root.p <- root.p
-  if(!is.null(p) & !is.null(rate.cat)){
-    if(verbose){
-      cat("Evaluating fixed parameters p =", p, "\n")
-    }
-    fixd_fit <- corHMMDredgeBase(phy=phy, 
-                                 data=data, 
-                                 rate.cat=rate.cat, 
-                                 root.p=root.p,
-                                 pen.type = pen.type, 
-                                 lambda = lambda, 
-                                 rate.mat=rate.mat, 
-                                 node.states = node.states, 
-                                 fixed.nodes=fixed.nodes, 
-                                 ip=ip, 
-                                 nstarts=nstarts, 
-                                 n.cores=n.cores, 
-                                 get.tip.states = get.tip.states, 
-                                 lewis.asc.bias = lewis.asc.bias, 
-                                 collapse = collapse, 
-                                 lower.bound = lower.bound, 
-                                 upper.bound = upper.bound, 
-                                 opts=opts, 
-                                 p=p,
-                                 grad=FALSE)
-    return(fixd_fit)
-  }
-  
-  # automatic search starting at rate cat 1
-  curr_index_mat <- rate.mat
-  fit_set <- list()
-  model_improved <- TRUE
-  hmm_valid <- TRUE
-  count <- 1
-  current_rate_category <- 1
-  if(verbose){
-    cat("Begining dredge...\n")
-  }
-  while(model_improved){
-    if(!inherits(root.p, "character")){
-      root.p <- rep(init.root.p, current_rate_category)
-    }
-    curr_fit <- try(corHMMDredgeBase(phy=phy, 
-                                 data=data, 
-                                 rate.cat=current_rate_category, 
-                                 root.p=root.p,
-                                 pen.type = pen.type, 
-                                 lambda = lambda, 
-                                 rate.mat=curr_index_mat, 
-                                 node.states = node.states, 
-                                 fixed.nodes=fixed.nodes, 
-                                 ip=ip, 
-                                 nstarts=nstarts, 
-                                 n.cores=n.cores, 
-                                 get.tip.states = get.tip.states, 
-                                 lewis.asc.bias = lewis.asc.bias, 
-                                 collapse = collapse, 
-                                 lower.bound = lower.bound, 
-                                 upper.bound = upper.bound, 
-                                 opts=opts, 
-                                 p=NULL,
-                                 grad=grad))
-    if(inherits(curr_fit, "try-error")){
-      warning("Model fitting failed. Stopping dredge.")
-      model_improved <- FALSE
-      fit_set[[count]] <- curr_fit
-      next
-    }
-    curr_info_criterion <- curr_fit[[criterion]]
-    fit_set[[count]] <- curr_fit
-    if(verbose){
-      cat("\n")
-      cat("AIC:", curr_info_criterion)
-      cat("\nMapping matrix:\n")
-      print(curr_fit$index.mat)
-    }
-    best_info_criterion <- get_best_info_criterion(fit_set, criterion, current_rate_category)
-    model_improved <- diff(c(best_info_criterion, curr_info_criterion)) < info.threshold
-    count <- count + 1
-    if(model_improved | current_rate_category < max.rate.cat){
-      # try dropping pars
-      curr_index_mat <- drop_pars(curr_fit, drop.threshold)
-      if(is.null(curr_index_mat)){
-        # try merging pars
-        curr_index_mat <- merge_pars(curr_fit, merge.threshold)
-        if(is.null(curr_index_mat)){
-          current_rate_category <- current_rate_category + 1
-          model_improved <- TRUE
-          if(current_rate_category > max.rate.cat){
-            model_improved <- FALSE
-          }else{
-            if(curr_fit$rate.cat > 1){
-              # test the current rate category
-              hmm_valid <- test_validity_hmm(curr_fit)
-              if(all(hmm_valid)){
-                cat("\n", "No unique parameters in rate class. Halting dredge", "\n")
-                model_improved <- FALSE
-              }
-            }else{
-              if(verbose){
-                cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
-              }
-            }
-          }
-        }else{
-          if(verbose){
-            cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
-          }
-        }
-      }else{
-        if(verbose){
-          cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
-        }
-      }
-    }
-  }
-  if(verbose){
-    cat("\nDone.\n")
-  }
-  tmp <- try(prune_redundant(fit_set))
-  if(class(tmp) != "try-error"){
-    fit_set <- tmp
-  }
-  class(fit_set) <- "corhmm.dredge"
-  return(fit_set)
-}
-
-corHMMDredgeSA <- function(phy, data, max.rate.cat=1, init.rate.cat=1, 
-  root.p="maddfitz", pen.type = "l1", lambda = 0, drop.par = TRUE, 
-  drop.threshold = 1e-7, info.threshold=2, criterion="AIC", merge.params=TRUE, 
-  merge.threshold=0, index_mat=NULL, node.states = "marginal", 
+corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1, 
+  root.p="maddfitz", pen.type = "l1", lambda = 0, drop.threshold = 1e-7, 
+  criterion="AIC", merge.threshold=0, index_mat=NULL, node.states = "marginal", 
   fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
   lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
   upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE, 
@@ -1560,3 +1414,313 @@ getCVTable <- function(x){
   return(list(score_table=score_table, avg_scores=avg_scores))
 }
 
+plotDredgeTrace <- function(dredge_fits,
+  break_size = 5,
+  palette = c("drop" = "#A23B72",
+    "merge" = "#2E86AB",
+    "free" = "#F18F01",
+    "restart" = "#7209B7",
+    "none" = "grey60"),
+  legend = TRUE,
+  legend.pos = "topright",
+  ...) {
+  
+  # 1. Input Validation
+  if (!is.list(dredge_fits) || !("sa_fits" %in% names(dredge_fits))) {
+    stop("Input must be a corHMMDredge object created with return.all = TRUE.")
+  }
+  
+  sa_fits <- dredge_fits$sa_fits
+  num_fits <- length(sa_fits)
+  if (num_fits == 0) {
+    message("No simulated annealing fits found in the object to plot.")
+    return(invisible(NULL))
+  }
+  
+  # 2. Data Extraction and Combination
+  combined_scores <- list()
+  combined_moves <- list()
+  combined_accepted <- list()
+  fit_lengths <- numeric(num_fits)
+  rate_cat_labels <- sapply(sa_fits, function(x) x$best_fit$rate.cat)
+  
+  for (i in 1:num_fits) {
+    fit_data <- sa_fits[[i]]
+    
+    # Filter out NAs which can occur if the loop ends prematurely
+    valid_indices <- !is.na(fit_data$every_move)
+    
+    scores <- fit_data$every_score[valid_indices]
+    moves <- fit_data$every_move[valid_indices]
+    accepted <- fit_data$accepted[valid_indices]
+    
+    # Treat NAs in 'accepted' vector as not accepted
+    accepted[is.na(accepted)] <- 0
+    # The first step is the initial model, so it's "accepted" by definition
+    if(length(accepted) > 0) accepted[1] <- 1
+    
+    combined_scores[[i]] <- scores
+    combined_moves[[i]] <- moves
+    combined_accepted[[i]] <- accepted
+    fit_lengths[i] <- length(scores)
+  }
+  
+  # Interleave the data with NAs for breaks between rate category runs
+  final_scores <- unlist(lapply(1:num_fits, function(i) {
+    if (i < num_fits) c(combined_scores[[i]], rep(NA, break_size)) else combined_scores[[i]]
+  }))
+  final_moves <- unlist(lapply(1:num_fits, function(i) {
+    if (i < num_fits) c(combined_moves[[i]], rep(NA, break_size)) else combined_moves[[i]]
+  }))
+  final_accepted <- unlist(lapply(1:num_fits, function(i) {
+    if (i < num_fits) c(combined_accepted[[i]], rep(NA, break_size)) else combined_accepted[[i]]
+  }))
+  
+  # Calculate positions for vertical separator lines
+  vline_pos <- cumsum(fit_lengths)[-num_fits] + (1:(num_fits-1)) * break_size - break_size/2
+  
+  # 3. Plot Setup
+  all_possible_moves <- unique(unlist(combined_moves, use.names = FALSE), na.rm = TRUE)
+  
+  # Ensure all moves in the data have a color assigned from the palette
+  missing_moves <- setdiff(all_possible_moves, names(palette))
+  if (length(missing_moves) > 0) {
+    new_colors <- setNames(rep("grey50", length(missing_moves)), missing_moves)
+    palette <- c(palette, new_colors)
+    warning("Some move types were not in the default palette and have been assigned a default color.")
+  }
+  move_colors <- palette[all_possible_moves]
+  
+  if(all(is.na(final_scores))) {
+    message("No scores available to plot.")
+    return(invisible(NULL))
+  }
+  
+  y_range <- diff(range(final_scores, na.rm = TRUE))
+  y_bottom <- min(final_scores, na.rm = TRUE) - y_range * 0.25
+  y_top <- max(final_scores, na.rm = TRUE) + y_range * 0.05
+  total_len <- length(final_scores)
+  
+  # Default plot arguments, can be overridden by user with `...`
+  plot_args <- list(x = seq_along(final_scores), y = final_scores, type = "n",
+    ylim = c(y_bottom, y_top), xlim = c(0.5, total_len + 0.5),
+    xlab = "Iteration", ylab = "Information Criterion Score",
+    main = "Simulated Annealing Trace",
+    las = 1, bty = "l", xaxs = "i")
+  
+  user_args <- list(...)
+  for (arg_name in names(user_args)) {
+    plot_args[[arg_name]] <- user_args[[arg_name]]
+  }
+  
+  # Create the empty plot
+  do.call(graphics::plot, plot_args)
+  
+  # 4. Plotting Elements
+  # **FIXED LINE HERE**
+  graphics::abline(h = pretty(final_scores, n = 8), col = "gray90", lty = 1, lwd = 0.5)
+  
+  # Add separator lines and labels for different rate category runs
+  if (num_fits > 1) {
+    graphics::abline(v = vline_pos, col = "gray40", lty = "dashed", lwd = 1.5)
+    text_pos <- c(fit_lengths[1]/2, vline_pos + break_size/2 + fit_lengths[-1]/2)
+    # Ensure there are labels for all fits
+    if (length(rate_cat_labels) == num_fits){
+      labels <- paste(rate_cat_labels, "Rate Class(es)")
+      graphics::mtext(labels, side=1, line=2.5, at=text_pos, cex=0.9)
+    }
+  }
+  
+  graphics::lines(seq_along(final_scores), final_scores, lwd = 1.5, col = "gray50")
+  
+  accepted_idx <- which(final_accepted == 1)
+  rejected_idx <- which(final_accepted == 0)
+  
+  graphics::points(accepted_idx, final_scores[accepted_idx], 
+    col = "darkgreen", pch = 19, cex = 1.0)
+  
+  graphics::points(rejected_idx, final_scores[rejected_idx], 
+    col = "firebrick", pch = 4, cex = 0.8, lwd = 1.5)
+  
+  # Draw the bar at the bottom indicating the move type at each iteration
+  rect_height_fraction <- 0.15
+  rect_bottom <- y_bottom + y_range * 0.05
+  rect_top <- rect_bottom + y_range * rect_height_fraction
+  
+  for(i in seq_along(final_scores)) {
+    if(!is.na(final_moves[i])) {
+      graphics::rect(xleft = i - 0.5, 
+        xright = i + 0.5,
+        ybottom = rect_bottom,
+        ytop = rect_top,
+        col = move_colors[final_moves[i]],
+        border = 'grey20')
+    }
+  }
+  
+  # Add legend
+  if (legend) {
+    legend_labels <- c("Accepted", "Rejected", names(move_colors))
+    legend_colors <- c("darkgreen", "firebrick", move_colors)
+    legend_pch <- c(19, 4, rep(15, length(move_colors)))
+    legend_lwd <- c(NA, 1.5, rep(NA, length(move_colors)))
+    legend_pt.cex <- c(1.0, 0.8, rep(1.5, length(move_colors)))
+    
+    graphics::legend(legend.pos,
+      legend = legend_labels,
+      col = legend_colors,
+      pch = legend_pch,
+      lwd = legend_lwd,
+      pt.cex = legend_pt.cex,
+      bty = "n",
+      cex = 0.8)
+  }
+  
+  return(invisible(NULL))
+}
+
+# old version that doesn't use simm ann
+# corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", 
+#   pen.type = "l1", lambda = 0, drop.par = TRUE, drop.threshold = 1e-7,  
+#   info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, 
+#   rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, 
+#   nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, 
+#   collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, 
+#   verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
+#   
+#   if((is.null(p) & !is.null(rate.cat))){
+#     print("A rate category was given without specifying a parameter vector (p)")
+#     return(NULL)
+#   }
+#   if((!is.null(p) & is.null(rate.cat))){
+#     print("A parameter vector (p) was given without specifying a rate category")
+#     return(NULL)
+#   }
+#   
+#   # FIXED FIT
+#   init.root.p <- root.p
+#   if(!is.null(p) & !is.null(rate.cat)){
+#     if(verbose){
+#       cat("Evaluating fixed parameters p =", p, "\n")
+#     }
+#     fixd_fit <- corHMMDredgeBase(phy=phy, 
+#       data=data, 
+#       rate.cat=rate.cat, 
+#       root.p=root.p,
+#       pen.type = pen.type, 
+#       lambda = lambda, 
+#       rate.mat=rate.mat, 
+#       node.states = node.states, 
+#       fixed.nodes=fixed.nodes, 
+#       ip=ip, 
+#       nstarts=nstarts, 
+#       n.cores=n.cores, 
+#       get.tip.states = get.tip.states, 
+#       lewis.asc.bias = lewis.asc.bias, 
+#       collapse = collapse, 
+#       lower.bound = lower.bound, 
+#       upper.bound = upper.bound, 
+#       opts=opts, 
+#       p=p,
+#       grad=FALSE)
+#     return(fixd_fit)
+#   }
+#   
+#   # automatic search starting at rate cat 1
+#   curr_index_mat <- rate.mat
+#   fit_set <- list()
+#   model_improved <- TRUE
+#   hmm_valid <- TRUE
+#   count <- 1
+#   current_rate_category <- 1
+#   if(verbose){
+#     cat("Begining dredge...\n")
+#   }
+#   while(model_improved){
+#     if(!inherits(root.p, "character")){
+#       root.p <- rep(init.root.p, current_rate_category)
+#     }
+#     curr_fit <- try(corHMMDredgeBase(phy=phy, 
+#       data=data, 
+#       rate.cat=current_rate_category, 
+#       root.p=root.p,
+#       pen.type = pen.type, 
+#       lambda = lambda, 
+#       rate.mat=curr_index_mat, 
+#       node.states = node.states, 
+#       fixed.nodes=fixed.nodes, 
+#       ip=ip, 
+#       nstarts=nstarts, 
+#       n.cores=n.cores, 
+#       get.tip.states = get.tip.states, 
+#       lewis.asc.bias = lewis.asc.bias, 
+#       collapse = collapse, 
+#       lower.bound = lower.bound, 
+#       upper.bound = upper.bound, 
+#       opts=opts, 
+#       p=NULL,
+#       grad=grad))
+#     if(inherits(curr_fit, "try-error")){
+#       warning("Model fitting failed. Stopping dredge.")
+#       model_improved <- FALSE
+#       fit_set[[count]] <- curr_fit
+#       next
+#     }
+#     curr_info_criterion <- curr_fit[[criterion]]
+#     fit_set[[count]] <- curr_fit
+#     if(verbose){
+#       cat("\n")
+#       cat("AIC:", curr_info_criterion)
+#       cat("\nMapping matrix:\n")
+#       print(curr_fit$index.mat)
+#     }
+#     best_info_criterion <- get_best_info_criterion(fit_set, criterion, current_rate_category)
+#     model_improved <- diff(c(best_info_criterion, curr_info_criterion)) < info.threshold
+#     count <- count + 1
+#     if(model_improved | current_rate_category < max.rate.cat){
+#       # try dropping pars
+#       curr_index_mat <- drop_pars(curr_fit, drop.threshold)
+#       if(is.null(curr_index_mat)){
+#         # try merging pars
+#         curr_index_mat <- merge_pars(curr_fit, merge.threshold)
+#         if(is.null(curr_index_mat)){
+#           current_rate_category <- current_rate_category + 1
+#           model_improved <- TRUE
+#           if(current_rate_category > max.rate.cat){
+#             model_improved <- FALSE
+#           }else{
+#             if(curr_fit$rate.cat > 1){
+#               # test the current rate category
+#               hmm_valid <- test_validity_hmm(curr_fit)
+#               if(all(hmm_valid)){
+#                 cat("\n", "No unique parameters in rate class. Halting dredge", "\n")
+#                 model_improved <- FALSE
+#               }
+#             }else{
+#               if(verbose){
+#                 cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+#               }
+#             }
+#           }
+#         }else{
+#           if(verbose){
+#             cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+#           }
+#         }
+#       }else{
+#         if(verbose){
+#           cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
+#         }
+#       }
+#     }
+#   }
+#   if(verbose){
+#     cat("\nDone.\n")
+#   }
+#   tmp <- try(prune_redundant(fit_set))
+#   if(class(tmp) != "try-error"){
+#     fit_set <- tmp
+#   }
+#   class(fit_set) <- "corhmm.dredge"
+#   return(fit_set)
+# }
