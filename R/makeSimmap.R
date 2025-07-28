@@ -1,5 +1,4 @@
-# exported function for use
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 1000, collapse=TRUE){
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 100000, collapse=TRUE){
   if(any(tree$edge.length<=.Machine$double.eps)){
     warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
     tree$edge.length <- tree$edge.length + sqrt(.Machine$double.eps) 
@@ -8,14 +7,6 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   diag(model) <- 0
   diag(model) <- -rowSums(model)
   conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony, collapse=collapse)
-  # if(!is.null(tip.probs)){
-  #   for(i in 1:dim(conditional.lik$tip.states)[1]){
-  #     nCol <- dim(tip.probs)[2]
-  #     tmp <- vector("numeric", nCol)
-  #     tmp[sample(1:nCol, 1, prob = tip.probs[i,])] <- 1
-  #     conditional.lik$tip.states[i, ] <- tmp
-  #   }
-  # }
   if(length(fix.node) != length(fix.state)){
     stop("The number of nodes supplied to be fixed does not match the number of states provided.",.call=FALSE)
   }
@@ -384,7 +375,6 @@ getSimmapLik <- function(simmap, Q){
   return(lik)
 }
 
-# The Floyd–Warshall algorithm (also known as Floyd's algorithm, the Roy–Warshall algorithm, the Roy–Floyd algorithm, or the WFI algorithm) is an algorithm for finding shortest paths in a directed weighted graph with positive or negative edge weights (but with no negative cycles).
 FloydWalshAlg <- function(model, init, final){
   nStates <- dim(model)[1]
   Dist <- matrix(Inf, nStates, nStates)
@@ -422,6 +412,123 @@ FloydWalshAlg <- function(model, init, final){
   return(path)
 }
 
+summarize_single_simmap <- function(simmap){
+  transition_index <- which(unlist(lapply(simmap$maps, length)) > 1)
+  bt <- branching.times(simmap)
+  transition_df <- data.frame(branch_id = NA, transition = NA, age = NA)
+  for(i in seq_along(transition_index)){
+    single_map <- simmap$maps[[transition_index[i]]]
+    for(j in 2:length(single_map)){
+      transition <- paste(names(single_map)[j-1], names(single_map)[j], sep = ",")
+      branch_index <- simmap$edge[transition_index[i],1] - Ntip(simmap)
+      timing <- bt[branch_index] - sum(single_map[1:j-1])
+      tmp <- data.frame(branch_id = transition_index[i], transition = transition, age = timing)
+      transition_df <- rbind(transition_df, tmp)
+    }
+  }
+  transition_df <- transition_df[-1,]
+  rownames(transition_df) <- NULL
+  return(transition_df)
+}
+
+summarize_transition_stats <- function(simmap_summaries) {
+  num_sims <- length(simmap_summaries)
+  all_transitions_df <- do.call(rbind, simmap_summaries)
+  unique_transitions <- unique(all_transitions_df$transition)
+  counts_per_sim <- lapply(simmap_summaries, function(df) {
+    table(factor(df$transition, levels = unique_transitions))
+  })
+  counts_matrix <- do.call(rbind, counts_per_sim)
+  avg_counts <- colMeans(counts_matrix)
+  sd_counts <- apply(counts_matrix, 2, sd)
+  avg_ages <- aggregate(age ~ transition, data = all_transitions_df, FUN = mean)
+  sd_ages <- aggregate(age ~ transition, data = all_transitions_df, FUN = sd)
+  summary_df <- data.frame(
+    transition = names(avg_counts),
+    avg_count = avg_counts,
+    sd_count = sd_counts
+  )
+  summary_df <- merge(summary_df, avg_ages, by = "transition")
+  summary_df <- merge(summary_df, sd_ages, by = "transition", suffixes = c("_avg", "_sd"))
+  names(summary_df)[names(summary_df) == "age_avg"] <- "avg_age"
+  names(summary_df)[names(summary_df) == "age_sd"] <- "sd_age"
+  rownames(summary_df) <- NULL
+  return(summary_df)
+}
+
+plot_transition_summary <- function(simmap_summaries, cols = NULL) {
+  all_transitions_df <- do.call(rbind, simmap_summaries)
+  if (nrow(all_transitions_df) == 0) {
+    warning("The provided simmap summaries are empty. No plots will be generated.")
+    return(invisible(NULL))
+  }
+  
+  unique_transitions <- sort(unique(all_transitions_df$transition))
+  counts_per_sim <- lapply(simmap_summaries, function(df) {
+    table(factor(df$transition, levels = unique_transitions))
+  })
+  counts_matrix <- do.call(rbind, counts_per_sim)
+  counts_df <- as.data.frame(counts_matrix)
+  
+  if (is.null(cols)) {
+    cols <- c("#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F",
+      "#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC")
+  }
+  plot_cols <- rep(cols, length.out = length(unique_transitions))
+  transparent_cols <- adjustcolor(plot_cols, alpha.f = 0.3)
+  
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+  par(mfrow = c(1, 2), oma = c(0, 0, 3, 0))
+  
+  par(mar = c(5, 4, 4, 1))
+  boxplot(counts_df,
+    las = 2,
+    col = plot_cols,
+    main = "Distribution of Transition Counts",
+    ylab = "Count per Simulation",
+    xlab = "",
+    border = "gray40",
+    outline = FALSE)
+  
+  stripchart(counts_df,
+    vertical = TRUE,
+    method = "jitter",
+    add = TRUE,
+    pch = 19,
+    col = transparent_cols)
+  
+  par(mar = c(5, 5, 4, 2))
+  n_transitions <- length(unique_transitions)
+  overlap_factor <- 0.8
+  xlim_age <- range(all_transitions_df$age, na.rm = TRUE)
+  ylim_age <- c(0.5, n_transitions + overlap_factor)
+  
+  plot(0, type = 'n',
+    xlim = xlim_age,
+    ylim = ylim_age,
+    main = "Distribution of Transition Ages",
+    xlab = "Age (Time from Root)",
+    ylab = "",
+    yaxt = "n")
+  
+  axis(2, at = (1:n_transitions) + (overlap_factor / 3), labels = unique_transitions, las = 1)
+  
+  for (i in 1:n_transitions) {
+    current_transition <- unique_transitions[i]
+    ages_current <- all_transitions_df$age[all_transitions_df$transition == current_transition]
+    
+    if (length(ages_current) > 1) {
+      d <- density(ages_current, from = xlim_age[1], to = xlim_age[2])
+      scaled_y <- d$y / max(d$y, na.rm = TRUE) * overlap_factor
+      polygon(c(d$x, rev(d$x)), c(scaled_y + i, rep(i, length(d$y))),
+        col = plot_cols[i],
+        border = "gray40")
+    }
+  }
+  
+  mtext("Summary of Transition Counts and Ages", outer = TRUE, cex = 1.5, line = 0.5)
+}
 # simmap <- makeSimmap(tree=phy, tip.states=tip.states, states=states, model=model, 
 #                      nSim=10, nCores=1)
 # 
