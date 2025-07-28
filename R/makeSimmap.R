@@ -508,7 +508,7 @@ plot_transition_summary <- function(simmap_summaries, cols = NULL) {
     xlim = xlim_age,
     ylim = ylim_age,
     main = "Distribution of Transition Ages",
-    xlab = "Age (Time from Root)",
+    xlab = "Age (Time from present)",
     ylab = "",
     yaxt = "n")
   
