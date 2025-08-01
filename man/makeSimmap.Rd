@@ -38,7 +38,12 @@ MK <- corHMM(phy, data, 1)
 
 ##get simmap from corhmm solution
 model <- MK$solution
-simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=1, nSim=1, nCores=1)
+simmaps <- makeSimmap(tree=phy, data=data, model=model, rate.cat=1, nSim=100, nCores=1)
+
+## get the summary
+simmap_summaries <- lapply(simmaps, summarize_single_simmap)
+summary_df <- summarize_transition_stats(simmap_summaries)
+print(summary_df)
 
 ## we import phytools plotSimmap for plotting
 # library(phytools)
@@ -55,4 +60,3 @@ Revell, L. J. 2012. phytools: an R package for phylogenetic comparative biology 
 Steel, M., and D. Penny. 2000. Parsimony, Likelihood, and the Role of Models in Molecular Phylogenetics. Molecular Biology and Evolution 17:839-850.
 }
 \author{James D. Boyko}
-\keyword{models}
