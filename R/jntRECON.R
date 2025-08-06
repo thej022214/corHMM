@@ -879,8 +879,8 @@ plot_clustered_phylo <- function(
           x1 = anc_xy[1],
           y1 = anc_xy[2],
           col = cluster_colors[i],
-          lwd = segment_params$lwd %||% edge_width,
-          lty = segment_params$lty %||% 2)
+          lwd = if (!is.null(segment_params$lwd)) segment_params$lwd else edge_width,
+          lty = if (!is.null(segment_params$lty)) segment_params$lty else 2)
       }
     }
   }
