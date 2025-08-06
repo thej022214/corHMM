@@ -128,10 +128,10 @@ ComputeCI <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=T
     return(dented_results)
 }
 
-print.corhmm_confidence <- function(obj) {
-	obj_rates <- as.data.frame(obj[,-1])
-	best_index <- which.max(obj$lnL)[1]
-	cat("Range of log likelihoods is ", max(obj$lnL), " to ", min(obj$lnL), " a difference of ", max(obj$lnL)- min(obj$lnL), "\n", sep="")
+print.corhmm_confidence <- function(x, ...) {
+	obj_rates <- as.data.frame(x[,-1])
+	best_index <- which.max(x$lnL)[1]
+	cat("Range of log likelihoods is ", max(x$lnL), " to ", min(x$lnL), " a difference of ", max(x$lnL)- min(x$lnL), "\n", sep="")
 	result <- data.frame(min=apply(obj_rates, 2, min), best=simplify2array(unname(obj_rates[best_index,,drop=TRUE])), max=apply(obj_rates, 2, max))
 	rownames(result) <- colnames(obj_rates)
 	for (i in sequence(ncol(obj_rates))) {

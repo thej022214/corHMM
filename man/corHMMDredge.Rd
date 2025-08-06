@@ -95,17 +95,16 @@ plotDredgeTrace(dredge_fits)
 mod_table <- getModelTable(dredge_fits$all_models)
 print(mod_table)
 # which ever model is best is the one used for downstream analysis
-best_fit <- dredge_fits[[which.min(mod_table$dAIC)]]
-best_fit
+best_fit <- dredge_fits$all_models[[which.min(mod_table$dAIC)]]
 
 # you can also fit dredge without any penalization. 
 # this will make the likelihoods directly comparable with corHMM- just set lambda to 0
-dredge_fits_no_penalty <- corHMMDredge(phy = phy, 
-  data = data, 
-  max.rate.cat = 1, 
-  pen.type = "l1", 
-  root.p = "maddfitz", 
-  lambda = 0)
+# dredge_fits_no_penalty <- corHMMDredge(phy = phy, 
+#  data = data, 
+#  max.rate.cat = 1, 
+#  pen.type = "l1", 
+#  root.p = "maddfitz", 
+#  lambda = 0)
 }
 }
 \references{

@@ -28,12 +28,6 @@ The graphical output consists of two main panels:
 }
 
 }
-
-
-\seealso{
-\code{\link{summarize_simmaps}} for the functions used to generate the input for this plot.
-}
-
 \examples{
 \dontrun{
 data(primates)

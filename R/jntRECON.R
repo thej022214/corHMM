@@ -367,7 +367,7 @@ get_xx_yy <- function (x, type = "phylogram", use.edge.length = TRUE, node.pos =
     }
     if (type == "tidy") {
       if (!show.tip.label) {
-        yy <- tidy.xy(z$edge, Ntip, Nnode, xx, yy)
+        yy <- tidy.xy_cp(z$edge, Ntip, Nnode, xx, yy)
       }
       else {
         xx.tips <- xx[1:Ntip]
@@ -376,7 +376,7 @@ get_xx_yy <- function (x, type = "phylogram", use.edge.length = TRUE, node.pos =
           x$tip.label, pin1, cex)
         xx2 <- xx
         xx2[1:Ntip] <- xx2[1:Ntip] + lab.strlength
-        yy <- tidy.xy(z$edge, Ntip, Nnode, xx2, yy)
+        yy <- tidy.xy_cp(z$edge, Ntip, Nnode, xx2, yy)
       }
     }
   }
@@ -549,6 +549,106 @@ get_xx_yy <- function (x, type = "phylogram", use.edge.length = TRUE, node.pos =
     1
   else NA
   return(list(xx = xx, yy = yy))
+}
+
+tidy.xy_cp <- function(edge, Ntip, Nnode, xx, yy){
+  yynew <- yy
+  oedge <- edge[match(seq_len(Ntip + Nnode), edge[, 2]), 1]
+  segofnodes <- data.frame(x1 = xx[oedge], y1 = yy, x2 = xx, 
+    y2 = yy)
+  postordernodes <- edge[, 2]
+  nodes <- c(postordernodes[order(xx[postordernodes], decreasing = TRUE)], 
+    Ntip + 1)
+  GetContourPairsFromSegments <- function(seg, which) {
+    if (nrow(seg) > 1) {
+      allx <- sort(unique(c(seg$x1, seg$x2)))
+      newx2 <- allx[2:length(allx)]
+      if (which == "top") {
+        newy2i <- sapply(newx2, function(cx, se) which(cx > 
+            se$x1 & cx <= se$x2)[which.max(se$y1[which(cx > 
+                se$x1 & cx <= se$x2)])], se = seg)
+      }
+      if (which == "bottom") {
+        newy2i <- sapply(newx2, function(cx, se) which(cx > 
+            se$x1 & cx <= se$x2)[which.min(se$y1[which(cx > 
+                se$x1 & cx <= se$x2)])], se = seg)
+      }
+      newx1 <- allx[1:(length(allx) - 1)]
+      newy1i <- newy2i
+      where2mergei <- which((newy1i[2:length(newy1i)] - 
+          newy2i[1:(length(newy1i) - 1)]) == 0)
+      if (length(where2mergei) > 0) {
+        newx1 <- newx1[-(where2mergei + 1)]
+        newy1i <- newy1i[-(where2mergei + 1)]
+        newx2 <- newx2[-(where2mergei)]
+        newy2i <- newy2i[-(where2mergei)]
+      }
+      newy1ok <- seg$y1[newy1i]
+      newy2ok <- newy1ok
+      newseg <- data.frame(x1 = newx1, y1 = newy1ok, x2 = newx2, 
+        y2 = newy2ok)
+    }
+    else {
+      newseg <- seg
+    }
+    newseg
+  }
+  GetMinDistBetweenContours <- function(topcontour, bottomcontour) {
+    d <- NULL
+    topi <- 1
+    boti <- 1
+    while ((topi <= nrow(topcontour)) & (boti <= nrow(bottomcontour))) {
+      d <- c(d, bottomcontour[boti, ]$y1 - topcontour[topi, 
+      ]$y1)
+      if (bottomcontour[boti, ]$x2 < topcontour[topi, ]$x2) 
+        boti <- boti + 1
+      else topi <- topi + 1
+    }
+    min(d)
+  }
+  N <- list()
+  for (n in nodes) {
+    N[[n]] <- list()
+    childs <- edge[edge[, 1] == n, 2]
+    childs.ord <- childs[order(yy[childs])]
+    desc <- c(childs, unlist(lapply(N[childs], function(x) x$desc)))
+    diffiny <- 0
+    if (n > Ntip) {
+      oldyofcurrentnode <- yynew[n]
+      for (nn in 2:length(childs.ord)) {
+        top <- N[[childs.ord[nn - 1]]]$segtop
+        bot <- N[[childs.ord[nn]]]$segbottom
+        mindist <- GetMinDistBetweenContours(top, bot)
+        if (mindist != 1) {
+          mod <- mindist - 1
+          N[[childs.ord[nn]]]$segbottom[, c(2, 4)] <- N[[childs.ord[nn]]]$segbottom[, 
+            c(2, 4)] - mod
+          N[[childs.ord[nn]]]$segtop[, c(2, 4)] <- N[[childs.ord[nn]]]$segtop[, 
+            c(2, 4)] - mod
+          yynew[c(childs.ord[nn], N[[childs.ord[nn]]]$desc)] <- yynew[c(childs.ord[nn], 
+            N[[childs.ord[nn]]]$desc)] - mod
+        }
+      }
+      newyofcurrentnode <- mean(range(yynew[childs.ord]))
+      yynew[n] <- newyofcurrentnode
+      diffiny <- oldyofcurrentnode - newyofcurrentnode
+    }
+    descseg <- segofnodes[n, ]
+    descseg[, c(2, 4)] <- descseg[, c(2, 4)] - diffiny
+    segtop.pre <- rbind(descseg, do.call(rbind, lapply(N[childs], 
+      function(x) x$segtop)))
+    segtop <- GetContourPairsFromSegments(segtop.pre, "top")
+    segbottom.pre <- rbind(descseg, do.call(rbind, lapply(N[childs], 
+      function(x) x$segbottom)))
+    segbottom <- GetContourPairsFromSegments(segbottom.pre, 
+      "bottom")
+    N[[n]]$childs <- childs.ord
+    N[[n]]$desc <- desc
+    N[[n]]$segtop <- segtop
+    N[[n]]$segbottom <- segbottom
+  }
+  yynew <- yynew - (min(yynew) - 1)
+  yynew
 }
 
 

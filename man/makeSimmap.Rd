@@ -4,7 +4,7 @@
 \description{Produces a character history given some of the outputs of a corHMM object.}
 \usage{
 makeSimmap(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL,
-fix.state=NULL, parsimony = FALSE, max.attempt = 1000, collapse=TRUE)
+fix.state=NULL, parsimony = FALSE, max.attempt = 1e5, collapse=TRUE)
 }       
 \arguments{
 \item{tree}{A phylogeny of class phylo.}

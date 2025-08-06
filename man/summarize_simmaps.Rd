@@ -1,4 +1,4 @@
-\name{summarize_simmaps}
+\name{summarize_transition_stats}
 \alias{summarize_single_simmap}
 \alias{summarize_transition_stats}
 \title{

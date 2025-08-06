@@ -28,7 +28,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       cat("Evaluating fixed parameters p =", p, "\n")
     }
     fixd_fit <- corHMMDredgeBase(phy=phy, data=data, rate.cat=rate.cat, 
-      root.p=root.p, pen.type = pen.type, lambda = lambda, rate.mat=rate.mat, 
+      root.p=root.p, pen.type = pen.type, lambda = lambda, rate.mat=index_mat, 
       node.states = node.states, fixed.nodes=fixed.nodes, ip=ip, 
       nstarts=nstarts, n.cores=n.cores, get.tip.states = get.tip.states, 
       lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
