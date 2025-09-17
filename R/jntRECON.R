@@ -217,7 +217,8 @@ plot_stacked_densities <- function(lnliks, clusters, cols, ...) {
     if(length(cluster_data) > 0) {
       d <- density(cluster_data)
       scaled_y <- (d$y/max(d$y)) * 0.9
-      polygon(d$x, scaled_y + i - 1, col = cols[i], border = "black")
+      y_pos <- rev(seq_along(levels(clusters)))[i]
+      polygon(d$x, scaled_y + y_pos - 1, col = cols[i], border = "black")
     }
   }
 }
