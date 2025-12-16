@@ -101,11 +101,12 @@ correctMapName <- function(map_element, state_names){
 simCharHistory <- function(phy, Pj, root, model, vector.form = FALSE){
   # organize
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
+  lnliks <- numeric(length(cladewise.index))
   # combine data in order of the edge matrix
   state.sample <- matrix(0, dim(Pj)[3], dim(Pj)[2])
   # sample the root
-  anc.index <- phy$edge[cladewise.index[1],1]
-  state.sample[anc.index,] <- c(rmultinom(1, 1, root))
+  root.index <- phy$edge[cladewise.index[1],1]
+  state.sample[root.index,] <- c(rmultinom(1, 1, root))
   # single sim function, not needed since we already calculated all possible probablities. now we just need to sample from those probabilities given the ancestral node.
   # state.samples <- simSingleCharHistory(phy, model, cladewise.index, state.probability, state.sample)
   for(i in cladewise.index){
@@ -118,9 +119,11 @@ simCharHistory <- function(phy, Pj, root, model, vector.form = FALSE){
       state.sample <- simCharHistory(phy, Pj, root, model, vector.form = FALSE)
       return(state.sample)
     }
-    state.sample[dec.index,] <- c(rmultinom(1, 1, p))
+    state_i <- c(rmultinom(1, 1, p))
+    lnliks[i] <- log(p[state_i==1])
+    state.sample[dec.index,] <- state_i
   }
-  if(vector.form == FALSE){
+  if(!vector.form){
     state.sample <- apply(state.sample, 1, function(y) which(y == 1))
   }
   return(state.sample)
@@ -194,7 +197,7 @@ simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model, max.
 }
 
 # simulate a substitution history given the simulations of ancestral states
-simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.attempt = 1000){
+simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.attempt = 1000, vector.form=FALSE, return.char = FALSE){
   # set-up
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # a potential speedup is to calculate all Pij (bollback eq.3) for all branches first
@@ -213,7 +216,10 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.at
     count <- count + 1
   }
   # simulate a character history
-  CharHistories <- lapply(1:nSim, function(x) simCharHistory(phy=phy, Pj=Pj, root=states[1,], model=model))
+  CharHistories <- lapply(1:nSim, function(x) simCharHistory(phy=phy, Pj=Pj, root=states[1,], model=model, vector.form=vector.form))
+  if(return.char){
+    return(CharHistories)
+  }
   obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model, max.attempt), mc.cores = nCores)
   return(obj)
 }
@@ -229,15 +235,18 @@ convertSubHistoryToEdge <- function(phy, map){
 }
 
 # get the conditional likelihoods of particular nodes
-getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE, collapse=TRUE){
+getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE, collapse=TRUE, model.set.final=NULL){
   phy <- reorder(tree, "pruningwise")
   nb.node <- phy$Nnode
   nb.tip <- length(phy$tip.label)
-  # process the data to match the liks table
-  CorData <- corProcessData(data, collapse=collapse)
-  nObs <- length(CorData$ObservedTraits)
   # get the liks table
-  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, ntraits = nObs, model = "ER", collapse=collapse, rate.mat=model)
+  if(is.null(model.set.final)){
+    # process the data to match the liks table
+    CorData <- corProcessData(data, collapse=collapse)
+    nObs <- length(CorData$ObservedTraits)
+    model.set.final <- rate.cat.set.corHMM.JDB(phy=phy,data=data, rate.cat=rate.cat, 
+      ntraits = nObs, model = "ER", collapse=collapse, rate.mat=model)
+  }
   if(parsimony==TRUE){
     model <- model/1000
   }

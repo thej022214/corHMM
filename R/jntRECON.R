@@ -1,19 +1,23 @@
 ############################################ compute uncertainty by sampling
-compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_threshold = 0, remove_outliers = TRUE, ncores = 1){
+compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, 
+  break_threshold = 0, remove_outliers = TRUE, ncores = 1, p_method="simmap"){
   p <- MatrixToPars(res)
   phy <- res$phy
   phy$node.label <- NULL
   
   corData <- corProcessData(res$data, collapse = res$collapse)
-  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy, data=res$data, rate.cat=res$rate.cat, ntraits = NULL, model = "ARD", rate.mat=res$index.mat, collapse = res$collapse)
+  model.set.final <- rate.cat.set.corHMM.JDB(phy=phy, data=res$data, 
+    rate.cat=res$rate.cat, ntraits = NULL, model = "ARD", 
+    rate.mat=res$index.mat, collapse = res$collapse)
   index_mat <- model.set.final$index.matrix
   index_mat[is.na(index_mat)] <- 0
   Q <- matrix(0, nrow=nrow(index_mat), ncol=ncol(index_mat))
   Q[index_mat > 0] <- p[index_mat[index_mat > 0]]
   diag(Q) <- -rowSums(Q)
-  # pre calculate all necessary matrix expm
-  p_mat <- vapply(phy$edge.length, function(x) expm(Q * x, method = "Ward77"), FUN.VALUE = matrix(0, nrow(Q), ncol(Q)))
   
+  # pre calculate all necessary matrix expm
+  p_mat <- vapply(phy$edge.length, function(x) expm(Q * x, method = "Ward77"), 
+    FUN.VALUE = matrix(0, nrow(Q), ncol(Q)))
   # you've tried the best
   best_joint <- ancRECON_internal(phy = phy, data = res$data, corData = corData, 
     model.set.final = model.set.final, 
@@ -22,7 +26,6 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_th
     rate.mat = res$index.mat, root.p = res$root.p, 
     get.likelihood = FALSE)
   phy$node.label <- best_joint$lik.anc.states
-  
   best_lnlik <- ancRECON_internal(phy = phy, data = res$data, corData = corData, 
     model.set.final = model.set.final, 
     p_mat = p_mat, p = p, method = "joint", 
@@ -31,12 +34,32 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_th
     get.likelihood = TRUE)
   
   # now try the rest
+  ## adjustments to use stochastic mapping conditional likelihoods instead of pupko based.
+  conditional.lik <- getConditionalNodeLik(phy, res$data, Q, res$rate.cat,
+    res$root.p, model.set.final=model.set.final)
+  
   unique_joints <- list()
   lnliks <- c()
   total_samples <- 0
   break_ratio <- Inf
   while (total_samples < max_samples) {
-    new_joints <- parallel::mclapply(1:batch_size, function(x) sample_joint(res, corData, model.set.final, p_mat, x), mc.cores = ncores)
+    if(p_method == "marginal"){
+      margin_recon <- ancRECON(phy = res$phy, data = res$data, p = corHMM:::MatrixToPars(res), method = "marginal", 
+        rate.cat = res$rate.cat, ntraits = NULL, rate.mat = res$index.mat, root.p = res$root.p)
+      new_joints <- lapply(1:batch_size, function(x) 
+        sample_marginal(res, margin_recon, corData, model.set.final, p_mat, x))
+    }else if (p_method == "simmap"){
+      state_set <- simSubstHistory(phy, 
+        conditional.lik$tip.states, conditional.lik$node.states, 
+        Q, batch_size, nCores,vector.form=FALSE, return.char=TRUE)
+      new_joints <- lapply(state_set, function(x) 
+        sample_joint(res, corData, model.set.final, p_mat, x))
+    }else{ # pupko
+      new_joints <- parallel::mclapply(1:batch_size, function(x) 
+        sample_joint_pupko(res, corData, model.set.final, p_mat, x), 
+        mc.cores = ncores)
+    }
+    # check batch and number of samples
     total_samples <- total_samples + batch_size
     new_lnliks <- sapply(new_joints, function(x) x$lnlik)
     new_joints_filtered <- new_joints[!duplicated(unlist(lapply(new_joints, "[[", "lnlik")))]
@@ -84,7 +107,23 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, break_th
   ))
 }
 
-sample_joint <- function(res, corData, model.set.final, p_mat, x){
+sample_joint <- function(res, corData, model.set.final, p_mat, state_set){
+  p <- MatrixToPars(res)
+  phy <- res$phy
+  phy$node.label <- NULL
+  tip.states <- state_set[1:Ntip(phy)]
+  node.states <- state_set[-(1:Ntip(phy))] 
+  phy$node.label <- node.states
+  lnlik <- ancRECON_internal(phy = phy, data = res$data, corData = corData, 
+    model.set.final = model.set.final, 
+    p_mat = p_mat, p = p, method = "joint", 
+    rate.cat = res$rate.cat, ntraits = NULL, 
+    rate.mat = res$index.mat, root.p = res$root.p, 
+    get.likelihood = TRUE)
+  return(list(tip.states = tip.states, anc.states = node.states, lnlik=lnlik))
+}
+
+sample_joint_pupko <- function(res, corData, model.set.final, p_mat, x){
   p <- MatrixToPars(res)
   res$phy$node.label <- NULL
   states_1 <- ancRECON_internal(phy = res$phy, data = res$data, corData = corData, 
@@ -102,6 +141,24 @@ sample_joint <- function(res, corData, model.set.final, p_mat, x){
     get.likelihood = TRUE)
   return(list(tip.states = states_1$lik.tip.states, anc.states = states_1$lik.anc.states, lnlik=lnlik))
 }
+
+sample_marginal <- function(res, margin_recon, corData, model.set.final, p_mat, x){
+  p <- MatrixToPars(res)
+  res$phy$node.label <- NULL
+  node_states <- apply(margin_recon$lik.anc.states, 1, 
+    function(x) sample(1:ncol(margin_recon$lik.anc.states), 1, prob = x))
+  tip_states <- apply(margin_recon$lik.tip.states, 1, 
+    function(x) sample(1:ncol(margin_recon$lik.tip.states), 1, prob = x))
+  res$phy$node.label <- node_states
+  lnlik <- ancRECON_internal(phy = res$phy, data = res$data, corData = corData, 
+    model.set.final = model.set.final, 
+    p_mat = p_mat, p = p, method = "joint", 
+    rate.cat = res$rate.cat, ntraits = NULL, 
+    rate.mat = res$index.mat, root.p = res$root.p, 
+    get.likelihood = TRUE)
+  return(list(tip.states = tip_states, anc.states = node_states, lnlik=lnlik))
+}
+
 
 compute_joint_results <- function(sim_result) {
   res <- sim_result$res
