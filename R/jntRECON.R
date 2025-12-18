@@ -1,6 +1,6 @@
 ############################################ compute uncertainty by sampling
 compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000, 
-  remove_outliers = TRUE, ncores = 1, p_method="simmap"){
+  remove_outliers = TRUE, p_method="simmap"){
   p <- MatrixToPars(res)
   phy <- res$phy
   phy$node.label <- NULL
@@ -52,7 +52,7 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000,
     }else if (p_method == "simmap"){
       state_sets <- simSubstHistory(phy, 
         conditional.lik$tip.states, conditional.lik$node.states, 
-        Q, batch_size, nCores,vector.form=FALSE, return.char=TRUE)
+        Q, batch_size, nCores = 1,vector.form=FALSE, return.char=TRUE)
       state_sets <- state_sets[!duplicated(state_sets)]
       new_joints <- lapply(state_sets, function(x) 
         calculate_asr_likelihood(res, corData, model.set.final, p_mat, x))
