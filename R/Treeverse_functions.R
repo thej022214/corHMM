@@ -211,55 +211,6 @@ return(node.frame)
 # 5         148      155 
 }
 
-print.corhmm<-function(x,...){
-    if (inherits(x$phy, "multiPhylo") || is.list(x$phy)){
-    ntips=Ntip(x$phy[[1]])
-    output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips,x$ntrees, row.names="")
-    names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax","ntrees")
-    cat("\nFit\n")
-    print(output)
-    cat("\n")
-    }else {
-    ntips=Ntip(x$phy)
-    output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
-    names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
-    cat("\nFit\n")
-    print(output)
-    cat("\n")
-    }
-
-    UserStates <- gsub("_", "|", corProcessData(x$data)$PossibleTraits)
-    ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
-
-    cat("Legend\n")
-    print(ColNames)
-    print(UserStates)
-    cat("\n")
-    
-    param.est<- x$solution
-    cat("Rates\n")
-    print(param.est)
-    cat("\n")
-
-	if(!is.null(x$tip.fog.probs)){
-		cat("Tip fog\n")
-		print(x$tip.fog.probs)
-		cat("\n")
-	}
-	
-    if(any(x$eigval<0)){
-        index.matrix <- x$index.mat
-        #If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
-        if (any(x$eigval<0)) {
-            cat("The objective function may be at a saddle point", "\n")
-        }
-    }
-    else{
-        cat("Arrived at a reliable solution","\n")
-    }
-
-}
-
 corHMM_treeverse_dev <- function(p, phy_list, data, weights_vector, rate.cat, rate.mat, model, root.p, tip.fog, collapse, node.states="none"){
 	p <- exp(p) # Taking the exponential of p (rate transitions vector)
 	ntrees <- length(phy_list) # length of nni trees
