@@ -461,6 +461,26 @@ summarize_transition_stats <- function(simmap_summaries) {
   summary_df <- merge(summary_df, sd_ages, by = "transition", suffixes = c("_avg", "_sd"))
   names(summary_df)[names(summary_df) == "age_avg"] <- "avg_age"
   names(summary_df)[names(summary_df) == "age_sd"] <- "sd_age"
+  
+  first_transition_times <- do.call(
+    rbind,
+    lapply(seq_along(simmap_summaries), function(i) {
+      df <- simmap_summaries[[i]]
+      first_df <- aggregate(age ~ transition, data = df, FUN = max)
+      first_df$sim <- i
+      first_df
+    })
+  )
+  
+  avg_first_age <- aggregate(age ~ transition, data = first_transition_times, mean)
+  sd_first_age  <- aggregate(age ~ transition, data = first_transition_times, sd)
+  
+  names(avg_first_age)[2] <- "avg_first_age"
+  names(sd_first_age)[2]  <- "sd_first_age"
+  
+  summary_df <- merge(summary_df, avg_first_age, by = "transition", all.x = TRUE)
+  summary_df <- merge(summary_df, sd_first_age,  by = "transition", all.x = TRUE)
+  
   rownames(summary_df) <- NULL
   return(summary_df)
 }
