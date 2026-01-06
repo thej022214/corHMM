@@ -719,14 +719,22 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
 
 
 print.corhmm<-function(x,...){
-    
+    if (inherits(x$phy, "multiPhylo") || is.list(x$phy)){
+    ntips=Ntip(x$phy[[1]])
+    output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips,x$ntrees, row.names="")
+    names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax","ntrees")
+    cat("\nFit\n")
+    print(output)
+    cat("\n")
+    }else {
     ntips=Ntip(x$phy)
     output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
     names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
     cat("\nFit\n")
     print(output)
     cat("\n")
-    
+    }
+
     UserStates <- gsub("_", "|", corProcessData(x$data)$PossibleTraits)
     ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
 
@@ -756,6 +764,7 @@ print.corhmm<-function(x,...){
     else{
         cat("Arrived at a reliable solution","\n")
     }
+
 }
 
 # function for calculating PIR according to gardner and organ (2021)
