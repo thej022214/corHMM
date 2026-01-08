@@ -46,7 +46,7 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000,
       margin_recon <- ancRECON(phy = res$phy, data = res$data, p = corHMM:::MatrixToPars(res), method = "marginal", 
         rate.cat = res$rate.cat, ntraits = NULL, rate.mat = res$index.mat, root.p = res$root.p)
       state_sets <- sample_marginal(res, batch_size, margin_recon, corData, model.set.final, p_mat)
-      state_sets <- state_sets[!duplicated(state_sets),]
+      state_sets <- state_sets[!duplicated(state_sets), , drop = FALSE]
       new_joints <- apply(state_sets, 1, function(x) 
         calculate_asr_likelihood(res, corData, model.set.final, p_mat, x))
     }else if (p_method == "simmap"){
@@ -57,7 +57,7 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000,
       new_joints <- lapply(state_sets, function(x) 
         calculate_asr_likelihood(res, corData, model.set.final, p_mat, x))
     }else{ # pupko
-      state_sets <- sample_joint_pupko(res, batch_size, margin_recon, corData, model.set.final, p_mat)
+      state_sets <- sample_joint_pupko(res, batch_size, corData, model.set.final, p_mat)
       state_sets <- state_sets[!duplicated(state_sets)]
       new_joints <- lapply(state_sets, function(x) 
         calculate_asr_likelihood(res, corData, model.set.final, p_mat, x))
@@ -100,7 +100,7 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000,
   ))
 }
 
-sample_joint_pupko <- function(res, n_sample, corData, model.set.final, p_mat, x){
+sample_joint_pupko <- function(res, n_sample, corData, model.set.final, p_mat){
   p <- MatrixToPars(res)
   res$phy$node.label <- NULL
   all_states <- lapply(1:n_sample, function(x)
