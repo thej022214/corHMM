@@ -1,0 +1,48 @@
+./tests/testthat/testlikelihood.R:  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=2, rate.mat = rate.mat, p = p, root.p = NULL, tip.fog=0)
+./tests/testthat/testlikelihood.R:  rate.mat <- corHMM:::rate.mat.maker(rate.cat=2, model="ER")
+./tests/testthat/testlikelihood.R:  corHMM.fogest.hrm <- corHMM(phy, phydat.new, model="ER", rate.cat=2, rate.mat=rate.mat, tip.fog=c(1,1))
+./R/fitCorrelationTest.R:  hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = indep_model_2, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./R/fitCorrelationTest.R:  hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = corr_model_2, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./R/fitCorrelationTest.R:    simplified_hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_indep_model_2, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./R/fitCorrelationTest.R:    simplified_hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_corr_model_2, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./R/confidence.R:	#return(dev.corhmm(log(par), corhmm_object$phy, liks=42, Q=42, rate=42, root.p=corhmm.object$root.p, rate.cat=42, order.test=42, lewis.asc.bias=ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE)))
+./vignettes/corHMMv2.1-vignette.Rmd:HMM_3state <- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM", get.tip.states = TRUE)
+./vignettes/corHMMv2.1-vignette.Rmd:simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=2, nSim=1, nCores=1)
+./vignettes/corHMMv2.1-vignette.Rmd:pp.estfog2.2cat <- corHMM(phy, phydat.new, model="ER", rate.cat=2, tip.fog=c(1,2))
+./vignettes/corHMMv2.1-vignette.Rmd:plotMKmodel(FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
+./vignettes/corHMMv2.1-vignette.Rmd:HMM_3state_custom <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")
+./vignettes/corHMMv2.1-vignette.Rmd:plotMKmodel(MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
+./vignettes/corHMMv2.1-vignette.Rmd:MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none", root.p = "maddfitz")
+./vignettes/corHMMv2.1-vignette.Rmd:Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat, root.p = "maddfitz")
+./vignettes/corHMMv2.1-vignette.Rmd:fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ARD", rate.cat=2, fixed.nodes=TRUE)
+./man/getFullMat.Rd:CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
+./man/plotMKmodel.Rd:plotMKmodel(HMM, rate.cat = 2)
+./man/plotMKmodel.Rd:CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
+./docs/articles/corHMMv2.1-vignette.html:<code class="sourceCode R"><span><span class="co">## HMM_3state &lt;- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM", get.tip.states = TRUE)</span></span>
+./docs/articles/corHMMv2.1-vignette.html:<code class="sourceCode R"><span><span class="co">## HMM_3state_custom &lt;- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")</span></span>
+./docs/articles/corHMMv2.1-vignette.html:<code class="sourceCode R"><span><span class="co">## MFT_res.corHMM &lt;- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none", root.p = "maddfitz")</span></span>
+./docs/articles/corHMMv2.1-vignette.html:<pre><code><span><span class="co">## Warning in corHMM(phy, data[, c(1, 2)], model = "ARD", rate.cat = 2,</span></span>
+./misc/ratecat_ex.txt:./tests/testthat/testlikelihood.R:  corHMM.new <- corHMM(phy, data, model="ARD", rate.cat=2, rate.mat = rate.mat, p = p, root.p = NULL, tip.fog=0)
+./misc/ratecat_ex.txt:./tests/testthat/testlikelihood.R:  rate.mat <- corHMM:::rate.mat.maker(rate.cat=2, model="ER")
+./misc/ratecat_ex.txt:./tests/testthat/testlikelihood.R:  corHMM.fogest.hrm <- corHMM(phy, phydat.new, model="ER", rate.cat=2, rate.mat=rate.mat, tip.fog=c(1,1))
+./misc/ratecat_ex.txt:./R/fitCorrelationTest.R:  hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = indep_model_2, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./misc/ratecat_ex.txt:./R/fitCorrelationTest.R:  hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = corr_model_2, collapse = FALSE, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./misc/ratecat_ex.txt:./R/fitCorrelationTest.R:    simplified_hidden_independent_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_indep_model_2, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./misc/ratecat_ex.txt:./R/fitCorrelationTest.R:    simplified_hidden_correlated_model_fit <- silence(corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = simp_corr_model_2, root.p=root.p, nstarts=nstarts, n.cores=n.cores))
+./misc/ratecat_ex.txt:./R/confidence.R:	#return(dev.corhmm(log(par), corhmm_object$phy, liks=42, Q=42, rate=42, root.p=corhmm.object$root.p, rate.cat=42, order.test=42, lewis.asc.bias=ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE)))
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:HMM_3state <- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM", get.tip.states = TRUE)
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:simmap <- makeSimmap(tree=phy, data=data, model=model, rate.cat=2, nSim=1, nCores=1)
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:pp.estfog2.2cat <- corHMM(phy, phydat.new, model="ER", rate.cat=2, tip.fog=c(1,2))
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:plotMKmodel(FullMat, rate.cat = 2, display = "row", text.scale = 0.7)
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:HMM_3state_custom <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:plotMKmodel(MFT_FullMat, rate.cat = 3, display = "square", text.scale = 0.9)
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:MFT_res.corHMM <- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none", root.p = "maddfitz")
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:Precur_res.corHMM <- corHMM(phy = phy, data = Precur_Dat, rate.cat = 2, rate.mat = Precur_FullMat, root.p = "maddfitz")
+./misc/ratecat_ex.txt:./vignettes/corHMMv2.1-vignette.Rmd:fix.node64.noestrus <- corHMM(phy, data[,c(1,2)], model="ARD", rate.cat=2, fixed.nodes=TRUE)
+./misc/ratecat_ex.txt:./man/getFullMat.Rd:CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
+./misc/ratecat_ex.txt:./man/plotMKmodel.Rd:plotMKmodel(HMM, rate.cat = 2)
+./misc/ratecat_ex.txt:./man/plotMKmodel.Rd:CustomModel <- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = HMM, node.states = "none")
+./misc/ratecat_ex.txt:./docs/articles/corHMMv2.1-vignette.html:<code class="sourceCode R"><span><span class="co">## HMM_3state &lt;- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM", get.tip.states = TRUE)</span></span>
+./misc/ratecat_ex.txt:./docs/articles/corHMMv2.1-vignette.html:<code class="sourceCode R"><span><span class="co">## HMM_3state_custom &lt;- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")</span></span>
+./misc/ratecat_ex.txt:./docs/articles/corHMMv2.1-vignette.html:<code class="sourceCode R"><span><span class="co">## MFT_res.corHMM &lt;- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none", root.p = "maddfitz")</span></span>
+./misc/ratecat_ex.txt:./docs/articles/corHMMv2.1-vignette.html:<pre><code><span><span class="co">## Warning in corHMM(phy, data[, c(1, 2)], model = "ARD", rate.cat = 2,</span></span>

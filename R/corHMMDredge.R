@@ -7,7 +7,8 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
   upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE, 
   max.iterations = 200, initial.temp = 2, cooling.rate = 0.95, 
-  temp.schedule = "exponential", seed = NULL, return.all=FALSE) {
+  temp.schedule = "exponential", seed = NULL, return.all=FALSE,
+  rate.mat = NULL) {
   
   if((is.null(p) & !is.null(rate.cat))){
     print("A rate category was given without specifying a parameter vector (p)")

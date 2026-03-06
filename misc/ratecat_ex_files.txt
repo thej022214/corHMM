@@ -1,0 +1,16 @@
+## files with rate.cat = 2 examples
+
+./tests/testthat/testlikelihood.R
+./vignettes/corHMMv2.1-vignette.Rmd
+./man/plotMKmodel.Rd
+./man/getFullMat.Rd
+
+## a little less relevant
+
+./R/fitCorrelationTest.R
+
+## almost certainly not relevant
+
+./R/confidence.R
+./docs/articles/corHMMv2.1-vignette.html
+

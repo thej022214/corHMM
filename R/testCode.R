@@ -146,5 +146,3 @@ GetMarginalBrute <- function(phy, data, p, root.p, n.states, node.fixed, state.f
     }
     return(marginals.x)
 }
-
-

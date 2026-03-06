@@ -1,0 +1,115 @@
+---
+title: "corHMM performance comparisons"
+date: today
+date-format: "D MMM YYYY"
+format:
+  html:
+    embed-resources: true
+code-fold: true    
+---
+
+
+```{r pkgs, message = FALSE}
+library(tidyverse)
+theme_set(theme_bw() + theme(panel.spacing = grid::unit(0, "lines")))
+```
+
+```{r get_data}
+dd <- readRDS("benchmark2.rds")
+if (!is.data.frame(dd)) dd <- do.call(rbind, dd)
+print(nrow(dd))
+```
+
+```{r manipulate}
+ddt <- (dd
+  |> select(c(seed, ntrait, ntaxa, model, ends_with("time")))
+  |> pivot_longer(ends_with("time"))
+  |> mutate(across(name, ~ stringr::str_remove(., "\\.time$")))
+  |> separate(name, into = c("method", "type"), sep = "_")
+)
+
+dd_bad <- (dd |>
+           mutate(ldiff = RTMB_loglik-orig_loglik,
+                  bad = case_when(abs(ldiff)<(1e-2) ~ "OK",
+                                  ldiff < 0 ~ "RTMB",
+                                  ldiff > 0 ~ "orig")) |>
+           select(c(seed, ntrait, ntaxa, model, bad, ldiff))
+)
+
+ddtb <- full_join(ddt, dd_bad,
+                  by = c("seed", "ntrait", "ntaxa", "model"))
+```
+
+## Achieved goodness-of-fit
+
+Looking at the differences in log-likelihoods between RTMB (nlminb) and original (subplex) optimization:
+
+```{r diffs}
+dd2 <- dd |>
+  mutate(ldiff = RTMB_loglik-orig_loglik) |>
+  arrange(ldiff) |>
+  mutate(n = seq(n()))
+ggplot(dd2, aes(n, ldiff)) + geom_point() +
+  labs(y = "log-lik diff\n(negative means RTMB is worse")
+```
+
+The worst differences are slightly worse for RTMB ...
+
+```{r diff-sum}
+summary(dd2$ldiff)
+```
+
+... but RTMB is actually worse than orig less of the time ...
+
+```{r tab}
+ldiff_tab <- prop.table(table(cut(dd2$ldiff,
+                                  c(-Inf, -1e-3, 1e-3, Inf),
+                                  labels = c("RTMB worse", "equivalent", "orig worse"))))
+knitr::kable(ldiff_tab, digits = 3)
+```
+
+In what cases do mismatches in log-likelihood occur, and how bad are they?
+
+This shows time on the y-axis (sort of irrelevant), which fit is bad (worse log-likelihood). 
+
+```{r badplot}
+ggplot(filter(ddtb, type == "opt" & method == "RTMB"), aes(ntaxa, value)) +
+  geom_point(aes(colour = bad, size = 0.2 + abs(ldiff))) +
+  scale_x_log10() + scale_y_log10() +
+  scale_colour_manual(values = c(adjustcolor("grey", alpha.f = 0.2),
+                                 palette()[c(4, 2)])) +
+  scale_size(range = c(3, 10)) +
+  labs(y="time (s) for RTMB")
+```
+
+Bad RTMB fits are most likely for small data sets, bad orig fits are more evenly distributed
+
+## Time
+
+Overall comparison of time between methods: 'opt' is optimization time only, 'tot' includes input processing etc..
+
+```{r timeplot1, message = FALSE, fig.width = 8}
+ggplot(ddt, aes(ntaxa, value, colour = method)) +
+  geom_point(aes(shape = factor(ntrait))) +
+  scale_x_log10() + scale_y_log10() +
+  facet_wrap(~type) +
+  geom_smooth(aes(linetype = factor(ntrait)))
+```
+
+RTMB is about 1.5 orders of magnitude faster on average. I'm a little bit surprised that the scaling is about the same (i.e. parallel slopes), I might have expected RTMB to scale better ... ?
+
+(`ntrait = 3` is *faster* on average?? weird.)
+
+
+And subdividing trends/points by model type (all-different vs symmetric)
+
+```{r timeplot2, message=FALSE, fig.width=8}
+ggplot(ddt, aes(ntaxa, value, colour = interaction(model, ntrait))) +
+  geom_point() +
+  scale_x_log10() + scale_y_log10() +
+  facet_wrap(~type) +
+  geom_smooth(aes(group=interaction(method, model, ntrait),
+                  fill=interaction(model, ntrait)))
+```
+
+

@@ -1,3 +1,14 @@
 inst/doc
 *.Rhistory
+*~
+\#*
+.#*
+*_cache/
+*_files/
 .DS_Store
+*~
+**/#*
+**/.#*
+accessoryglands
+*.Rout
+.RData

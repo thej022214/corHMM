@@ -7,7 +7,7 @@ corHMM(phy, data, rate.cat, rate.mat=NULL, model = "ARD",
 node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", 
 tip.fog=NULL, ip=NULL, fog.ip=0.01, nstarts=0, n.cores=1, 
 get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = TRUE, 
-lower.bound = 1e-9, upper.bound = 100, opts=NULL)
+lower.bound = 1e-9, upper.bound = 100, opts=NULL, return.devfun = FALSE, use_RTMB = FALSE)
 }
 \arguments{
 \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -30,6 +30,8 @@ lower.bound = 1e-9, upper.bound = 100, opts=NULL)
 \item{lower.bound}{lower bound for the likelihood search. The default is \code{lower.bound=1e-9}.}
 \item{upper.bound}{upper bound for the likelihood search. The default is \code{upper.bound=100}.}
 \item{opts}{options to pass to nloptr. default is \code{NULL}.}
+\item{return.devfun}{return deviance function?}
+\item{use_RTMB}{use RTMB for optimization?}
 }
 \details{
 This function takes a tree and a trait file and estimates transition rates and ancestral states for any number of discrete characters using a Markov model with or without "hidden" states. Users are advised to read the _Generalized corHMM_ vignette for details on how to make full use of \code{corHMM}'s new functionality. In general, these models describe evolution as discrete transitions between observed states. If \code{ rate.cat} > 1, then the model is a hidden Markov model (HMM; also known as a hidden rates model (HRM)). The HRM is a generalization of the covarion model that allows different rate classes to be treated as "hidden" states. Essentially a hidden Markov model allows for multiple processes to describe the evolution of your observed character. This could be another (hidden) state or a large group of them. Regardless of the reason, an HMM is saying that not all observed characters are expected to act the same way. 

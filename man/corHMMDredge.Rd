@@ -12,7 +12,7 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
   lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
   upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE, 
   max.iterations = 200, initial.temp = 2, cooling.rate = 0.95, 
-  temp.schedule = "exponential", seed = NULL, return.all=FALSE)
+  temp.schedule = "exponential", seed = NULL, return.all=FALSE, rate.mat = NULL)
 }
 \arguments{
   \item{phy}{A phylogenetic tree of class 'phylo'.}
@@ -44,7 +44,10 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
   \item{cooling.rate}{The rate at which the temperature decreases in the simulated annealing search (e.g., T_new = T_old * cooling.rate). Must be between 0 and 1. Defaults to 0.95.}
   \item{temp.schedule}{The cooling schedule for the temperature. Currently only "exponential" is implemented.}
   \item{seed}{An integer to set the random seed for reproducibility.}
-  \item{return.all}{Logical. If TRUE, returns a detailed list including all visited models and search diagnostics, not just the pruned final set.}
+  \item{return.all}{Logical. If TRUE, returns a detailed list including
+    all visited models and search diagnostics, not just the pruned final
+   set.}
+ \item{rate.mat}{FIXME}
 }
 \details{
 This function implements an automated model discovery framework for phylogenetic comparative methods based on the work of Boyko (2025). The core of the method is a simulated annealing heuristic search algorithm combined with regularization.

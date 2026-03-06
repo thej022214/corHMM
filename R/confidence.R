@@ -1,7 +1,7 @@
 #' Compute confidence around rate estimates
-#' 
-#' corHMM gives a single point estimate of rates, but this point estimate could be very uncertain. A traditional way to evaluate confidence is to vary each parameter until the log likelihood gets 2 units worse, while holding other parameters at their maximum likelihood estimates. That's fine and fast, but it can be misled by ridges. So, instead, we want all values that lead to a likelihood within two log likelihood units of the best. The range will be at least as wide as the univariate estimates but probably much larger. 
-#' 
+#'
+#' corHMM gives a single point estimate of rates, but this point estimate could be very uncertain. A traditional way to evaluate confidence is to vary each parameter until the log likelihood gets 2 units worse, while holding other parameters at their maximum likelihood estimates. That's fine and fast, but it can be misled by ridges. So, instead, we want all values that lead to a likelihood within two log likelihood units of the best. The range will be at least as wide as the univariate estimates but probably much larger.
+#'
 #' @param corhmm.object The result of a corHMM search
 #' @param desired.delta How many log likelihood units to deviate from the optimal likelihood from
 #' @param n.points How many points to use
@@ -10,8 +10,8 @@
 #' @param use.pbapply If TRUE, use the pbapply package to give output for the multivariate fitting
 #' @param n.cores If using pbapply, batch the analyses across this many cores
 #' @param ... Other arguments to pass into the likelihood function.
-#' @export 
-#' @examples 
+#' @export
+#' @examples
 #' 	data(primates)
 #'	phy <- multi2di(primates[[1]])
 #'	data <- primates[[2]]
@@ -89,17 +89,17 @@
 # }
 
 #' Compute confidence around rate estimates
-#' 
-#' corHMM gives a single point estimate of rates, but this point estimate could be very uncertain. A traditional way to evaluate confidence is to vary each parameter until the log likelihood gets 2 units worse, while holding other parameters at their maximum likelihood estimates. That's fine and fast, but it can be misled by ridges. So, instead, we want all values that lead to a likelihood within two log likelihood units of the best. The range will be at least as wide as the univariate estimates but probably much larger. 
-#' 
+#'
+#' corHMM gives a single point estimate of rates, but this point estimate could be very uncertain. A traditional way to evaluate confidence is to vary each parameter until the log likelihood gets 2 units worse, while holding other parameters at their maximum likelihood estimates. That's fine and fast, but it can be misled by ridges. So, instead, we want all values that lead to a likelihood within two log likelihood units of the best. The range will be at least as wide as the univariate estimates but probably much larger.
+#'
 #' @param corhmm.object The result of a corHMM search
 #' @param desired.delta How many log likelihood units to deviate from the optimal likelihood from
 #' @param n.points How many points to use
 #' @param print_freq Output progress every print_freq steps.
 #' @param verbose If TRUE, print details of the search to the screen
 #' @param ... Other arguments to pass into the likelihood function.
-#' @export 
-#' @examples 
+#' @export
+#' @examples
 #' 	data(primates)
 #'	phy <- multi2di(primates[[1]])
 #'	data <- primates[[2]]
@@ -117,14 +117,15 @@ ComputeCI <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=T
 	par <- MatrixToPars(corhmm.object)
 	par.best <- par
 
-	# compute_neglnlikelihood <- function(...) {
-	# 	return(-compute_lnlikelihood(...))	
-	# }
-	dented_results <- dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=print_freq, corhmm.object=corhmm.object)
-	# class(dented_results) <- "dentist"
+	## compute_neglnlikelihood <- function(...) {
+	## 	return(-compute_lnlikelihood(...))
+        ## }
+        if (!requireNamespace("dentist")) {
+          stop("please install the 'dentist' package via remotes::install_github('bomeara/dentist'")
+        }
+	dented_results <- dentist::dent_walk(par=par.best, fn=compute_neglnlikelihood, best_neglnL=best.neglnl,  nsteps=n.points, print_freq=print_freq, corhmm.object=corhmm.object)
 
-	
-	# class(dented_results) <- append("corhmm_confidence", class(dented_results))
+	#class(dented_results) <- append("corhmm_confidence", class(dented_results))
     return(dented_results)
 }
 
@@ -194,14 +195,14 @@ compute_neglnlikelihood <- function(par, corhmm.object) {
 	model.set.final$liks[,drop.states] <- 0
 	}
 	result <- dev.corhmm(
-		p = log(par), 
-		phy = phy, 
-		liks = model.set.final$liks, 
-		Q = model.set.final$Q, 
-		rate = model.set.final$rate, 
-		root.p = corhmm.object$root.p, 
-		rate.cat = corhmm.object$rate.cat, 
-		order.test = corhmm.object$order.test, 
+		p = log(par),
+		phy = corhmm.object$phy,
+		liks = model.set.final$liks,
+		Q = model.set.final$Q,
+		rate = model.set.final$rate,
+		root.p = corhmm.object$root.p,
+		rate.cat = corhmm.object$rate.cat,
+		order.test = corhmm.object$order.test,
 		lewis.asc.bias = ifelse(any(grepl("lewis.asc.bias", names(corhmm.object))), corhmm.object$lewis.asc.bias, FALSE),
 	  set.fog = FALSE, 
 	  fog.vec = model.set.final$fog.vec

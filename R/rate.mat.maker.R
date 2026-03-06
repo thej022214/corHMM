@@ -205,7 +205,7 @@ rate.par.drop <- function(rate.mat.index=NULL,drop.par=NULL){
     max <- max - length(drop.par)
     exclude <- which(is.na(rate.mat.index))
     rate.mat.index[-exclude] <- 1:max
-    
+
     return(rate.mat.index)
 }
 
@@ -241,7 +241,7 @@ rate.par.eq <- function(rate.mat.index=NULL,eq.par=NULL){
         dec.index[to.dec] <- dec.index[to.dec] + 1
     }
     rate.mat.index <- rate.mat.index - dec.index
-        
+
     return(rate.mat.index)
 }
 
@@ -269,13 +269,16 @@ getRateCatMat <- function(rate.cats){
   return(RateCatMat)
 }
 
-dropStateMatPars <- function(StateMat, Pars){
+dropStateMatPars <- function(StateMat, Pars) {
+  ## empty/trivial Pars (NULL or empty list), return original matrix
+  if (length(Pars) == 0) return(StateMat)
   for(i in Pars){
     StateMat[StateMat==i] <- 0
   }
   StateMat[StateMat == 0] <- NA
+
   pars <- sort(unique(na.omit(as.vector(StateMat))))
-  for(i in 1:length(pars)){
+  for(i in seq_along(pars)) {
     StateMat[StateMat == pars[i]] <- i
   }
   return(StateMat)
@@ -291,16 +294,20 @@ keepStateMatPars <- function(StateMat, Pars){
 }
 
 equateStateMatPars <- function(StateMat, ParsList){
+
+  ## empty/trivial ParsList (NULL or empty list), return original matrix
+  if (length(ParsList) == 0) return(StateMat)
   if(!inherits(ParsList, what="list")){
     ParsList <- list(ParsList)
   }
-  for(i in 1:length(ParsList)){
+  for(i in seq_along(ParsList)){
     max_par_i <- max(StateMat, na.rm = TRUE) + 1
     StateMat[as.vector(StateMat) %in% ParsList[[i]]] <- max_par_i
   }
   StateMat[StateMat == 0] <- NA
+
   pars <- sort(unique(na.omit(as.vector(StateMat))))
-  for(i in 1:length(pars)){
+  for(i in seq_along(pars)){
     StateMat[StateMat == pars[i]] <- i
   }
   return(StateMat)
@@ -352,7 +359,7 @@ getFullMat <- function(StateMats, RateClassMat = NULL){
 }
 
 rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model="ARD"){
-  
+
   if(rate.cat == 1){
     FullMat <- getStateMat(ntraits)
     StateNames <- paste("(", rep(1:ntraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
@@ -368,21 +375,21 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
     FullMat[FullMat == 0] <- NA
     return(FullMat)
   }
-  
+
   StateMats <- vector("list", rate.cat)
-  
+
   #i should have put the if statements outside... but it's w/e
   for(i in 1:rate.cat){
     if(model == "ARD"){
       StateMats[[i]] <- getStateMat(ntraits)
     }
-    
+
     if(model == "ER"){
       FullMat <- getStateMat(ntraits)
       FullMat[FullMat > 0] <- 1
       StateMats[[i]] <- FullMat
     }
-    
+
     if(model == "SYM"){
       FullMat <- getStateMat(ntraits)
       FullMat[upper.tri(FullMat)] <- 1:length(FullMat[upper.tri(FullMat)])
@@ -391,13 +398,13 @@ rate.mat.maker.JDB <-function(rate.cat, hrm=TRUE, ntraits=2, nstates=NULL, model
       StateMats[[i]] <- FullMat
     }
   }
-  
+
   RateClassMat <- getStateMat(rate.cat)
   StateMats <- updateStateMats(StateMats)
   FullMat <- getFullMat(StateMats, RateClassMat)
-  
+
   StateNames <- paste("(", rep(1:ntraits, rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = ntraits), ")", sep = "")
-  
+
   rownames(FullMat) <- colnames(FullMat) <- StateNames
   FullMat[FullMat == 0] <- NA
   return(FullMat)
@@ -417,7 +424,7 @@ get_transition_key <- function(state1, state2) {
 }
 
 getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALSE){
-  
+
   CorData <- corProcessData(data, collapse)
   data.legend <- CorData$ObservedTraits
   nObs <- length(data.legend)
@@ -500,18 +507,18 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, 
     }
     rate.mat <- getStateMat(nObs)
   }
-  
+
   if(!indep){
     if(model == "ER"){
       rate.mat[rate.mat > 0] <- 1
     }
-    
+
     if(model == "SYM"){
       rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
       rate.mat <- t(rate.mat)
       rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0] <- 1:length(rate.mat[upper.tri(rate.mat)][rate.mat[upper.tri(rate.mat)]>0])
     }
-    
+
     if(model == "ARD"){
       rate.mat[rate.mat > 0] <- 1:length(rate.mat[rate.mat > 0])
     }
@@ -576,7 +583,7 @@ FindGenerations <- function(phy){
     knowable <- unknown[needed %in% known]
     knowable <- knowable[duplicated(knowable)]
     generation[[i]] <-  knowable
-    
+
     known <- c(known, knowable)
     needed <- needed[!unknown %in% knowable]
     unknown <- unknown[!unknown %in% knowable]

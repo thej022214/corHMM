@@ -22,7 +22,7 @@ The vignette is comprised of three sections, where we demonstrate all new extens
 * __Background information__
 
 * __Section 1 Default use of corHMM__
-    * 1.1: No hidden rate categores
+    * 1.1: No hidden rate categories
     * 1.2: Any number of hidden rate categories
     * 1.3: Estimating "tip fog"
 
@@ -103,7 +103,7 @@ $$
 
 Again, exactly the same. 
 
-The updated version of `corHMM()` now lets users transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accomodate an arbitrary number of hidden states. Thus, `corHMM()` is completely flexible and naturally contains `rayDISC()` and `corDISC()` capabilities - standalone functions in previous versions of `corHMM` that may have been mistaken as different "methods." As this vignette will show, they are indeed nested within a broader class of HMMs. 
+The updated version of `corHMM()` now lets users transform a set of characters into a *single* multistate character. This means that two characters need not have the same number of character states -- that is, one trait could have four states, and the other could be binary. We also allow any model to be expanded to accommodate an arbitrary number of hidden states. Thus, `corHMM()` is completely flexible and naturally contains `rayDISC()` and `corDISC()` capabilities - standalone functions in previous versions of `corHMM` that may have been mistaken as different "methods." As this vignette will show, they are indeed nested within a broader class of HMMs. 
 
 # Section 1: Default use of corHMM
 
@@ -183,7 +183,7 @@ HMM_3state <- corHMM(phy = phy, data = data, rate.cat = 2, model = "SYM", get.ti
 HMM_3state
 ```
 
-Models with more states (larger state space) take longer to estimate because the number of transition rates increases. Hidden rate models further expand state space. For example, adding a second rate category incerases the number of transition rates from 4 to 10 (if the model is left as the default "ARD"). In section 1.1 we left our parameters unconstrained. We estimated all transisions as independent and allowed for transitions from all states to any other state. However, we can constrain a model in `corHMM` in two different ways. The easiest way is to set the model to either "SYM" or "ER". This is what we've done for the HMM_3state model above. By setting model = "SYM", we have forced the transition rates between any two states to be equal. In comparison, model = "ER" constrains all transition rates between states to be the same. Finally, model = "ARD" (the default) allows all transition rates to be independently estimated. Although "ER" and "SYM are common restrictions, it is often more useful to manually restrict your model to match a biological hypothesis (which is described in the next section). Finally, we set get.tip.states to be true because it is necessary for simmaps.
+Models with more states (larger state space) take longer to estimate because the number of transition rates increases. Hidden rate models further expand state space. For example, adding a second rate category increases the number of transition rates from 4 to 10 (if the model is left as the default "ARD"). In section 1.1 we left our parameters unconstrained. We estimated all transitions as independent and allowed for transitions from all states to any other state. However, we can constrain a model in `corHMM` in two different ways. The easiest way is to set the model to either "SYM" or "ER". This is what we've done for the HMM_3state model above. By setting model = "SYM", we have forced the transition rates between any two states to be equal. In comparison, model = "ER" constrains all transition rates between states to be the same. Finally, model = "ARD" (the default) allows all transition rates to be independently estimated. Although "ER" and "SYM are common restrictions, it is often more useful to manually restrict your model to match a biological hypothesis (which is described in the next section). Finally, we set get.tip.states to be true because it is necessary for simmaps.
 
 Interpreting the estimated rate matrix for this hidden Markov model is intimidating. But, the same principles of interpreting the transition rate matrices apply -- that is, you still read rates from row to column. However, there is the added complexity of transitions among the different rate categories (as represented by R1 and R2). `plotMKmodel()` will plot the underlying structure of model in discrete parts. In the following example, the first 2 panels show how observed states transition within each rate category, and the last panel shows transitions among the different rate classes:
 
@@ -303,7 +303,7 @@ RateMat <- LegendAndRateMat$rate.mat
 RateMat
 ```
 
-The numbers in this matrix are not rates, they are used to index the unique parameters to be estimated by `corHMM()`. Each distinct number is a parameter to be estimated independently from all others. Let's manually create the symmetric model we used in secion 1.2. In the symmetric model we want transitions *to* a state to be the same as *from* that state. This means that (1) $\rightarrow$ (2) & (2) $\rightarrow$ (1) are equal AND that (3) $\rightarrow$(2) and (2) $\rightarrow$ (3) are equal. In other words, based on the `rate.mat` above, we want parameters 1 & 2 to be equal and we want parameters 3 & 4 to be equal as shown below:
+The numbers in this matrix are not rates, they are used to index the unique parameters to be estimated by `corHMM()`. Each distinct number is a parameter to be estimated independently from all others. Let's manually create the symmetric model we used in section 1.2. In the symmetric model we want transitions *to* a state to be the same as *from* that state. This means that (1) $\rightarrow$ (2) & (2) $\rightarrow$ (1) are equal AND that (3) $\rightarrow$(2) and (2) $\rightarrow$ (3) are equal. In other words, based on the `rate.mat` above, we want parameters 1 & 2 to be equal and we want parameters 3 & 4 to be equal as shown below:
 
 ```{r}
 pars2equal <- list(c(1,2), c(3,4))
@@ -392,7 +392,7 @@ MFT_LegendAndRate <- getStateMat4Dat(MFT_dat)
 MFT_LegendAndRate
 ```
 
-Here, freshwater habitat will be State 1, marine habitat will be State 2,and terrestrial habitat will be State 3. Now, we need to create 3 different rate classes that are consistent with our hypotheses of how habitat changes occurs. We'll say that rate class R1 is one in which lineages cannot leave a terrestrial habitat, rate class R2 will allow linneages to transition between marine and terrestrial *only* through freshwater, and rate class R3 will be unrestricted movement between the habitats.
+Here, freshwater habitat will be State 1, marine habitat will be State 2,and terrestrial habitat will be State 3. Now, we need to create 3 different rate classes that are consistent with our hypotheses of how habitat changes occurs. We'll say that rate class R1 is one in which lineages cannot leave a terrestrial habitat, rate class R2 will allow lineages to transition between marine and terrestrial *only* through freshwater, and rate class R3 will be unrestricted movement between the habitats.
 
 For R1 we need terrestrial to be an absorbing state, meaning once terrestriality evolves it is not lost. Since 1 = freshwater, 2 = marine, and 3 = terrestrial, that means removing from (3) to (1) and from (3) to (2). 
 ```{r}
@@ -623,7 +623,7 @@ sum(fix.node64.noestrus$states[homo_gorilla-Ntip(phy),])
 
 ## References
 
-Beaulieu J.M., B.C. O'Meara, and M.J. Donoghue. 2013. Identifying hidden rate changes in the evolution of a binary morphologicalcharacter: the evolution of plant habit in campanulid angiosperms. Systematic Biology 62:725-737.
+Beaulieu J.M., B.C. O'Meara, and M.J. Donoghue. 2013. Identifying hidden rate changes in the evolution of a binary morphological character: the evolution of plant habit in campanulid angiosperms. Systematic Biology 62:725-737.
 
 Marazzi B., Ane C., Simon M.F., Delgado-Salinas A., Luckow M., Sanderson M.J. 2012. Locating Evolutionary Precursors on a Phylogenetic Tree. Evolution. 66:3918-3930.
 

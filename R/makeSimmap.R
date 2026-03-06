@@ -44,7 +44,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   if(rate.cat > 1){
     StateNames <- paste(RCNames, StateNames)
   }
-  for(i in 1:nSim){
+  for(i in 1:nSim) {
     tree.simmap <- tree
     tree.simmap$maps <- maps[[i]]
     tree.simmap$maps <- lapply(maps[[i]], function(x) correctMapName(x, StateNames))
@@ -61,7 +61,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     tree.simmap$Q <- model
     colnames(tree.simmap$Q) <- rownames(tree.simmap$Q) <- StateNames
     attr(tree.simmap, "map.order") <- "right-to-left"
-    if (!inherits(tree.simmap, "simmap")) 
+    if (!inherits(tree.simmap, "simmap"))
       class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))
     obj[[i]] <- tree.simmap
   }
@@ -81,7 +81,7 @@ correctMapName <- function(map_element, state_names){
 #   # sample the root state
 #   anc.index <- phy$edge[cladewise.index[1],1]
 #   state.sample[anc.index,] <- t(rmultinom(1, 1, state.probability[anc.index,]))
-#   
+#
 #   # sample the nodes
 #   for(i in cladewise.index){
 #     # A = the probability of transition FROM node i (ancestor)
@@ -384,6 +384,8 @@ getSimmapLik <- function(simmap, Q){
   return(lik)
 }
 
+
+# The Floyd-Warshall algorithm (also known as Floyd's algorithm, the Roy-Warshall algorithm, the Roy-Floyd algorithm, or the WFI algorithm) is an algorithm for finding shortest paths in a directed weighted graph with positive or negative edge weights (but with no negative cycles).
 FloydWalshAlg <- function(model, init, final){
   nStates <- dim(model)[1]
   Dist <- matrix(Inf, nStates, nStates)
@@ -560,7 +562,7 @@ plot_transition_summary <- function(simmap_summaries, cols = NULL) {
 }
 # simmap <- makeSimmap(tree=phy, tip.states=tip.states, states=states, model=model, 
 #                      nSim=10, nCores=1)
-# 
+#
 # liks <- unlist(lapply(simmap, function(x) getSimmapLik(x, Q)))
 # log(sum(exp(liks)))
 

@@ -43,7 +43,7 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000,
   total_samples <- 0
   while (total_samples < max_samples) {
     if(p_method == "marginal"){
-      margin_recon <- ancRECON(phy = res$phy, data = res$data, p = corHMM:::MatrixToPars(res), method = "marginal", 
+      margin_recon <- ancRECON(phy = res$phy, data = res$data, p = MatrixToPars(res), method = "marginal", 
         rate.cat = res$rate.cat, ntraits = NULL, rate.mat = res$index.mat, root.p = res$root.p)
       state_sets <- sample_marginal(res, batch_size, margin_recon, corData, model.set.final, p_mat)
       state_sets <- state_sets[!duplicated(state_sets), , drop = FALSE]

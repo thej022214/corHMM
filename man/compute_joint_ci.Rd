@@ -22,14 +22,12 @@ remove_outliers = TRUE, p_method = "simmap")
 }
 \value{
 A list with components:
-\itemize{
-\item{best_joint: }{The internal representation of the best joint history as returned by \code{ancRECON_internal(..., method = "joint", get.likelihood = FALSE)}.}
+  \item{best_joint: }{The internal representation of the best joint history as returned by \code{ancRECON_internal(..., method = "joint", get.likelihood = FALSE)}.}
 \item{best_lnlik: }{The log-likelihood corresponding to \code{best_joint} (obtained with \code{get.likelihood = TRUE}).}
 \item{sampled_joints: }{A list of sampled joint histories. Each element is expected to contain at least \code{anc.states} (internal node states) and \code{tip.states} (tip states).}
 \item{state_df:}{Data frame of internal node states across the sampled histories.}
 \item{tip_state_df: }{Data frame of tip states across the sampled histories.}
 \item{lnliks: }{Numeric vector of log-likelihoods for the sampled histories.}
-}
 }
 \details{
 This function implements a two-pass sampling approach to quantify the uncertainty of joint ancestral-state reconstructions. Key steps include:
@@ -43,13 +41,14 @@ This function implements a two-pass sampling approach to quantify the uncertaint
 \item{\code{"marginal"}: sample marginal reconstructions and combine them into joint histories.}
 \item{\code{"pupko"}: use Pupko-based sampling of joint histories.}}
 }
-\item{Aggregating sampled histories, removing duplicates, and filtering out (-\infty) ln-likelihoods.}
+\item{Aggregating sampled histories, removing duplicates, and filtering
+  out (negative) infinite ln-likelihoods.}
 \item{Optionally removing outlier ln-likelihoods to improve stability.}
 \item{Assembling \code{state_df} and \code{tip_state_df} from the remaining histories.} }
 
 }
 \examples{ \donttest{
-res is a corHMM-style result object produced earlier in your workflow
+## res is a corHMM-style result object produced earlier in your workflow
 ci <- compute_joint_ci(res)
 str(ci)
 }
