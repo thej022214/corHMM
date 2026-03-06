@@ -5,7 +5,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   criterion="AIC", merge.threshold=0, index_mat=NULL, node.states = "marginal", 
   fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE, 
   lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
-  upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE, 
+  upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, use_RTMB=TRUE, 
   max.iterations = 200, initial.temp = 2, cooling.rate = 0.95, 
   temp.schedule = "exponential", seed = NULL, return.all=FALSE,
   rate.mat = NULL) {
@@ -34,7 +34,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       nstarts=nstarts, n.cores=n.cores, get.tip.states = get.tip.states, 
       lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
       lower.bound = lower.bound, upper.bound = upper.bound, 
-      opts=opts, p=p, grad=FALSE)
+      opts=opts, p=p, use_RTMB=use_RTMB)
     return(fixd_fit)
   }
   
@@ -90,7 +90,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       n.cores=n.cores, get.tip.states = get.tip.states, 
       lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
       lower.bound = lower.bound, upper.bound = upper.bound, 
-      opts=opts, p=NULL, grad=grad))
+      opts=opts, p=NULL, use_RTMB=use_RTMB))
     
     if(inherits(curr_fit, "try-error")){
       warning("Model fitting failed. Stopping dredge.")
@@ -113,7 +113,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       pen.type, lambda, node.states, fixed.nodes, 
       ip, nstarts, n.cores, get.tip.states, 
       lewis.asc.bias, collapse, lower.bound, 
-      upper.bound, opts, grad, criterion,
+      upper.bound, opts, use_RTMB, criterion,
       drop.threshold, merge.threshold,
       max.iterations, initial.temp, cooling.rate, 
       temp.schedule, verbose)
@@ -160,7 +160,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
 sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat, 
   max_index_mat, rate_category, root.p, pen.type, lambda, node.states, 
   fixed.nodes, ip, nstarts, n.cores, get.tip.states, lewis.asc.bias, collapse, 
-  lower.bound, upper.bound, opts, grad, criterion, drop.threshold, 
+  lower.bound, upper.bound, opts, use_RTMB, criterion, drop.threshold, 
   merge.threshold, max.iterations, initial.temp, cooling.rate, temp.schedule, 
   verbose, restart.strategy = "fixed_steps", # "fixed_steps", "energy_threshold", "random", "none"
   restart.interval = 20, restart.threshold = 1.5, restart.probability = 0.05,
@@ -309,7 +309,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       n.cores=n.cores, get.tip.states = get.tip.states, 
       lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
       lower.bound = lower.bound, upper.bound = upper.bound, 
-      opts=opts, p=NULL, grad=grad))
+      opts=opts, p=NULL, use_RTMB=use_RTMB))
     
     if(inherits(proposed_fit, "try-error")) {
       next  # Skip failed fits
@@ -699,7 +699,10 @@ merge_current_pars <- function(current_pars, merge.threshold){
 }
 
 # this is the function that does most of the heavy lifting
-corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = "l1", lambda = 1, rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1, get.tip.states = FALSE,lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, p=NULL, grad=FALSE){
+corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type="l1", lambda=1,
+  rate.mat=NULL, node.states="marginal", fixed.nodes=FALSE, ip=NULL, nstarts=0, n.cores=1,
+  get.tip.states=FALSE, lewis.asc.bias=FALSE, collapse=FALSE, lower.bound=1e-10,
+  upper.bound=100, opts=NULL, p=NULL, use_RTMB=FALSE) {
   
   # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
   if(is.null(node.states)){
@@ -833,11 +836,26 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = 
   lower = rep(lb, model.set.final$np)
   upper = rep(ub, model.set.final$np)
   
-  if(is.null(opts)){
-    if(grad){
-      opts <- list("algorithm"="NLOPT_LD_MMA", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
-    }else{
-      opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
+  if (use_RTMB) {
+    RTMB_obj <- mkdev.corhmm_rtmb(rep(0, model.set.final$np),
+      phy, liks=model.set.final$liks,
+      Q=model.set.final$Q, rate=model.set.final$rate,
+      root.p=root.p, rate.cat=rate.cat,
+      order.test=FALSE, lewis.asc.bias=FALSE,
+      pen.type=pen.type, lambda=lambda)
+    devfun      <- function(p, ...) RTMB_obj$fn(p)
+    devfun_grad <- function(p, ...) RTMB_obj$gr(p)
+  } else {
+    devfun <- NULL  ## not used for non-RTMB; dev.corhmm.dredge passed directly to nloptr
+  }
+  
+  if (is.null(opts)) {
+    if (use_RTMB) {
+      opts <- list("algorithm"="NLOPT_LD_MMA", "maxeval"="1000000",
+        "ftol_rel"=.Machine$double.eps^0.5)
+    } else {
+      opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000",
+        "ftol_rel"=.Machine$double.eps^0.5)
     }
   }
   if(!is.null(p)){
@@ -845,7 +863,12 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = 
     out<-NULL
     p <- p*H
     est.pars<-log(p)
-    out$objective<-dev.corhmm.dredge(est.pars,phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda)
+    out$objective <- dev.corhmm.dredge(est.pars, phy=phy,
+      liks=model.set.final$liks, Q=model.set.final$Q,
+      rate=model.set.final$rate, root.p=root.p,
+      rate.cat=rate.cat, order.test=order.test,
+      lewis.asc.bias=lewis.asc.bias,
+      pen.type=pen.type, lambda=lambda)
     loglik <- -out$objective
     est.pars <- exp(est.pars)
   }else{
@@ -872,18 +895,31 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = 
       tl <- sum(phy$edge.length)
       mean.change = par.score/tl
       
-      random.restart<-function(nstarts){
-        tmp = matrix(,1,ncol=(1+model.set.final$np))
-        if(mean.change==0){
-          starts=rep(0.01+exp(lb), model.set.final$np)
-        }else{
-          starts<-sort(rexp(model.set.final$np, 1/mean.change), decreasing = TRUE)
+      random.restart <- function(nstarts) {
+        tmp <- matrix(, 1, ncol=(1 + model.set.final$np))
+        if (mean.change == 0) {
+          starts <- rep(0.01 + exp(lb), model.set.final$np)
+        } else {
+          starts <- sort(rexp(model.set.final$np, 1/mean.change), decreasing=TRUE)
         }
-        starts[starts < exp(lb)] = exp(lb)
-        starts[starts > exp(ub)] = exp(lb)
-        out = nloptr(x0=log(starts), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda, grad=grad)
-        tmp[,1] = out$objective
-        tmp[,2:(model.set.final$np+1)] = out$solution
+        starts[starts < exp(lb)] <- exp(lb)
+        starts[starts > exp(ub)] <- exp(lb)
+        if (use_RTMB) {
+          out <- nlminb(log(starts),
+            objective = devfun,
+            gradient  = devfun_grad,
+            lower = lower, upper = upper)
+          tmp[, 1] <- out$objective
+          tmp[, 2:(model.set.final$np + 1)] <- out$par
+        } else {
+          out = nloptr(x0=log(starts), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, 
+            opts=opts, phy=phy, liks=model.set.final$liks,Q=model.set.final$Q,
+            rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, 
+            order.test = order.test, lewis.asc.bias = lewis.asc.bias, 
+            pen.type = pen.type, lambda = lambda)
+          tmp[, 1] <- out$objective
+          tmp[, 2:(model.set.final$np + 1)] <- out$solution
+        }
         tmp
       }
       # this is the first model pass
@@ -901,12 +937,24 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = 
       loglik <- -out$objective
       est.pars <- exp(out$solution)
     }else{
-      # the user has specified initial params
-      # cat("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
-      ip=ip
-      out = nloptr(x0=rep(log(ip), length.out = model.set.final$np), eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts, phy=phy,liks=model.set.final$liks,Q=model.set.final$Q,rate=model.set.final$rate,root.p=root.p, rate.cat = rate.cat, order.test = order.test, lewis.asc.bias = lewis.asc.bias, pen.type = pen.type, lambda = lambda, grad=grad)
-      loglik <- -out$objective
-      est.pars <- exp(out$solution)
+      if (use_RTMB) {
+        out <- nlminb(rep(log(ip), length.out=model.set.final$np),
+          objective = devfun,
+          gradient  = devfun_grad,
+          lower = lower, upper = upper)
+        loglik   <- -out$objective
+        est.pars <- exp(out$par)
+      } else {
+        out <- nloptr(x0=rep(log(ip), length.out=model.set.final$np),
+          eval_f=dev.corhmm.dredge, lb=lower, ub=upper, opts=opts,
+          phy=phy, liks=model.set.final$liks, Q=model.set.final$Q,
+          rate=model.set.final$rate, root.p=root.p,
+          rate.cat=rate.cat, order.test=order.test,
+          lewis.asc.bias=lewis.asc.bias,
+          pen.type=pen.type, lambda=lambda)
+        loglik   <- -out$objective
+        est.pars <- exp(out$solution)
+      }
     }
   }
   
@@ -990,7 +1038,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", pen.type = 
 
 ### The function used to optimize parameters:
 
-dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type="l1",lambda=1,grad=FALSE){
+dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type="l1",lambda=1){
   p = exp(p)
   cp_root.p <- root.p
   nb.tip <- length(phy$tip.label)
@@ -1111,24 +1159,7 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
     dummy.liks.vec <- getLewisLikelihood(p = p, phy = phy, liks = liks, Q = Q, rate = rate, root.p = cp_root.p, rate.cat = rate.cat)
     loglik <- loglik - log(sum(root.p * (1 - exp(dummy.liks.vec))))
   }
-  if(grad){
-    epsilon <- 1e-6
-    base_log_likelihood <- -(loglik + (pen_score * lambda))
-    gradient <- numeric(length(p))
-    for (i in seq_along(p)) {
-      p_plus <- log(p)
-      p_plus[i] <- p_plus[i] + epsilon
-      log_likelihood_plus <- -dev.corhmm.dredge(p_plus,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis.asc.bias,pen.type,lambda,grad=FALSE)
-      gradient[i] <- (log_likelihood_plus - base_log_likelihood) / epsilon
-    }
-    cat("\rlnLik:", paste0(base_log_likelihood, "..."))
-    # print(-gradient)
-    return(list(
-      objective = -base_log_likelihood,
-      gradient = -gradient))
-  }else{
-    return(loglik + (pen_score * lambda))
-  }
+  return(loglik + (pen_score * lambda))
 }
 
 
@@ -1293,7 +1324,7 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
                                          upper.bound = 100, 
                                          opts=NULL, 
                                          p=NULL,
-                                         grad=FALSE)
+                                         use_RTMB = use_RTMB)
       
       # Evaluate the model on testing data
       score <- evaluateModel(model, corhmm_obj)
@@ -1580,148 +1611,3 @@ plotDredgeTrace <- function(dredge_fits,
   return(invisible(NULL))
 }
 
-# old version that doesn't use simm ann
-# corHMMDredge <- function(phy, data, max.rate.cat, root.p="maddfitz", 
-#   pen.type = "l1", lambda = 0, drop.par = TRUE, drop.threshold = 1e-7,  
-#   info.threshold=2, criterion="AIC", merge.params=TRUE, merge.threshold=0, 
-#   rate.mat=NULL, node.states = "marginal", fixed.nodes=FALSE, ip=NULL, 
-#   nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, 
-#   collapse = FALSE, lower.bound = 1e-10, upper.bound = 100, opts=NULL, 
-#   verbose=TRUE, p=NULL, rate.cat=NULL, grad=FALSE){
-#   
-#   if((is.null(p) & !is.null(rate.cat))){
-#     print("A rate category was given without specifying a parameter vector (p)")
-#     return(NULL)
-#   }
-#   if((!is.null(p) & is.null(rate.cat))){
-#     print("A parameter vector (p) was given without specifying a rate category")
-#     return(NULL)
-#   }
-#   
-#   # FIXED FIT
-#   init.root.p <- root.p
-#   if(!is.null(p) & !is.null(rate.cat)){
-#     if(verbose){
-#       cat("Evaluating fixed parameters p =", p, "\n")
-#     }
-#     fixd_fit <- corHMMDredgeBase(phy=phy, 
-#       data=data, 
-#       rate.cat=rate.cat, 
-#       root.p=root.p,
-#       pen.type = pen.type, 
-#       lambda = lambda, 
-#       rate.mat=rate.mat, 
-#       node.states = node.states, 
-#       fixed.nodes=fixed.nodes, 
-#       ip=ip, 
-#       nstarts=nstarts, 
-#       n.cores=n.cores, 
-#       get.tip.states = get.tip.states, 
-#       lewis.asc.bias = lewis.asc.bias, 
-#       collapse = collapse, 
-#       lower.bound = lower.bound, 
-#       upper.bound = upper.bound, 
-#       opts=opts, 
-#       p=p,
-#       grad=FALSE)
-#     return(fixd_fit)
-#   }
-#   
-#   # automatic search starting at rate cat 1
-#   curr_index_mat <- rate.mat
-#   fit_set <- list()
-#   model_improved <- TRUE
-#   hmm_valid <- TRUE
-#   count <- 1
-#   current_rate_category <- 1
-#   if(verbose){
-#     cat("Begining dredge...\n")
-#   }
-#   while(model_improved){
-#     if(!inherits(root.p, "character")){
-#       root.p <- rep(init.root.p, current_rate_category)
-#     }
-#     curr_fit <- try(corHMMDredgeBase(phy=phy, 
-#       data=data, 
-#       rate.cat=current_rate_category, 
-#       root.p=root.p,
-#       pen.type = pen.type, 
-#       lambda = lambda, 
-#       rate.mat=curr_index_mat, 
-#       node.states = node.states, 
-#       fixed.nodes=fixed.nodes, 
-#       ip=ip, 
-#       nstarts=nstarts, 
-#       n.cores=n.cores, 
-#       get.tip.states = get.tip.states, 
-#       lewis.asc.bias = lewis.asc.bias, 
-#       collapse = collapse, 
-#       lower.bound = lower.bound, 
-#       upper.bound = upper.bound, 
-#       opts=opts, 
-#       p=NULL,
-#       grad=grad))
-#     if(inherits(curr_fit, "try-error")){
-#       warning("Model fitting failed. Stopping dredge.")
-#       model_improved <- FALSE
-#       fit_set[[count]] <- curr_fit
-#       next
-#     }
-#     curr_info_criterion <- curr_fit[[criterion]]
-#     fit_set[[count]] <- curr_fit
-#     if(verbose){
-#       cat("\n")
-#       cat("AIC:", curr_info_criterion)
-#       cat("\nMapping matrix:\n")
-#       print(curr_fit$index.mat)
-#     }
-#     best_info_criterion <- get_best_info_criterion(fit_set, criterion, current_rate_category)
-#     model_improved <- diff(c(best_info_criterion, curr_info_criterion)) < info.threshold
-#     count <- count + 1
-#     if(model_improved | current_rate_category < max.rate.cat){
-#       # try dropping pars
-#       curr_index_mat <- drop_pars(curr_fit, drop.threshold)
-#       if(is.null(curr_index_mat)){
-#         # try merging pars
-#         curr_index_mat <- merge_pars(curr_fit, merge.threshold)
-#         if(is.null(curr_index_mat)){
-#           current_rate_category <- current_rate_category + 1
-#           model_improved <- TRUE
-#           if(current_rate_category > max.rate.cat){
-#             model_improved <- FALSE
-#           }else{
-#             if(curr_fit$rate.cat > 1){
-#               # test the current rate category
-#               hmm_valid <- test_validity_hmm(curr_fit)
-#               if(all(hmm_valid)){
-#                 cat("\n", "No unique parameters in rate class. Halting dredge", "\n")
-#                 model_improved <- FALSE
-#               }
-#             }else{
-#               if(verbose){
-#                 cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
-#               }
-#             }
-#           }
-#         }else{
-#           if(verbose){
-#             cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
-#           }
-#         }
-#       }else{
-#         if(verbose){
-#           cat("\n", rep("*", count-1), "Continuing dredge", rep("*", count-1), "\n")
-#         }
-#       }
-#     }
-#   }
-#   if(verbose){
-#     cat("\nDone.\n")
-#   }
-#   tmp <- try(prune_redundant(fit_set))
-#   if(class(tmp) != "try-error"){
-#     fit_set <- tmp
-#   }
-#   class(fit_set) <- "corhmm.dredge"
-#   return(fit_set)
-# }
