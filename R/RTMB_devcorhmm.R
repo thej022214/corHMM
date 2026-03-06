@@ -43,7 +43,20 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
   ## We pre-compute this mask outside AD
   nq <- nrow(Q)
   
-  tmb_data <- namedList(nb.node, nb.tip, TIPS, anc, k.rates, nq)
+  ## precompute fog application indices outside prune_fun (static, no AD)
+  fog_idx <- if (set.fog) {
+    lapply(seq_len(nb.tip), function(tip.index) {
+      list(
+        zeros = which(liks[tip.index, ] == 0),
+        ones  = which(liks[tip.index, ] == 1),
+        not1  = which(liks[tip.index, ] != 1)
+      )
+    })
+  } else {
+    NULL
+  }
+  
+  tmb_data <- namedList(nb.node, nb.tip, TIPS, anc, k.rates, nq, fog_idx)
   
   prune_fun <- function(pars) {
     "[<-" <- RTMB::ADoverload("[<-")
@@ -55,27 +68,21 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     comp <- numeric(nb.tip + nb.node)
     
     if (set.fog) {
-      fog_pars <- seq.int(length(unique(fog.vec)))
+      fog_pars    <- seq.int(length(unique(fog.vec)))
       tip.fog.tmp <- p[fog_pars]
-      p <- p[-fog_pars]
-      tip.fog <- numeric(length(fog.vec))
-      tip.fog[] <- c(tip.fog.tmp, 0)[fog.vec]
+      p           <- p[-fog_pars]
+      tip.fog     <- numeric(length(fog.vec))
+      tip.fog[]   <- c(tip.fog.tmp, 0)[fog.vec]
       
-      if(rate.cat > 1){
-        for(tip.index in seq(nb.tip)) {
-          num.zeros <- length(liks[tip.index, which(liks[tip.index,] == 0)])
-          if(num.zeros > 0){
-            liks[tip.index, which(liks[tip.index,] == 1)] <- 1 - (sum(tip.fog[which(liks[tip.index,] != 1)]) / rate.cat)
-            liks[tip.index, which(liks[tip.index,] == 0)] <- tip.fog[which(liks[tip.index,] == 0)]
+      for (tip.index in seq(nb.tip)) {
+        idx <- fog_idx[[tip.index]]
+        if (length(idx$zeros) > 0) {
+          if (rate.cat > 1) {
+            liks[tip.index, idx$ones] <- 1 - (sum(tip.fog[idx$not1]) / rate.cat)
+          } else {
+            liks[tip.index, idx$ones] <- 1 - sum(tip.fog[idx$not1])
           }
-        }
-      } else {
-        for(tip.index in seq(nb.tip)) {
-          num.zeros <- length(liks[tip.index, which(liks[tip.index,] == 0)])
-          if(num.zeros > 0){
-            liks[tip.index, which(liks[tip.index,] == 1)] <- 1 - sum(tip.fog[which(liks[tip.index,] != 1)])
-            liks[tip.index, which(liks[tip.index,] == 0)] <- tip.fog[which(liks[tip.index,] == 0)]
-          }
+          liks[tip.index, idx$zeros] <- tip.fog[idx$zeros]
         }
       }
     }
