@@ -35,7 +35,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       nstarts=nstarts, n.cores=n.cores, get.tip.states = get.tip.states, 
       lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
       lower.bound = lower.bound, upper.bound = upper.bound, 
-      opts=opts, p=p, use_RTMB=use_RTMB)
+      tip.fog=tip.fog, fog.ip=fog.ip, opts=opts, p=p, use_RTMB=use_RTMB)
     return(fixd_fit)
   }
   
@@ -93,8 +93,8 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     curr_fit <- try(corHMMDredgeBase(phy=phy, data=data, 
       rate.cat=current_rate_category, root.p=root.p, pen.type = pen.type, 
       lambda = lambda, rate.mat=curr_index_mat, node.states = node.states, 
-      fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts, 
-      n.cores=n.cores, get.tip.states = get.tip.states, 
+      fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts, tip.fog=tip.fog, 
+      n.cores=n.cores, get.tip.states = get.tip.states, fog.ip=fog.ip,
       lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
       lower.bound = lower.bound, upper.bound = upper.bound, 
       opts=opts, p=NULL, use_RTMB=use_RTMB, prep=curr_prep))
@@ -124,6 +124,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       drop.threshold, merge.threshold,
       max.iterations, initial.temp, cooling.rate, 
       temp.schedule, verbose, prep=curr_prep,
+      tip.fog=tip.fog, fog.ip=fog.ip,
       checkpoint.file = checkpoint.file, 
       checkpoint.interval = checkpoint.interval)
     fit_set[[count]] <- sa_result
@@ -171,7 +172,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
   fixed.nodes, ip, nstarts, n.cores, get.tip.states, lewis.asc.bias, collapse, 
   lower.bound, upper.bound, opts, use_RTMB, criterion, drop.threshold, 
   merge.threshold, max.iterations, initial.temp, cooling.rate, temp.schedule, 
-  verbose, restart.strategy = "fixed_steps",
+  verbose, restart.strategy = "fixed_steps", tip.fog=tip.fog, fog.ip=fog.ip,
   restart.interval = 20, restart.threshold = 1.5, restart.probability = 0.05,
   restart.temp.reset = FALSE, prep=NULL,
   checkpoint.file = NULL, checkpoint.interval = 50) {
@@ -375,8 +376,8 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       rate.mat=move_result$new_index_mat, node.states=node.states,
       fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts,
       n.cores=n.cores, get.tip.states=get.tip.states,
-      lewis.asc.bias=lewis.asc.bias, collapse=collapse,
-      lower.bound=lower.bound, upper.bound=upper.bound,
+      lewis.asc.bias=lewis.asc.bias, collapse=collapse, fog.ip=fog.ip,
+      lower.bound=lower.bound, upper.bound=upper.bound,tip.fog=tip.fog,
       opts=opts, p=NULL, use_RTMB=use_RTMB, prep=prep))
     
     if (inherits(proposed_fit, "try-error")) next
@@ -903,12 +904,17 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
   
   ## --- optimizer setup ---
   if (use_RTMB) {
-    RTMB_obj    <- mkdev.corhmm_rtmb(rep(0, model.set.final$np), phy,
+    RTMB_obj <- mkdev.corhmm_rtmb(rep(0, np_tot), phy,
       liks=model.set.final$liks, Q=model.set.final$Q,
-      rate=model.set.final$rate, root.p=root.p, rate.cat=rate.cat,
-      order.test=FALSE, lewis.asc.bias=FALSE,
-      pen.type=pen.type, lambda=lambda,
-      set.fog=set.fog, fog.vec=model.set.final$fog.vec)
+      rate=model.set.final$rate, root.p=root.p,
+      rate.cat = rate.cat,
+      ## these two are intentionally disabled
+      order.test = FALSE,
+      lewis.asc.bias = FALSE,
+      set.fog = set.fog,
+      fog.vec = model.set.final$fog.vec,
+      pen.type=pen.type, lambda=lambda)
+    
     devfun      <- function(p, ...) RTMB_obj$fn(p)
     devfun_grad <- function(p, ...) RTMB_obj$gr(p)
   }
@@ -1091,6 +1097,8 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
     pen.type    = pen.type,
     lambda      = lambda,
     use_RTMB    = use_RTMB,
+    tip.fog     = tip.fog,
+    fog.ip      = fog.ip,
     tip.fog.p   = tip.fog.probs
   )
   class(obj) <- "corhmm"
@@ -1583,7 +1591,9 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
                                          upper.bound = 100, 
                                          opts=NULL, 
                                          p=NULL,
-                                         use_RTMB = use_RTMB)
+                                         use_RTMB = use_RTMB,
+                                         fog.ip = fog.ip,
+                                         tip.fog = tip.fog)
       
       # Evaluate the model on testing data
       score <- evaluateModel(model, corhmm_obj)
