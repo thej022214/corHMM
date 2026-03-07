@@ -157,6 +157,12 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     all_models <- c(all_models, fit_set[[i]]$all_models)
   }
   all_models <- prune_redundant(all_models)
+  # reattach to final models the big data pieces
+  for(i in seq_along(all_models)){
+    all_models[[i]]$phy         <- phy
+    all_models[[i]]$data        <- data
+    all_models[[i]]$data.legend <- curr_fit$data.legend
+  }
   class(all_models) <- "corhmm.dredge"
   
   if(!return.all){
@@ -164,6 +170,13 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   }else{
     return(list(all_models=all_models, sa_fits = fit_set))
   }
+}
+
+strip_corhmm <- function(fit) {
+  fit$phy         <- NULL
+  fit$data        <- NULL
+  fit$data.legend <- NULL
+  fit
 }
 
 # SA within a single rate category
@@ -386,7 +399,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     ## record every genuinely evaluated model
     every_idx              <- every_idx + 1L
     proposed_score         <- proposed_fit[[criterion]]
-    every_model[[every_idx]] <- proposed_fit
+    every_model[[every_idx]] <- strip_corhmm(proposed_fit)
     every_score[every_idx]   <- proposed_score
     every_move[every_idx]    <- move_result$move_type
     
@@ -403,7 +416,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       steps_since_accept   <- 0L
       
       model_count            <- length(all_models) + 1L
-      all_models[[model_count]]     <- current_fit
+      all_models[[model_count]]     <- strip_corhmm(current_fit)
       all_index_mats[[model_count]] <- current_index_mat
       all_scores[model_count]       <- current_score
       model_ids[model_count]        <- move_id
@@ -464,25 +477,26 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
 }
 
 # Propose stochastic moves within rate category
-propose_sa_move_within_rate_cat <- function(current_fit, drop.threshold, merge.threshold, max_index_mat) {
+propose_sa_move_within_rate_cat <- function(current_fit, drop.threshold,
+  merge.threshold, max_index_mat) {
   
-  # Randomly choose between drop and merge
-  move_type <- sample(c("drop", "merge", "free"), 1, prob = c(1/3, 1/3, 1/3))
+  move_type <- sample(c("drop", "merge", "free", "eigen_merge"), 1,
+    prob = c(0.3, 0.3, 0.2, 0.2))
   
-  if(move_type == "drop") {
+  if (move_type == "drop") {
     new_index_mat <- propose_stochastic_drop(current_fit, drop.threshold)
   }
-  if(move_type == "merge") {
+  if (move_type == "merge") {
     new_index_mat <- propose_stochastic_merge(current_fit, merge.threshold)
-  } 
-  if(move_type == "free") {
+  }
+  if (move_type == "free") {
     new_index_mat <- propose_stochastic_free(current_fit, max_index_mat)
-  } 
-
-  return(list(
-    move_type = move_type,
-    new_index_mat = new_index_mat
-  ))
+  }
+  if (move_type == "eigen_merge") {
+    new_index_mat <- propose_eigen_merge(current_fit)
+  }
+  
+  return(list(move_type = move_type, new_index_mat = new_index_mat))
 }
 
 # Stochastic parameter dropping
@@ -529,6 +543,58 @@ propose_stochastic_drop <- function(current_fit, drop.threshold) {
   return(new_index_mat)
 }
 
+propose_eigen_merge <- function(current_fit) {
+  Q <- current_fit$solution
+  Q[is.na(Q)] <- 0
+  diag(Q) <- -rowSums(Q)
+  
+  # Need at least 2 free parameters to merge
+  n_free <- max(current_fit$index.mat, na.rm = TRUE)
+  if (is.na(n_free) || n_free < 2) return(NULL)
+  
+  # Catch degenerate Q (e.g. all zeros)
+  eig <- tryCatch(eigen(Q), error = function(e) NULL)
+  if (is.null(eig)) return(NULL)
+  
+  # Each free parameter corresponds to a set of off-diagonal positions
+  # in the index matrix. Represent each parameter by the mean absolute
+  # loading of its entries across all eigenvectors -- this is a vector
+  # in eigenvector space describing what that parameter "does".
+  par_profiles <- matrix(0, nrow = n_free, ncol = ncol(Q))
+  for (p in seq_len(n_free)) {
+    positions <- which(current_fit$index.mat == p, arr.ind = TRUE)
+    # Sum the absolute eigenvector loadings for the rows involved
+    par_profiles[p, ] <- colMeans(abs(eig$vectors[positions[, 1], , drop = FALSE]))
+  }
+  
+  # Cosine similarity between all pairs of parameter profiles
+  norms <- sqrt(rowSums(par_profiles^2))
+  # If any parameter has zero norm it contributes nothing -- skip
+  if (any(norms < 1e-10)) return(NULL)
+  par_profiles_norm <- par_profiles / norms
+  sim_mat <- par_profiles_norm %*% t(par_profiles_norm)
+  diag(sim_mat) <- -Inf
+  
+  # Find the most similar pair -- these are the best candidates to merge
+  best_pair <- which(sim_mat == max(sim_mat), arr.ind = TRUE)[1, ]
+  
+  # With some probability also pull in a third parameter if it's similarly
+  # aligned, giving the occasional larger move
+  cluster <- best_pair
+  avg_profile <- colMeans(par_profiles_norm[best_pair, ])
+  third_sims <- par_profiles_norm %*% avg_profile
+  third_sims[best_pair] <- -Inf
+  if (max(third_sims) > 0.95 && runif(1) < 0.3) {
+    cluster <- c(cluster, which.max(third_sims))
+  }
+  
+  new_index_mat <- equateStateMatPars(current_fit$index.mat, cluster)
+  pars <- sort(unique(na.omit(as.vector(new_index_mat))))
+  for (i in seq_along(pars)) {
+    new_index_mat[new_index_mat == pars[i]] <- i
+  }
+  return(new_index_mat)
+}
 # Stochastic parameter merging
 propose_stochastic_merge <- function(current_fit, merge.threshold) {
   if(current_fit$rate.cat > 1) {
@@ -1721,6 +1787,7 @@ plotDredgeTrace <- function(dredge_fits,
     "merge" = "#2E86AB",
     "free" = "#F18F01",
     "restart" = "#7209B7",
+    "eigen_merge" = "#C73E1D",
     "none" = "grey60"),
   legend = TRUE,
   legend.pos = "topright",
@@ -1748,8 +1815,10 @@ plotDredgeTrace <- function(dredge_fits,
   for (i in 1:num_fits) {
     fit_data <- sa_fits[[i]]
     
-    # Filter out NAs which can occur if the loop ends prematurely
-    valid_indices <- !is.na(fit_data$every_move)
+    # Filter out NAs which can occur if the loop ends prematurely and can happen when the model is not possible to be fit
+    valid_indices <- !is.na(fit_data$every_move) & 
+      !is.na(fit_data$accepted) &
+      !is.infinite(fit_data$every_score)
     
     scores <- fit_data$every_score[valid_indices]
     moves <- fit_data$every_move[valid_indices]
