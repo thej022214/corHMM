@@ -8,7 +8,7 @@ This function automates the search for the best-fitting model of discrete charac
 corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
   root.p="maddfitz", tip.fog=NULL, fog.ip=0.01, pen.type = "l1", lambda = 0,
   drop.threshold = 1e-7, criterion="AIC", merge.threshold=0, index_mat=NULL,
-  node.states = "marginal", fixed.nodes=FALSE, ip=NULL, nstarts=1, n.cores=1,
+  node.states = "none", fixed.nodes=FALSE, ip=NULL, nstarts=1, n.cores=1,
   get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE,
   lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE,
   p=NULL, rate.cat=NULL, use_RTMB=TRUE, max.iterations = 200,
