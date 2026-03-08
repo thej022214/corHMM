@@ -796,24 +796,24 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
 
 print.corhmm<-function(x,...){
 
-    # ntips=Ntip(x$phy)
-    output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat, row.names="")
-    names(output)<-c("lnL","AIC","AICc","Rate.cat")
-    cat("\nFit\n")
-    print(output)
-    cat("\n")
-    # UserStates <- gsub("_", "|", corProcessData(x$data)$PossibleTraits)
-    # ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
-
-    # cat("Legend\n")
-    # print(ColNames)
-    # print(UserStates)
-    # cat("\n")
-
-    param.est<- x$solution
-    cat("Rates\n")
-    print(param.est)
-    cat("\n")
+  ntips=Ntip(x$phy)
+  output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
+  names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
+  cat("\nFit\n")
+  print(output)
+  cat("\n")
+  UserStates <- colnames(x$solution)
+  ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
+  
+  cat("Legend\n")
+  print(ColNames)
+  print(UserStates)
+  cat("\n")
+  
+  param.est<- x$solution
+  cat("Rates\n")
+  print(param.est)
+  cat("\n")
 
 	if(!is.null(x$tip.fog.probs)){
                 cat("Tip fog\n")

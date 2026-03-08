@@ -6,8 +6,8 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   node.states = "none", fixed.nodes=FALSE, ip=NULL, nstarts=1, n.cores=1, 
   get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
   upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, use_RTMB=TRUE, 
-  max.iterations = 200, initial.temp = 2, cooling.rate = 0.95, 
-  temp.schedule = "exponential", seed = NULL, return.all=FALSE,
+  max.iterations = 1000, initial.temp = 2, cooling.rate = 0.95, 
+  temp.schedule = "exponential", seed = NULL,
   checkpoint.file = NULL, checkpoint.interval = 50){
   # TODO: ADD TIP FOG
   
@@ -164,12 +164,8 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     all_models[[i]]$data.legend <- curr_fit$data.legend
   }
   class(all_models) <- "corhmm.dredge"
-  
-  if(!return.all){
-    return(all_models)
-  }else{
-    return(list(all_models=all_models, sa_fits = fit_set))
-  }
+  attr(all_models, "sa_fits") <- fit_set
+  return(all_models)
 }
 
 strip_corhmm <- function(fit) {
@@ -644,7 +640,9 @@ propose_stochastic_merge <- function(current_fit, merge.threshold) {
 }
 
 propose_stochastic_free <- function(current_fit, max_index_mat) {
-  duplicates <- !is.na(current_fit$index.mat) & duplicated(current_fit$index.mat, MARGIN = 0)
+  duplicates <- !is.na(current_fit$index.mat) & 
+    !is.na(max_index_mat) &
+    duplicated(current_fit$index.mat, MARGIN = 0)
   dropped <- is.na(current_fit$index.mat) & !is.na(max_index_mat)
   if(sum(dropped | duplicates) == 0) return(NULL)
   n_free <- sample(1:min(3, sum(dropped | duplicates)), 1)
@@ -657,7 +655,6 @@ propose_stochastic_free <- function(current_fit, max_index_mat) {
   }
   return(new_index_mat)
 }
-
 
 # Stochastic version of merge_current_pars
 stochastic_merge_pars <- function(current_pars, merge.threshold) {
@@ -1781,6 +1778,49 @@ getCVTable <- function(x){
   return(list(score_table=score_table, avg_scores=avg_scores))
 }
 
+#' @export
+#' @method print corhmm.dredge
+print.corhmm.dredge <- function(x, ...) {
+  sa_fits <- attr(x, "sa_fits")
+  
+  # Header
+  n_rc <- length(sa_fits)
+  rate_cats <- sapply(sa_fits, function(s) s$best_fit$rate.cat)
+  cat("corhmm.dredge object\n")
+  cat("  Models retained :", length(x), "\n")
+  cat("  Rate categories :", paste(rate_cats, collapse = ", "), "\n")
+  
+  # SA diagnostics if available
+  if (!is.null(sa_fits)) {
+    for (i in seq_along(sa_fits)) {
+      s <- sa_fits[[i]]
+      cat(sprintf("  [Rate cat %d] Iterations: %d | Acceptance rate: %.1f%% | Restarts: %d | Best %s: %.3f\n",
+        rate_cats[i],
+        s$iterations,
+        s$acceptance_rate * 100,
+        s$restart_count,
+        names(s$best_fit)[grep("AIC", names(s$best_fit))][1],
+        s$best_score))
+    }
+  }
+  
+  cat("\n")
+  
+  # Model table
+  tbl <- getModelTable(x)
+  print(tbl)
+  
+  # Best model
+  best_idx <- which.min(tbl$dAIC)
+  cat("\n--- Best model ---\n")
+  print(x[[best_idx]])
+  
+  # Footer hint
+  cat("\nAccess SA trace: attr(x, 'sa_fits')\n")
+  
+  invisible(x)
+}
+
 plotDredgeTrace <- function(dredge_fits,
   break_size = 5,
   palette = c("drop" = "#A23B72",
@@ -1794,11 +1834,10 @@ plotDredgeTrace <- function(dredge_fits,
   ...) {
   
   # 1. Input Validation
-  if (!is.list(dredge_fits) || !("sa_fits" %in% names(dredge_fits))) {
+  if (!is.list(dredge_fits)) {
     stop("Input must be a corHMMDredge object created with return.all = TRUE.")
   }
-  
-  sa_fits <- dredge_fits$sa_fits
+  sa_fits <- attr(dredge_fits, "sa_fits")
   num_fits <- length(sa_fits)
   if (num_fits == 0) {
     message("No simulated annealing fits found in the object to plot.")
