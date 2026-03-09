@@ -2,19 +2,22 @@
 \alias{corHMMDredge}
 \title{Automatic Discovery of Optimal Discrete Character Models via Simulated Annealing}
 \description{
-This function automates the search for the best-fitting model of discrete character evolution. It uses a combination of simulated annealing and regularization to explore a vast space of possible model structures. This approach helps to identify optimal models without requiring the user to manually specify and compare a large set of candidate models, which is often impractical for complex datasets with multiple characters or hidden rate categories.
+This function automates the search for the best-fitting model of discrete
+character evolution. It uses a combination of simulated annealing and
+optional regularization to explore a vast space of possible model
+structures, identifying optimal models without requiring the user to
+manually specify and compare candidate models.
 }
 \usage{
 corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
-  root.p="maddfitz", tip.fog=NULL, fog.ip=0.01, pen.type = "l1", lambda = 0,
-  drop.threshold = 1e-7, criterion="AIC", merge.threshold=0, index_mat=NULL,
-  node.states = "none", fixed.nodes=FALSE, ip=NULL, nstarts=1, n.cores=1,
-  get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE,
-  lower.bound = 1e-10, upper.bound = 100, opts=NULL, verbose=TRUE,
-  p=NULL, rate.cat=NULL, use_RTMB=TRUE, max.iterations = 200,
-  initial.temp = 2, cooling.rate = 0.95, temp.schedule = "exponential",
-  seed = NULL, return.all=FALSE, checkpoint.file=NULL,
-  checkpoint.interval=50)
+  root.p="maddfitz", tip.fog=NULL, fog.ip=0.01, pen.type="l1", lambda=0,
+  drop.threshold=1e-7, criterion="AIC", merge.threshold=0, index_mat=NULL,
+  node.states="none", fixed.nodes=FALSE, ip=NULL, nstarts=1, n.cores=1,
+  get.tip.states=FALSE, lewis.asc.bias=FALSE, collapse=FALSE,
+  lower.bound=1e-10, upper.bound=100, opts=NULL, verbose=TRUE,
+  p=NULL, rate.cat=NULL, use_RTMB=TRUE, max.iterations=1000,
+  initial.temp=2, cooling.rate=0.95, temp.schedule="exponential",
+  seed=NULL, checkpoint.file=NULL, checkpoint.interval=50)
 }
 \arguments{
   \item{phy}{A phylogenetic tree of class \code{"phylo"}.}
@@ -54,7 +57,9 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
     different) model.}
   \item{node.states}{The method for ancestral state reconstruction.
     Options are \code{"marginal"}, \code{"joint"}, \code{"scaled"}, or
-    \code{"none"}.}
+    \code{"none"}. Defaults to \code{"none"} during the search for speed;
+    set to \code{"marginal"} if ancestral states are needed on the
+    returned models.}
   \item{fixed.nodes}{Logical. Whether to fix the states of labelled
     internal nodes in the provided phylogeny.}
   \item{ip}{Optional numeric vector of initial parameter values for the
@@ -79,10 +84,10 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
     console.}
   \item{p, rate.cat}{Used together to evaluate a single fixed model. If
     both are provided the dredge search is skipped and a single model fit
-    is returned.}
+    is returned immediately.}
   \item{use_RTMB}{Logical. Whether to use the RTMB automatic
     differentiation backend for gradient-based optimisation. Defaults to
-    \code{TRUE}. When \code{TRUE} the gradient is computed analytically,
+    \code{TRUE}. When \code{TRUE} the gradient is computed via autodifferentiation,
     which is substantially faster for complex models.}
   \item{max.iterations}{The maximum number of simulated annealing
     iterations within each rate category.}
@@ -91,17 +96,16 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
     accepting worse models with higher probability early in the search.}
   \item{cooling.rate}{The multiplicative rate at which temperature
     decreases per iteration (\eqn{T_{new} = T_{old} \times
-    \text{cooling.rate}}). Must be between 0 and 1. Defaults to 0.95.}
+    \mathrm{cooling.rate}}). Must be between 0 and 1. Defaults to 0.95.}
   \item{temp.schedule}{The cooling schedule. Options are
     \code{"exponential"} and \code{"linear"}.}
   \item{seed}{An integer random seed for reproducibility.}
-  \item{return.all}{Logical. If \code{TRUE}, returns a list containing
-    both the pruned model set and full simulated annealing diagnostics
-    (required for \code{\link{plotDredgeTrace}}).}
   \item{checkpoint.file}{Optional path to an RDS file used for
     checkpointing. If the file already exists the search resumes from the
     saved state; otherwise a new checkpoint is created at regular
-    intervals.}
+    intervals. When \code{max.rate.cat > 1} a separate checkpoint file is
+    written per rate category (e.g. \code{ckpt_rc1.rds},
+    \code{ckpt_rc2.rds}).}
   \item{checkpoint.interval}{Number of iterations between checkpoint
     saves. Defaults to 50.}
 }
@@ -121,19 +125,24 @@ four modifications to the current model's rate matrix index structure:
     equal. Pairs with similar estimated values are preferentially
     targeted.
   \item \strong{Free:} A currently constrained or dropped parameter is
-    freed to be estimated independently, expanding model complexity.
+    freed to be estimated independently, expanding model complexity[1].
+    
   \item \strong{Eigen-merge:} Parameters are merged based on the
     eigenstructure of the current rate matrix rather than raw value
-    proximity. Specifically, each free parameter is represented as a
-    profile of its absolute loadings onto the eigenvectors of Q. Parameters
-    whose profiles have high cosine similarity -- meaning they drive
-    transitions along the same directions in state space -- are identified
-    as functionally redundant and proposed for merging. This move can
+    proximity[2]. 
+    
+\strong{[1]} Only positions permitted by the maximum index matrix are eligible,
+    preventing proposals that violate the structural constraints of the
+    model space.
+    
+\strong{[2]} Each free parameter is represented as a profile of its
+    absolute loadings onto the eigenvectors of Q. Parameters whose
+    profiles have high cosine similarity -- meaning they drive transitions
+    along the same directions in state space -- are identified as
+    functionally redundant and proposed for merging. This move can
     identify candidates that value-based merging would miss, and is
     particularly effective for complex multi-state or multi-rate-category
-    models. For models with multiple rate categories the full block rate
-    matrix is used, so eigen-merge can also propose merging parameters
-    across rate categories when they are functionally equivalent.
+    models.
 }
 
 \strong{Acceptance criterion.} A proposed model that improves the
@@ -144,37 +153,30 @@ temperature cools the algorithm transitions from broad exploration to
 focused exploitation.
 
 \strong{Restart mechanism.} To avoid entrapment in local optima the
-algorithm can restart from a previously accepted model when the search
-has stagnated. The restart strategy is controlled internally and the
-restart event is recorded in the trace for diagnostic purposes.
-
-\strong{Memory efficiency.} During the search, \code{phy}, \code{data},
-and \code{data.legend} are stripped from stored model objects to reduce
-RAM usage. These fields are restored on the small set of models that
-survive \code{prune_redundant} before the function returns, so every
-model in the output is a complete \code{corhmm} object.
+algorithm periodically restarts from a previously accepted model when the
+search has stagnated (no improvement in \code{restart.interval}
+iterations). The restart event is recorded in the trace for diagnostic
+purposes.
 
 \strong{Regularization.} An optional L1 or L2 penalty on the rate
 parameters is incorporated directly into the likelihood during
 optimisation. The \code{lambda} parameter controls the penalty strength.
-Setting \code{lambda = 0} recovers standard maximum likelihood.
+Setting \code{lambda = 0} recovers standard maximum likelihood, making
+scores directly comparable with \code{\link{corHMM}}.
 }
 \value{
-By default, an object of class \code{"corhmm.dredge"}, which is a list
-of unique accepted models pruned to remove redundant entries (identical
-likelihoods and parameter counts). Each element is a standard
-\code{corhmm} object including \code{$phy}, \code{$data}, and
-\code{$data.legend}. The list is ordered by the information criterion
-score, best model first.
+An object of class \code{"corhmm.dredge"}, which is a list of unique
+accepted models pruned to remove redundant entries (identical likelihoods
+and parameter counts). Each element is a standard \code{corhmm} object
+including \code{$phy}, \code{$data}, and \code{$data.legend}. The list
+is ordered by the information criterion score, best model first.
 
-If \code{return.all = TRUE}, a list with two elements:
-\describe{
-  \item{all_models}{The pruned \code{"corhmm.dredge"} object described
-    above.}
-  \item{sa_fits}{A list of detailed simulated annealing outputs for each
-    rate category explored, including per-iteration scores, move types,
-    and acceptance decisions. Required by \code{\link{plotDredgeTrace}}.}
-}
+Full simulated annealing diagnostics for each rate category explored
+(per-iteration scores, move types, acceptance decisions) are stored as a
+hidden attribute and can be accessed via
+\code{attr(result, "dredge_history")}. This attribute is used
+automatically by \code{\link{plotDredgeTrace}} and is displayed in the
+\code{print} summary.
 }
 \author{
 James D. Boyko
@@ -191,35 +193,51 @@ phy <- multi2di(primates[[1]])
 phy$edge.length <- phy$edge.length + 1e-6
 data <- primates[[2]]
 
-# Basic dredge search -- single rate category, L1 penalty
+# basic dredge search -- single rate category, L1 penalty
 dredge_fits <- corHMMDredge(phy = phy,
   data = data,
   max.rate.cat = 1,
   pen.type = "l1",
   root.p = "maddfitz",
-  lambda = 1,
-  return.all = TRUE)
+  lambda = 1)
 
-# return.all = TRUE is required for the trace plot
+# printing shows a model table and the best model
+print(dredge_fits)
+
+# trace plot uses the hidden dredge_history attribute automatically
 plotDredgeTrace(dredge_fits)
 
-# Inspect the model table
-mod_table <- getModelTable(dredge_fits$all_models)
+# inspect the model table directly
+mod_table <- getModelTable(dredge_fits)
 print(mod_table)
 
-# The best model for downstream analysis
-best_fit <- dredge_fits$all_models[[which.min(mod_table$dAIC)]]
+# the best model for downstream analysis
+best_fit <- dredge_fits[[which.min(mod_table$dAIC)]]
 
-# Without penalization (lambda = 0) likelihoods are directly comparable
-# with standard corHMM output
-# dredge_fits_ml <- corHMMDredge(phy = phy,
-#   data = data,
-#   max.rate.cat = 1,
-#   pen.type = "l1",
-#   root.p = "maddfitz",
-#   lambda = 0)
+# access full SA diagnostics if needed
+history <- attr(dredge_fits, "dredge_history")
 
-# Resume an interrupted run using checkpointing
+# note: models inside dredge_history are stripped of $phy, $data, and
+# $data.legend to save memory during the search. if you need complete
+# objects, reattach the shared fields manually:
+for(i in seq_along(history)){
+  for(j in seq_along(history[[i]]$accepted_models)){
+    history[[i]]$accepted_models[[j]]$phy         <- dredge_fits[[1]]$phy
+    history[[i]]$accepted_models[[j]]$data        <- dredge_fits[[1]]$data
+    history[[i]]$accepted_models[[j]]$data.legend <- dredge_fits[[1]]$data.legend
+  }
+}
+
+for(i in seq_along(history)){
+  for(j in seq_along(history[[i]]$every_model)){
+    if(is.null(history[[i]]$every_model[[j]])){next} 
+    history[[i]]$every_model[[j]]$phy         <- dredge_fits[[1]]$phy
+    history[[i]]$every_model[[j]]$data        <- dredge_fits[[1]]$data
+    history[[i]]$every_model[[j]]$data.legend <- dredge_fits[[1]]$data.legend
+  }
+}
+
+# resume an interrupted run using checkpointing
 # dredge_fits <- corHMMDredge(phy = phy,
 #   data = data,
 #   max.rate.cat = 1,

@@ -9,8 +9,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   max.iterations = 1000, initial.temp = 2, cooling.rate = 0.95, 
   temp.schedule = "exponential", seed = NULL,
   checkpoint.file = NULL, checkpoint.interval = 50){
-  # TODO: ADD TIP FOG
-  
+
   if((is.null(p) & !is.null(rate.cat))){
     print("A rate category was given without specifying a parameter vector (p)")
     return(NULL)
@@ -133,7 +132,7 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       max.iterations, initial.temp, cooling.rate, 
       temp.schedule, verbose, prep=curr_prep,
       tip.fog=tip.fog, fog.ip=fog.ip,
-      checkpoint.file = checkpoint.file, 
+      checkpoint.file = rc_checkpoint_file, 
       checkpoint.interval = checkpoint.interval)
     fit_set[[count]] <- sa_result
     
@@ -160,20 +159,20 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     cat("\nDone.\n")
   }
   
-  all_models <- list()
+  accepted_models <- list()
   for(i in 1:length(fit_set)){
-    all_models <- c(all_models, fit_set[[i]]$all_models)
+    accepted_models <- c(accepted_models, fit_set[[i]]$accepted_models)
   }
-  all_models <- prune_redundant(all_models)
+  accepted_models <- prune_redundant(accepted_models)
   # reattach to final models the big data pieces
-  for(i in seq_along(all_models)){
-    all_models[[i]]$phy         <- phy
-    all_models[[i]]$data        <- data
-    all_models[[i]]$data.legend <- curr_fit$data.legend
+  for(i in seq_along(accepted_models)){
+    accepted_models[[i]]$phy         <- phy
+    accepted_models[[i]]$data        <- data
+    accepted_models[[i]]$data.legend <- curr_fit$data.legend
   }
-  class(all_models) <- "corhmm.dredge"
-  attr(all_models, "sa_fits") <- fit_set
-  return(all_models)
+  class(accepted_models) <- "corhmm.dredge"
+  attr(accepted_models, "dredge_history") <- fit_set
+  return(accepted_models)
 }
 
 strip_corhmm <- function(fit) {
@@ -210,9 +209,9 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     best_fit           <- ckpt$best_fit
     best_index_mat     <- ckpt$best_index_mat
     best_score         <- ckpt$best_score
-    all_models         <- ckpt$all_models
-    all_index_mats     <- ckpt$all_index_mats
-    all_scores         <- ckpt$all_scores
+    accepted_models    <- ckpt$accepted_models
+    accepted_index_mats <- ckpt$accepted_index_mats
+    accepted_scores    <- ckpt$accepted_scores
     model_ids          <- ckpt$model_ids
     every_model        <- ckpt$every_model
     every_score        <- ckpt$every_score
@@ -235,18 +234,18 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     current_index_mat  <- initial_index_mat
     current_score      <- current_fit[[criterion]]
     
-    all_models     <- list()
+    accepted_models     <- list()
     every_model    <- list()
-    all_index_mats <- list()
-    every_score    <- all_scores <- numeric()
+    accepted_index_mats <- list()
+    every_score    <- accepted_scores <- numeric()
     model_ids      <- character()
     every_move     <- character()
     accepted       <- numeric()
     
     initial_id <- paste0(c(initial_index_mat), collapse = "_")
-    every_model[[1]]    <- all_models[[1]] <- initial_fit
-    all_index_mats[[1]] <- initial_index_mat
-    every_score[1]      <- all_scores[1] <- current_score
+    every_model[[1]]    <- accepted_models[[1]] <- initial_fit
+    accepted_index_mats[[1]] <- initial_index_mat
+    every_score[1]      <- accepted_scores[1] <- current_score
     model_ids[1]        <- initial_id
     every_move[1]       <- "none"
     accepted[1]         <- 1L
@@ -283,9 +282,9 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       best_fit           = best_fit,
       best_index_mat     = best_index_mat,
       best_score         = best_score,
-      all_models         = all_models,
-      all_index_mats     = all_index_mats,
-      all_scores         = all_scores,
+      accepted_models         = accepted_models,
+      accepted_index_mats     = accepted_index_mats,
+      accepted_scores         = accepted_scores,
       model_ids          = model_ids,
       every_model        = every_model,
       every_score        = every_score,
@@ -335,12 +334,12 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       every_score[every_idx] <- current_score
       every_model[[every_idx]] <- NULL   ## no new fit on a restart
       
-      available_indices <- which(all_scores != best_score)
+      available_indices <- which(accepted_scores != best_score)
       if (length(available_indices) > 0) {
         restart_idx       <- sample(available_indices, 1)
-        current_fit       <- all_models[[restart_idx]]
-        current_index_mat <- all_index_mats[[restart_idx]]
-        current_score     <- all_scores[restart_idx]
+        current_fit       <- accepted_models[[restart_idx]]
+        current_index_mat <- accepted_index_mats[[restart_idx]]
+        current_score     <- accepted_scores[restart_idx]
       } else {
         current_fit       <- best_fit
         current_index_mat <- best_index_mat
@@ -419,10 +418,10 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       accepted_moves       <- accepted_moves + 1L
       steps_since_accept   <- 0L
       
-      model_count            <- length(all_models) + 1L
-      all_models[[model_count]]     <- strip_corhmm(current_fit)
-      all_index_mats[[model_count]] <- current_index_mat
-      all_scores[model_count]       <- current_score
+      model_count            <- length(accepted_models) + 1L
+      accepted_models[[model_count]]     <- strip_corhmm(current_fit)
+      accepted_index_mats[[model_count]] <- current_index_mat
+      accepted_scores[model_count]       <- current_score
       model_ids[model_count]        <- move_id
       
       if (current_score < best_score) {
@@ -449,7 +448,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
   
   model_summary <- data.frame(
     model_id = model_ids,
-    score    = all_scores,
+    score    = accepted_scores,
     stringsAsFactors = FALSE
   )
   model_summary <- model_summary[order(model_summary$score), ]
@@ -458,14 +457,14 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     best_fit             = best_fit,
     best_index_mat       = best_index_mat,
     best_score           = best_score,
-    all_models           = all_models,
-    all_index_mats       = all_index_mats,
-    all_scores           = all_scores,
+    accepted_models      = accepted_models,
+    accepted_index_mats  = accepted_index_mats,
+    accepted_scores      = accepted_scores,
     model_ids            = model_ids,
     model_summary        = model_summary,
     iterations           = iteration,
     acceptance_rate      = acceptance_rate,
-    total_unique_models  = length(all_models),
+    total_unique_models  = length(accepted_models),
     restart_count        = restart_count,
     final_steps_since_best = steps_since_best,
     every_model          = every_model,
@@ -1170,7 +1169,8 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
     use_RTMB    = use_RTMB,
     tip.fog     = tip.fog,
     fog.ip      = fog.ip,
-    tip.fog.p   = tip.fog.probs
+    tip.fog.p   = tip.fog.probs,
+    rtmb_obj    = RTMB_obj
   )
   class(obj) <- "corhmm"
   return(obj)
@@ -1662,9 +1662,9 @@ kFoldCrossValidation <- function(corhmm_obj, k, lambdas=NULL, return_model=TRUE,
                                          upper.bound = 100, 
                                          opts=NULL, 
                                          p=NULL,
-                                         use_RTMB = use_RTMB,
-                                         fog.ip = fog.ip,
-                                         tip.fog = tip.fog)
+                                         use_RTMB = corhmm_obj$use_RTMB,
+                                         fog.ip = corhmm_obj$fog.ip,
+                                         tip.fog = corhmm_obj$tip.fog)
       
       # Evaluate the model on testing data
       score <- evaluateModel(model, corhmm_obj)
@@ -1789,7 +1789,7 @@ getCVTable <- function(x){
 #' @export
 #' @method print corhmm.dredge
 print.corhmm.dredge <- function(x, ...) {
-  sa_fits <- attr(x, "sa_fits")
+  sa_fits <- attr(x, "dredge_history")
   
   # Header
   n_rc <- length(sa_fits)
@@ -1824,7 +1824,7 @@ print.corhmm.dredge <- function(x, ...) {
   print(x[[best_idx]])
   
   # Footer hint
-  cat("\nAccess SA trace: attr(x, 'sa_fits')\n")
+  cat("\nAccess SA trace: attr(x, 'dredge_history')\n")
   
   invisible(x)
 }
@@ -1843,9 +1843,9 @@ plotDredgeTrace <- function(dredge_fits,
   
   # 1. Input Validation
   if (!is.list(dredge_fits)) {
-    stop("Input must be a corHMMDredge object created with return.all = TRUE.")
+    stop("Input must be a corHMMDredge object.")
   }
-  sa_fits <- attr(dredge_fits, "sa_fits")
+  sa_fits <- attr(dredge_fits, "dredge_history")
   num_fits <- length(sa_fits)
   if (num_fits == 0) {
     message("No simulated annealing fits found in the object to plot.")

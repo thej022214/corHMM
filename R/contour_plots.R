@@ -69,6 +69,7 @@ get_profile_lik <- function(par_free_0, par_fixed_values, par_fixed_index, ncore
 get_batch_profile_lik <- function(corhmm_obj, range_factor, n_points, verbose=FALSE, ncores=NULL, dredge=FALSE) {
   # Generate logarithmically spaced points for all parameters
   # mle_pars is expected to be a named list or vector of MLEs for each parameter
+  corhmm_obj$phy <-  reorder(corhmm_obj$phy, "pruningwise")
   mle_pars <- MatrixToPars(corhmm_obj)
   log_points_list <- generate_log_points(mle_pars, range_factor, n_points)
   profile_lik_results <- list()
