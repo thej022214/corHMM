@@ -113,6 +113,14 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       cat("\n")
     }
     
+    rc_checkpoint_file <- if (!is.null(checkpoint.file)) {
+      paste0(tools::file_path_sans_ext(checkpoint.file), 
+        "_rc", current_rate_category, ".",
+        tools::file_ext(checkpoint.file))
+    } else {
+      NULL
+    }
+    
     # SIMULATED ANNEALING WITHIN THIS RATE CATEGORY
     sa_result <- sa_within_rate_category(phy, data, curr_fit, 
       curr_index_mat, max_index_mat,
