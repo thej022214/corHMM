@@ -1148,6 +1148,12 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
     NULL
   }
   
+  if(use_RTMB){
+      rtmb_obj <- RTMB_obj
+    }else{
+      rtmb_obj <- NULL
+      }
+  
   obj <- list(
     loglik      = loglik,
     AIC         = AIC,
@@ -1170,7 +1176,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
     tip.fog     = tip.fog,
     fog.ip      = fog.ip,
     tip.fog.p   = tip.fog.probs,
-    rtmb_obj    = RTMB_obj
+    rtmb_obj    = rtmb_obj
   )
   class(obj) <- "corhmm"
   return(obj)
