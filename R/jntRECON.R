@@ -153,8 +153,7 @@ compute_joint_results <- function(sim_result) {
   many_joints <- compute_joint_ci(
     res, 
     batch_size = 100, 
-    max_samples = 1000, 
-    ncores = 10
+    max_samples = 1000 
   )
   
   perc_correct <- unlist(lapply(

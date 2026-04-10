@@ -88,36 +88,49 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       upper.bound=upper.bound, lewis.asc.bias=lewis.asc.bias,
       use_RTMB=use_RTMB, opts=opts, tip.fog=tip.fog, fog.ip=fog.ip)
     
-    # Initial fit for this rate category
-    curr_fit <- try(corHMMDredgeBase(phy=phy, data=data, 
-      rate.cat=current_rate_category, root.p=root.p, pen.type = pen.type, 
-      lambda = lambda, rate.mat=curr_index_mat, node.states = node.states, 
-      fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts, tip.fog=tip.fog, 
-      n.cores=n.cores, get.tip.states = get.tip.states, fog.ip=fog.ip,
-      lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
-      lower.bound = lower.bound, upper.bound = upper.bound, 
-      opts=opts, p=NULL, use_RTMB=use_RTMB, prep=curr_prep))
-    
-    if(inherits(curr_fit, "try-error")){
-      warning("Model fitting failed. Stopping dredge.")
-      model_improved <- FALSE
-      fit_set[[count]] <- curr_fit
-      next
-    }
-    
-    curr_info_criterion <- curr_fit[[criterion]]
-    if(verbose){
-      cat("Initial", criterion, ":", curr_info_criterion, "\n")
-      print(curr_fit$index.mat)
-      cat("\n")
-    }
-    
     rc_checkpoint_file <- if (!is.null(checkpoint.file)) {
       paste0(tools::file_path_sans_ext(checkpoint.file), 
         "_rc", current_rate_category, ".",
         tools::file_ext(checkpoint.file))
     } else {
       NULL
+    }
+    
+    # Check if checkpoint already has an initial fit we can reuse
+    checkpoint_has_state <- !is.null(rc_checkpoint_file) && 
+      file.exists(rc_checkpoint_file) && {
+        ckpt <- tryCatch(readRDS(rc_checkpoint_file), error = function(e) NULL)
+        !is.null(ckpt) && (!is.null(ckpt$current_fit) || isTRUE(ckpt$finished))
+      }
+    
+    if (checkpoint_has_state) {
+      if (verbose) cat("Checkpoint found for rate category", current_rate_category, 
+        "- skipping initial fit.\n")
+      curr_fit <- NULL  # sa_within_rate_category will restore from checkpoint
+    } else {
+      # Initial fit for this rate category
+      curr_fit <- try(corHMMDredgeBase(phy=phy, data=data, 
+        rate.cat=current_rate_category, root.p=root.p, pen.type = pen.type, 
+        lambda = lambda, rate.mat=curr_index_mat, node.states = node.states, 
+        fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts, tip.fog=tip.fog, 
+        n.cores=n.cores, get.tip.states = get.tip.states, fog.ip=fog.ip,
+        lewis.asc.bias = lewis.asc.bias, collapse = collapse, 
+        lower.bound = lower.bound, upper.bound = upper.bound, 
+        opts=opts, p=NULL, use_RTMB=use_RTMB, prep=curr_prep))
+      
+      if(inherits(curr_fit, "try-error")){
+        warning("Model fitting failed. Stopping dredge.")
+        model_improved <- FALSE
+        fit_set[[count]] <- curr_fit
+        next
+      }
+      
+      curr_info_criterion <- curr_fit[[criterion]]
+      if(verbose){
+        cat("Initial", criterion, ":", curr_info_criterion, "\n")
+        print(curr_fit$index.mat)
+        cat("\n")
+      }
     }
     
     # SIMULATED ANNEALING WITHIN THIS RATE CATEGORY
