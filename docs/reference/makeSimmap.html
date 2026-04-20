@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
       </span>
     </div>
 
@@ -55,7 +55,7 @@
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">makeSimmap</span><span class="op">(</span><span class="va">tree</span>, <span class="va">data</span>, <span class="va">model</span>, <span class="va">rate.cat</span>, root.p<span class="op">=</span><span class="st">"yang"</span>, nSim<span class="op">=</span><span class="fl">1</span>, nCores<span class="op">=</span><span class="fl">1</span>, fix.node<span class="op">=</span><span class="cn">NULL</span>,</span>
-<span>fix.state<span class="op">=</span><span class="cn">NULL</span>, parsimony <span class="op">=</span> <span class="cn">FALSE</span>, max.attempt <span class="op">=</span> <span class="fl">1000</span>, collapse<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span>fix.state<span class="op">=</span><span class="cn">NULL</span>, parsimony <span class="op">=</span> <span class="cn">FALSE</span>, max.attempt <span class="op">=</span> <span class="fl">1e5</span>, collapse<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -124,21 +124,34 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">primates</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu">multi2di</span><span class="op">(</span><span class="va">phy</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/multi2di.html" class="external-link">multi2di</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">##run corhmm</span></span></span>
 <span class="r-in"><span><span class="va">MK</span> <span class="op">&lt;-</span> <span class="fu"><a href="corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span>, <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> States:	0|0	0|1	1|1	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Counts:	29	10	21	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing 0 random restarts </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states using marginal reconstruction. </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> States:0|00|11|1</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Counts:291021</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing0random restarts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states usingmarginalreconstruction.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">##get simmap from corhmm solution</span></span></span>
 <span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="va">MK</span><span class="op">$</span><span class="va">solution</span></span></span>
-<span class="r-in"><span><span class="va">simmap</span> <span class="op">&lt;-</span> <span class="fu">makeSimmap</span><span class="op">(</span>tree<span class="op">=</span><span class="va">phy</span>, data<span class="op">=</span><span class="va">data</span>, model<span class="op">=</span><span class="va">model</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, nSim<span class="op">=</span><span class="fl">1</span>, nCores<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">simmaps</span> <span class="op">&lt;-</span> <span class="fu">makeSimmap</span><span class="op">(</span>tree<span class="op">=</span><span class="va">phy</span>, data<span class="op">=</span><span class="va">data</span>, model<span class="op">=</span><span class="va">model</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, nSim<span class="op">=</span><span class="fl">100</span>, nCores<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## get the summary</span></span></span>
+<span class="r-in"><span><span class="va">simmap_summaries</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">simmaps</span>, <span class="va">summarize_single_simmap</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">summary_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="summarize_simmaps.html">summarize_transition_stats</a></span><span class="op">(</span><span class="va">simmap_summaries</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">summary_df</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   transition avg_count sd_count   avg_age    sd_age avg_first_age sd_first_age</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1    0|0,0|1      8.36 2.808789 14.286471 12.226670      35.14966     10.77071</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    0|1,0|0      9.66 2.906697 12.873929 10.711360      31.76098     10.00761</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    0|1,1|1      4.79 1.297200 13.761488  9.077361      25.54842      6.42255</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4    1|1,0|1      3.72 1.848177  9.875203 10.805980      16.51956     13.65378</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## we import phytools plotSimmap for plotting</span></span></span>
 <span class="r-in"><span><span class="co"># library(phytools)</span></span></span>
@@ -158,7 +171,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

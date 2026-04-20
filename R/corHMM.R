@@ -407,7 +407,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     }
 	
     # StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
-    rownames(solution) <- colnames(solution) <- StateNames
+    try({rownames(solution) <- colnames(solution) <- StateNames})
 	if(set.fog == TRUE){
 		tip.fog.probs <- numeric(length(model.set.final$fog.vec))
 		tip.fog.probs[] <- c(fog.est, 0)[model.set.final$fog.vec]
@@ -422,8 +422,8 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	}
     if (is.character(node.states)) {
         if (node.states == "marginal" || node.states == "scaled"){
-            colnames(lik.anc$lik.anc.states) <- StateNames
-            colnames(tip.states) <- StateNames
+            try({colnames(lik.anc$lik.anc.states) <- StateNames})
+            try({colnames(tip.states) <- StateNames})
         }
     }
 

@@ -1134,8 +1134,8 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
   solution <- matrix(est.pars[model.set.final$index.matrix], dim(model.set.final$index.matrix))
   np <- model.set.final$np
   index.matrix <- model.set.final$index.matrix
-  rownames(solution) <- colnames(solution) <- StateNames_rc
-  rownames(index.matrix) <- colnames(index.matrix) <- StateNames_rc
+  try({rownames(solution) <- colnames(solution) <- StateNames_rc})
+  try({rownames(index.matrix) <- colnames(index.matrix) <- StateNames_rc})
   solution <- solution / H
   solution[solution < lower.bound] <- lower.bound
   

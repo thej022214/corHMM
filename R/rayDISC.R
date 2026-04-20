@@ -318,8 +318,8 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 	if((any(solution == lb,na.rm = TRUE) || any(solution == ub,na.rm = TRUE)) && (lb != 0 || ub != 100)){
 		bound.hit <- TRUE
 	}
-	rownames(solution) <- rownames(solution.se) <- state.names
-	colnames(solution) <- colnames(solution.se) <- state.names
+	try({rownames(solution) <- rownames(solution.se) <- state.names})
+	try({colnames(solution) <- colnames(solution.se) <- state.names})
 	if(is.character(node.states)){
 		if (node.states == "marginal" || node.states == "scaled"){
             colnames(lik.anc$lik.anc.states) <- state.names

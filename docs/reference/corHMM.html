@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
       </span>
     </div>
 
@@ -58,7 +58,7 @@
 <span>node.states <span class="op">=</span> <span class="st">"marginal"</span>, fixed.nodes<span class="op">=</span><span class="cn">FALSE</span>, p<span class="op">=</span><span class="cn">NULL</span>, root.p<span class="op">=</span><span class="st">"yang"</span>, </span>
 <span>tip.fog<span class="op">=</span><span class="cn">NULL</span>, ip<span class="op">=</span><span class="cn">NULL</span>, fog.ip<span class="op">=</span><span class="fl">0.01</span>, nstarts<span class="op">=</span><span class="fl">0</span>, n.cores<span class="op">=</span><span class="fl">1</span>, </span>
 <span>get.tip.states <span class="op">=</span> <span class="cn">FALSE</span>, lewis.asc.bias <span class="op">=</span> <span class="cn">FALSE</span>, collapse <span class="op">=</span> <span class="cn">TRUE</span>, </span>
-<span>lower.bound <span class="op">=</span> <span class="fl">1e-9</span>, upper.bound <span class="op">=</span> <span class="fl">100</span>, opts<span class="op">=</span><span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span>lower.bound <span class="op">=</span> <span class="fl">1e-9</span>, upper.bound <span class="op">=</span> <span class="fl">100</span>, opts<span class="op">=</span><span class="cn">NULL</span>, return.devfun <span class="op">=</span> <span class="cn">FALSE</span>, use_RTMB <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -125,6 +125,12 @@
 <dt id="arg-opts">opts<a class="anchor" aria-label="anchor" href="#arg-opts"></a></dt>
 <dd><p>options to pass to nloptr. default is <code>NULL</code>.</p></dd>
 
+<dt id="arg-return-devfun">return.devfun<a class="anchor" aria-label="anchor" href="#arg-return-devfun"></a></dt>
+<dd><p>return deviance function?</p></dd>
+
+<dt id="arg-use-rtmb">use_RTMB<a class="anchor" aria-label="anchor" href="#arg-use-rtmb"></a></dt>
+<dd><p>use RTMB for optimization?</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -182,6 +188,12 @@
 <dt>$root.p</dt>
 <dd><p>The root prior used in model estimation.</p></dd>
 
+<dt>pen.type</dt>
+<dd><p>The penalty type used in model estimation.</p></dd>
+
+<dt>lambda</dt>
+<dd><p>The hyperparameter that adjusts penalty severity used in model estimation.</p></dd>
+
 </dl></div>
     <div id="references">
     <h2>References</h2>
@@ -207,11 +219,13 @@
 <span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">MK_3state</span> <span class="op">&lt;-</span> <span class="fu">corHMM</span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, rate.cat <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> States:	0|0	0|1	1|1	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Counts:	29	10	21	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing 0 random restarts </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states using marginal reconstruction. </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> States:0|00|11|1</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Counts:291021</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing0random restarts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states usingmarginalreconstruction.</span>
 <span class="r-in"><span><span class="va">MK_3state</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fit</span>
@@ -220,7 +234,7 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Legend</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "T1|T2"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "0|0" "1|0" "0|1" "1|1"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "0|0" "0|1" "1|1"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Rates</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            0|0        0|1        1|1</span>
@@ -255,11 +269,13 @@
 <span class="r-in"><span><span class="co"># run</span></span></span>
 <span class="r-in"><span><span class="va">MK_3state.fixed</span> <span class="op">&lt;-</span> <span class="fu">corHMM</span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>, rate.mat <span class="op">=</span> <span class="va">rate.mat</span>, p <span class="op">=</span> <span class="va">p</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> States:	0|0	0|1	1|1	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Counts:	29	10	21	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Calculating likelihood from a set of fixed parameters </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states using marginal reconstruction. </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> States:0|00|11|1</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Counts:291021</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating likelihood from a set of fixed parameters</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states usingmarginalreconstruction.</span>
 <span class="r-in"><span><span class="va">MK_3state.fixed</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fit</span>
@@ -268,7 +284,7 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Legend</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "T1|T2"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "0|0" "1|0" "0|1" "1|1"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "0|0" "0|1" "1|1"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Rates</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      0|0  0|1  1|1</span>
@@ -292,7 +308,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

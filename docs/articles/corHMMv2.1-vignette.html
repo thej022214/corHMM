@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
       </span>
     </div>
 
@@ -87,7 +87,7 @@ new extensions as well as other new and useful features:</p>
 <li>
 <p><strong>Section 1 Default use of corHMM</strong></p>
 <ul>
-<li>1.1: No hidden rate categores</li>
+<li>1.1: No hidden rate categories</li>
 <li>1.2: Any number of hidden rate categories</li>
 <li>1.3: Estimating “tip fog”</li>
 </ul>
@@ -223,7 +223,7 @@ q_{3 \rightarrow 1} &amp; - &amp; - &amp; q_{3 \rightarrow 4}\\
 a set of characters into a <em>single</em> multistate character. This
 means that two characters need not have the same number of character
 states – that is, one trait could have four states, and the other could
-be binary. We also allow any model to be expanded to accomodate an
+be binary. We also allow any model to be expanded to accommodate an
 arbitrary number of hidden states. Thus, <code><a href="../reference/corHMM.html">corHMM()</a></code> is
 completely flexible and naturally contains <code><a href="../reference/rayDISC.html">rayDISC()</a></code> and
 <code><a href="../reference/corDISC.html">corDISC()</a></code> capabilities - standalone functions in previous
@@ -249,11 +249,11 @@ that comes with <code>corHMM</code>:</p>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">phy</span>, show.tip.label <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">data</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span>, <span class="va">data</span><span class="op">[</span>, <span class="fl">3</span><span class="op">]</span>, row.names <span class="op">=</span> <span class="va">data</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">data</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span>, <span class="va">data</span><span class="op">[</span>, <span class="fl">3</span><span class="op">]</span>, row.names <span class="op">=</span> <span class="va">data</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="va">data.sort</span><span class="op">[</span><span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span>, <span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/nodelabels.html" class="external-link">tiplabels</a></span><span class="op">(</span>pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="va">data.sort</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="fl">1</span>, cex <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/nodelabels.html" class="external-link">tiplabels</a></span><span class="op">(</span>pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="va">data.sort</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">+</span><span class="fl">3</span>, cex <span class="op">=</span> <span class="fl">0.5</span>, offset <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;"></p>
+<span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/nodelabels.html" class="external-link">tiplabels</a></span><span class="op">(</span>pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="va">data.sort</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1</span>, cex <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/nodelabels.html" class="external-link">tiplabels</a></span><span class="op">(</span>pch <span class="op">=</span> <span class="fl">16</span>, col <span class="op">=</span> <span class="va">data.sort</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fl">3</span>, cex <span class="op">=</span> <span class="fl">0.5</span>, offset <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>We have two characters each with two possible states: trait 1 is the
 absence (black) or presence (red) of estrus advertisement in females,
 and trait 2 is single male (green) or multimale (blue) mating system in
@@ -287,7 +287,7 @@ evolve either estrus advertisement or multimale mating system.</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "T1|T2"</span></span>
-<span><span class="co">## [1] "0|0" "1|0" "0|1" "1|1"</span></span>
+<span><span class="co">## [1] "(1,R1)" "(2,R1)" "(3,R1)"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##            (1,R1)     (2,R1)     (3,R1)</span></span>
@@ -348,7 +348,7 @@ rate.cat &gt; 1). To help users, we have implemented a new plotting
 function:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotMKmodel.html">plotMKmodel</a></span><span class="op">(</span><span class="va">MK_3state</span><span class="op">)</span></span></code></pre></div>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-6-1.png" width="576" style="display: block; margin: auto;"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>This function uses a <code>corHMM</code> object (which is the result
 of running <code><a href="../reference/corHMM.html">corHMM()</a></code>) or a custom rate matrix (discussed in
 a later section) to plot the model in two parts. On the left is a ball
@@ -365,17 +365,18 @@ the output.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">phy</span> <span class="op">=</span> <span class="va">MK_3state</span><span class="op">$</span><span class="va">phy</span></span>
 <span><span class="va">data</span> <span class="op">=</span> <span class="va">MK_3state</span><span class="op">$</span><span class="va">data</span></span>
-<span><span class="va">model</span>  <span class="op">=</span> <span class="va">MK_3state</span><span class="op">$</span><span class="va">solution</span></span>
+<span><span class="va">model</span> <span class="op">=</span> <span class="va">MK_3state</span><span class="op">$</span><span class="va">solution</span></span>
 <span><span class="va">model</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/colSums-methods.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="co"># run get simmap (can be plotted using phytools)</span></span>
-<span><span class="va">simmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeSimmap.html">makeSimmap</a></span><span class="op">(</span>tree<span class="op">=</span><span class="va">phy</span>, data<span class="op">=</span><span class="va">data</span>, model<span class="op">=</span><span class="va">model</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, nSim<span class="op">=</span><span class="fl">1</span>, nCores<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">simmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeSimmap.html">makeSimmap</a></span><span class="op">(</span>tree <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, model <span class="op">=</span> <span class="va">model</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>, nSim <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    nCores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co"># we import phytools plotSimmap for plotting</span></span>
-<span><span class="fu">phytools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/phytools/man/plotSimmap.html" class="external-link">plotSimmap</a></span><span class="op">(</span><span class="va">simmap</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, fsize<span class="op">=</span><span class="fl">.5</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">phytools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/phytools/man/plotSimmap.html" class="external-link">plotSimmap</a></span><span class="op">(</span><span class="va">simmap</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, fsize <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## no colors provided. using the following legend:</span></span>
 <span><span class="co">##       0|0       0|1       1|1 </span></span>
 <span><span class="co">##   "black" "#DF536B" "#61D04F"</span></span></code></pre>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="700"></p>
 <div class="section level5">
 <h5 id="a-trait-with-any-number-of-states-and-any-number-of-hidden-rate-categories">1.2: A trait with any number of states and any number of hidden rate
 categories<a class="anchor" aria-label="anchor" href="#a-trait-with-any-number-of-states-and-any-number-of-hidden-rate-categories"></a>
@@ -397,7 +398,7 @@ from above:</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "T1|T2"</span></span>
-<span><span class="co">## [1] "0|0" "1|0" "0|1" "1|1"</span></span>
+<span><span class="co">## [1] "(1,R1)" "(2,R1)" "(3,R1)" "(1,R2)" "(2,R2)" "(3,R2)"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##            (1,R1)     (2,R1)     (3,R1)      (1,R2)      (2,R2)     (3,R2)</span></span>
@@ -412,9 +413,9 @@ from above:</p>
 <p>Models with more states (larger state space) take longer to estimate
 because the number of transition rates increases. Hidden rate models
 further expand state space. For example, adding a second rate category
-incerases the number of transition rates from 4 to 10 (if the model is
+increases the number of transition rates from 4 to 10 (if the model is
 left as the default “ARD”). In section 1.1 we left our parameters
-unconstrained. We estimated all transisions as independent and allowed
+unconstrained. We estimated all transitions as independent and allowed
 for transitions from all states to any other state. However, we can
 constrain a model in <code>corHMM</code> in two different ways. The
 easiest way is to set the model to either “SYM” or “ER”. This is what
@@ -438,29 +439,30 @@ observed states transition within each rate category, and the last panel
 shows transitions among the different rate classes:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotMKmodel.html">plotMKmodel</a></span><span class="op">(</span><span class="va">HMM_3state</span>, display <span class="op">=</span> <span class="st">"row"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-9-1.png" width="960" style="display: block; margin: auto;"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="960" style="display: block; margin: auto;"></p>
 <p>And again we can plot the simmap of this <code>corHMM</code> result.
 It is important to note that a character history not only generates
 hypotheses about ancestral states, but is an effective way to visualize
 the tempo of evolution. This is particularly important for HMMs where
 rates of evolution can vary drastically across the tree.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#get simmap inputs from corhmm outputs</span></span>
+<code class="sourceCode R"><span><span class="co"># get simmap inputs from corhmm outputs</span></span>
 <span><span class="va">phy</span> <span class="op">=</span> <span class="va">HMM_3state</span><span class="op">$</span><span class="va">phy</span></span>
 <span><span class="va">data</span> <span class="op">=</span> <span class="va">HMM_3state</span><span class="op">$</span><span class="va">data</span></span>
-<span><span class="va">model</span>  <span class="op">=</span> <span class="va">HMM_3state</span><span class="op">$</span><span class="va">solution</span></span>
+<span><span class="va">model</span> <span class="op">=</span> <span class="va">HMM_3state</span><span class="op">$</span><span class="va">solution</span></span>
 <span><span class="va">model</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/colSums-methods.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># run get simmap (can be plotted using phytools)</span></span>
-<span><span class="va">simmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeSimmap.html">makeSimmap</a></span><span class="op">(</span>tree<span class="op">=</span><span class="va">phy</span>, data<span class="op">=</span><span class="va">data</span>, model<span class="op">=</span><span class="va">model</span>, rate.cat<span class="op">=</span><span class="fl">2</span>, nSim<span class="op">=</span><span class="fl">1</span>, nCores<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">simmap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeSimmap.html">makeSimmap</a></span><span class="op">(</span>tree <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, model <span class="op">=</span> <span class="va">model</span>, rate.cat <span class="op">=</span> <span class="fl">2</span>, nSim <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    nCores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># we import phytools plotSimmap for plotting</span></span>
-<span><span class="fu">phytools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/phytools/man/plotSimmap.html" class="external-link">plotSimmap</a></span><span class="op">(</span><span class="va">simmap</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, fsize<span class="op">=</span><span class="fl">.5</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">phytools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/phytools/man/plotSimmap.html" class="external-link">plotSimmap</a></span><span class="op">(</span><span class="va">simmap</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, fsize <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## no colors provided. using the following legend:</span></span>
 <span><span class="co">##    R1 0|0    R1 0|1    R1 1|1    R2 0|0    R2 0|1    R2 1|1 </span></span>
 <span><span class="co">##   "black" "#DF536B" "#61D04F" "#2297E6" "#28E2E5" "#CD0BBC"</span></span></code></pre>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-10-1.png" width="700"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 </div>
 <div class="section level3">
@@ -485,19 +487,21 @@ containing 64 taxa:</p>
 <span><span class="va">markov.rate</span> <span class="op">&lt;-</span> <span class="fl">0.05</span></span>
 <span><span class="va">Q</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="va">markov.rate</span>, <span class="va">markov.rate</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">markov.rate</span>, <span class="op">-</span><span class="va">markov.rate</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ages</span> <span class="op">&lt;-</span> <span class="fl">7</span></span>
-<span><span class="va">phy</span><span class="op">$</span><span class="va">edge.length</span> <span class="op">&lt;-</span> <span class="va">phy</span><span class="op">$</span><span class="va">edge.length</span><span class="op">*</span><span class="va">ages</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/branching.times.html" class="external-link">branching.times</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">traits</span> <span class="op">&lt;-</span> <span class="fu">corHMM</span><span class="fu">:::</span><span class="fu"><a href="../reference/simMarkov.html">simMarkov</a></span><span class="op">(</span><span class="va">phy</span>, Q<span class="op">=</span><span class="va">Q</span>, root.freqs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">phy</span><span class="op">$</span><span class="va">edge.length</span> <span class="op">&lt;-</span> <span class="va">phy</span><span class="op">$</span><span class="va">edge.length</span> <span class="op">*</span> <span class="va">ages</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/branching.times.html" class="external-link">branching.times</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">traits</span> <span class="op">&lt;-</span> <span class="fu">corHMM</span><span class="fu">:::</span><span class="fu"><a href="../reference/simMarkov.html">simMarkov</a></span><span class="op">(</span><span class="va">phy</span>, Q <span class="op">=</span> <span class="va">Q</span>, root.freqs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
-<span><span class="va">phydat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>taxon<span class="op">=</span><span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span>, Reg<span class="op">=</span><span class="va">traits</span><span class="op">$</span><span class="va">TipStates</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">phydat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>taxon <span class="op">=</span> <span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span>, Reg <span class="op">=</span> <span class="va">traits</span><span class="op">$</span><span class="va">TipStates</span><span class="op">)</span></span></code></pre></div>
 <p>and then estimate the transition rates using <code>corHMM</code>:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pp.nofog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pp.nofog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp.nofog</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -517,30 +521,32 @@ containing 64 taxa:</p>
 <p>Here when the rates are known perfectly we obtain a rate estimate of
 ~0.025 transitions per million years. Now let’s see what happens when we
 choose 10% of the taxa and switch their observed state:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">error</span> <span class="op">&lt;-</span> <span class="fl">0.10</span></span>
-<span><span class="va">error.absolute</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">phydat</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">*</span><span class="va">error</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">error</span> <span class="op">&lt;-</span> <span class="fl">0.1</span></span>
+<span><span class="va">error.absolute</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">phydat</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">*</span> <span class="va">error</span><span class="op">)</span></span>
 <span><span class="va">taxa.sample</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">phydat</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">error.absolute</span><span class="op">)</span></span>
-<span>        <span class="va">phydat.new</span> <span class="op">&lt;-</span> <span class="va">phydat</span></span>
-<span>        <span class="kw">for</span><span class="op">(</span><span class="va">index</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">taxa.sample</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
-<span>            <span class="va">state</span> <span class="op">&lt;-</span> <span class="va">phydat</span><span class="op">[</span><span class="va">taxa.sample</span><span class="op">[</span><span class="va">index</span><span class="op">]</span>,<span class="fl">2</span><span class="op">]</span></span>
-<span>            <span class="kw">if</span><span class="op">(</span><span class="va">state</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span><span class="op">{</span></span>
-<span>                <span class="va">state</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
-<span>            <span class="op">}</span><span class="kw">else</span><span class="op">{</span></span>
-<span>                <span class="va">state</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
-<span>            <span class="op">}</span></span>
-<span>            <span class="va">phydat.new</span><span class="op">[</span><span class="va">taxa.sample</span><span class="op">[</span><span class="va">index</span><span class="op">]</span>,<span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">state</span></span>
+<span><span class="va">phydat.new</span> <span class="op">&lt;-</span> <span class="va">phydat</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">index</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">taxa.sample</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">state</span> <span class="op">&lt;-</span> <span class="va">phydat</span><span class="op">[</span><span class="va">taxa.sample</span><span class="op">[</span><span class="va">index</span><span class="op">]</span>, <span class="fl">2</span><span class="op">]</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="va">state</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="va">state</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
+<span>    <span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>        <span class="va">state</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span>    <span class="op">}</span></span>
+<span>    <span class="va">phydat.new</span><span class="op">[</span><span class="va">taxa.sample</span><span class="op">[</span><span class="va">index</span><span class="op">]</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">state</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>To see the effect of tip fog let’s re-estimate the transition
 rates:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pp.fog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pp.fog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp.fog</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -559,14 +565,16 @@ rates:</p>
 <span><span class="co">## Arrived at a reliable solution</span></span></code></pre>
 <p>The transition rate increases by an order of magnitude. We can run a
 fix value for tip fog of 10%. Let’s run it:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pp.fixfog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, tip.fog<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pp.fixfog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>, tip.fog <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp.fixfog</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -589,14 +597,17 @@ contains the number of free parameters the user wants to estaimte. For
 example, suppose we want to assume a single tip fog for both states,
 we’d input a vector of <code>c(1,1)</code> to correspond to a single
 parameter applied to both states:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pp.estfog1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, tip.fog<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pp.estfog1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>, tip.fog <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
+<span>    <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp.estfog1</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -622,19 +633,24 @@ about 9% chance of being incorrectly assigned it’s observed state. This
 is very close to the 10% we used in the simulation. Now, suppose we want
 to see if there are different tip fog values for each of the observed
 states, we’d input a vector of <code>c(1,2)</code>:</p>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pp.estfog2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, tip.fog<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>, fog.ip<span class="op">=</span><span class="fl">0.09095415</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pp.estfog2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>, tip.fog <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
+<span>    <span class="fl">2</span><span class="op">)</span>, fog.ip <span class="op">=</span> <span class="fl">0.09095415</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp.estfog2</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -664,14 +680,17 @@ tip fog values for each observed state are simply replicated across the
 different rate categories. Thus, a user only needs to include the vector
 for the free parameters for the observed state. For example, in the two
 tip fog model, but with two rate categories the input would be:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pp.estfog2.2cat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">2</span>, tip.fog<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  1   2   </span></span>
-<span><span class="co">## Counts:  32  32  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pp.estfog2.2cat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">phydat.new</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">2</span>, tip.fog <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
+<span>    <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:12</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3232</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp.estfog2.2cat</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -680,7 +699,7 @@ tip fog model, but with two rate categories the input would be:</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "Reg"</span></span>
-<span><span class="co">## [1] "1" "2"</span></span>
+<span><span class="co">## [1] "R1 1" "R1 2" "R2 1" "R2 2"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##             R1 1        R1 2        R2 1        R2 2</span></span>
@@ -717,7 +736,7 @@ clades, or tests of the presence of hidden precursors before a state can
 evolve.</p>
 <p>Let’s start by using the <code><a href="../reference/getRateMat4Dat.html">getStateMat4Dat()</a></code> function to
 get a generic <code>rate.mat</code> object:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">LegendAndRateMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span>
 <span><span class="va">RateMat</span> <span class="op">&lt;-</span> <span class="va">LegendAndRateMat</span><span class="op">$</span><span class="va">rate.mat</span></span>
 <span><span class="va">RateMat</span></span></code></pre></div>
@@ -728,9 +747,9 @@ get a generic <code>rate.mat</code> object:</p>
 <p>The numbers in this matrix are not rates, they are used to index the
 unique parameters to be estimated by <code><a href="../reference/corHMM.html">corHMM()</a></code>. Each
 distinct number is a parameter to be estimated independently from all
-others. Let’s manually create the symmetric model we used in secion 1.2.
-In the symmetric model we want transitions <em>to</em> a state to be the
-same as <em>from</em> that state. This means that (1)
+others. Let’s manually create the symmetric model we used in section
+1.2. In the symmetric model we want transitions <em>to</em> a state to
+be the same as <em>from</em> that state. This means that (1)
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
 (2) &amp; (2)
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
@@ -741,8 +760,8 @@ and (2)
 (3) are equal. In other words, based on the <code>rate.mat</code> above,
 we want parameters 1 &amp; 2 to be equal and we want parameters 3 &amp;
 4 to be equal as shown below:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pars2equal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pars2equal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">StateMatA_constrained</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">RateMat</span>, <span class="va">pars2equal</span><span class="op">)</span></span>
 <span><span class="va">StateMatA_constrained</span></span></code></pre></div>
 <pre><code><span><span class="co">##     0|0 0|1 1|1</span></span>
@@ -758,7 +777,7 @@ is not duplicated or changed by <code><a href="../reference/corHMM.html">corHMM(
 model can only be used if we set rate.cat=1 since that is the
 appropriate number of rate categories. We can now provide this
 customized <code>rate.mat</code> to <code><a href="../reference/corHMM.html">corHMM()</a></code>:</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## MK_3state_customSYM &lt;- corHMM(phy = phy, data = data, rate.cat = 1, rate.mat = StateMatA_constrained)</span></span>
 <span><span class="va">MK_3state_customSYM</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
@@ -768,7 +787,7 @@ customized <code>rate.mat</code> to <code><a href="../reference/corHMM.html">cor
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "T1|T2"</span></span>
-<span><span class="co">## [1] "0|0" "1|0" "0|1" "1|1"</span></span>
+<span><span class="co">## [1] "(1,R1)" "(2,R1)" "(3,R1)"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##            (1,R1)     (2,R1)     (3,R1)</span></span>
@@ -807,16 +826,16 @@ classes (parameter process). We begin by constructing two
 In R1, we assume a drift-like hypothesis where all transition rates are
 equal. In R2, we assume that the combination of estrus advertisement and
 multimale mating systems are not lost once they evolve:</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">RateCat1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">rate.mat</span> <span class="co"># R1</span></span>
+<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RateCat1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">rate.mat</span>  <span class="co"># R1</span></span>
 <span><span class="va">RateCat1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">RateCat1</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">RateCat1</span></span></code></pre></div>
 <pre><code><span><span class="co">##     0|0 0|1 1|1</span></span>
 <span><span class="co">## 0|0  NA   1  NA</span></span>
 <span><span class="co">## 0|1   1  NA   1</span></span>
 <span><span class="co">## 1|1  NA   1  NA</span></span></code></pre>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">RateCat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">rate.mat</span> <span class="co"># R2</span></span>
+<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RateCat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">rate.mat</span>  <span class="co"># R2</span></span>
 <span><span class="va">RateCat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">RateCat2</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">RateCat2</span></span></code></pre></div>
 <pre><code><span><span class="co">##     0|0 0|1 1|1</span></span>
@@ -835,16 +854,16 @@ absence of a third trait. Basically, it is everything and anything that
 can influence the evolution of your observed characters.</p>
 <p>For illustrative purposes, we will specify that the transition rate
 from R1 to R2 is the same as the rate from R2 to R1:</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getRateCatMat</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span> <span class="co">#</span></span>
-<span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">RateClassMat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getRateCatMat</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span>  <span class="co">#</span></span>
+<span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">RateClassMat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">RateClassMat</span></span></code></pre></div>
 <pre><code><span><span class="co">##    R1 R2</span></span>
 <span><span class="co">## R1 NA  1</span></span>
 <span><span class="co">## R2  1 NA</span></span></code></pre>
 <p>We now group all of our rate classes together in a list. The first
 element of the list corresponds to R1, the second to R2, etc.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">StateMats</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">RateCat1</span>, <span class="va">RateCat2</span><span class="op">)</span></span>
 <span><span class="va">StateMats</span></span></code></pre></div>
 <pre><code><span><span class="co">## [[1]]</span></span>
@@ -862,7 +881,7 @@ element of the list corresponds to R1, the second to R2, etc.</p>
 using the <code><a href="../reference/getFullMat.html">getFullMat()</a></code> function. This function requires
 that the first input be a list of the within rate class matrices and the
 second argument be the among rate class matrices:</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">FullMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getFullMat</a></span><span class="op">(</span><span class="va">StateMats</span>, <span class="va">RateClassMat</span><span class="op">)</span></span>
 <span><span class="va">FullMat</span></span></code></pre></div>
 <pre><code><span><span class="co">##        (1,R1) (2,R1) (3,R1) (1,R2) (2,R2) (3,R2)</span></span>
@@ -877,12 +896,13 @@ components, we may not be sure it’s exactly what we want. We can use
 <code><a href="../reference/plotMKmodel.html">plotMKmodel()</a></code> to take a look at the model setup
 <em>before</em> running the analysis. Here’s an example function
 call:</p>
-<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb88"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotMKmodel.html">plotMKmodel</a></span><span class="op">(</span><span class="va">FullMat</span>, rate.cat <span class="op">=</span> <span class="fl">2</span>, display <span class="op">=</span> <span class="st">"row"</span>, text.scale <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span></code></pre></div>
 <p>Since this is the model we intended on making, we can run
 <code><a href="../reference/corHMM.html">corHMM()</a></code> with our custom matrix:</p>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## HMM_3state_custom &lt;- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat, node.states = "none")</span></span>
+<div class="sourceCode" id="cb89"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## HMM_3state_custom &lt;- corHMM(phy = phy, data = data, rate.cat = 2, rate.mat = FullMat,</span></span>
+<span><span class="co">##     node.states = "none")</span></span>
 <span><span class="va">HMM_3state_custom</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -891,7 +911,7 @@ call:</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "T1|T2"</span></span>
-<span><span class="co">## [1] "0|0" "1|0" "0|1" "1|1"</span></span>
+<span><span class="co">## [1] "(1,R1)" "(2,R1)" "(3,R1)" "(1,R2)" "(2,R2)" "(3,R2)"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##            (1,R1)     (2,R1)     (3,R1)     (1,R2)      (2,R2)     (3,R2)</span></span>
@@ -904,9 +924,9 @@ call:</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Arrived at a reliable solution</span></span></code></pre>
 <p>We may plot the resulting parameter estimates as before:</p>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb91"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotMKmodel.html">plotMKmodel</a></span><span class="op">(</span><span class="va">HMM_3state_custom</span>, display <span class="op">=</span> <span class="st">"row"</span>, text.scale <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span></code></pre></div>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-29-1.png" width="960"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-29-1.png" class="r-plt" alt="" width="960"></p>
 <p>As of 5/19 this functionality is still being tested thoroughly and
 subject to change.</p>
 </div>
@@ -930,7 +950,7 @@ we will demonstrate how to create a custom hidden Markov model which
 satisfies all of these requirements.</p>
 <p>To do this we will use a simulated a dataset that contains these 3
 states:</p>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/read.tree.html" class="external-link">read.tree</a></span><span class="op">(</span><span class="st">"randomBD.tree"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span><span class="st">"simulatedData.Rsave"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">MFT_dat</span><span class="op">)</span></span></code></pre></div>
@@ -941,13 +961,13 @@ states:</p>
 <span><span class="co">## 4 s17 Terrestrial</span></span>
 <span><span class="co">## 5 s18 Terrestrial</span></span>
 <span><span class="co">## 6 s21      Marine</span></span></code></pre>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">MFT_dat</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="co"># how many of each state do we have?</span></span></code></pre></div>
+<div class="sourceCode" id="cb94"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">MFT_dat</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>  <span class="co"># how many of each state do we have?</span></span></code></pre></div>
 <pre><code><span><span class="co">##  Freshwater      Marine Terrestrial </span></span>
 <span><span class="co">##           7          14          79</span></span></code></pre>
 <p>As before, start off by getting a legend and rate matrix from this
 dataset:</p>
-<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb96"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MFT_LegendAndRate</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">MFT_dat</span><span class="op">)</span></span>
 <span><span class="va">MFT_LegendAndRate</span></span></code></pre></div>
 <pre><code><span><span class="co">## $legend</span></span>
@@ -963,15 +983,15 @@ State 2,and terrestrial habitat will be State 3. Now, we need to create
 3 different rate classes that are consistent with our hypotheses of how
 habitat changes occurs. We’ll say that rate class R1 is one in which
 lineages cannot leave a terrestrial habitat, rate class R2 will allow
-linneages to transition between marine and terrestrial <em>only</em>
+lineages to transition between marine and terrestrial <em>only</em>
 through freshwater, and rate class R3 will be unrestricted movement
 between the habitats.</p>
 <p>For R1 we need terrestrial to be an absorbing state, meaning once
 terrestriality evolves it is not lost. Since 1 = freshwater, 2 = marine,
 and 3 = terrestrial, that means removing from (3) to (1) and from (3) to
 (2).</p>
-<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">MFT_R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">MFT_LegendAndRate</span><span class="op">$</span><span class="va">rate.mat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">MFT_R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">MFT_LegendAndRate</span><span class="op">$</span><span class="va">rate.mat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">MFT_R1</span></span></code></pre></div>
 <pre><code><span><span class="co">##             Freshwater Marine Terrestrial</span></span>
 <span><span class="co">## Freshwater          NA      2           3</span></span>
@@ -982,8 +1002,8 @@ marine. We disallow the positions (1,3) and (3,1) in the rate matrix. In
 this case, any lineage can move into freshwater and move out of
 freshwater, but they are not allowed to transition directly between
 terrestrial and marine habitats:</p>
-<div class="sourceCode" id="cb72"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">MFT_R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">MFT_LegendAndRate</span><span class="op">$</span><span class="va">rate.mat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">6</span><span class="op">)</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">MFT_R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">MFT_LegendAndRate</span><span class="op">$</span><span class="va">rate.mat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">MFT_R2</span></span></code></pre></div>
 <pre><code><span><span class="co">##             Freshwater Marine Terrestrial</span></span>
 <span><span class="co">## Freshwater          NA      3           4</span></span>
@@ -991,7 +1011,7 @@ terrestrial and marine habitats:</p>
 <span><span class="co">## Terrestrial          2     NA          NA</span></span></code></pre>
 <p>For R3, we allow all possible transitions to occur, which is the
 default matrix provided by getStateMat4Dat:</p>
-<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MFT_R3</span> <span class="op">&lt;-</span> <span class="va">MFT_LegendAndRate</span><span class="op">$</span><span class="va">rate.mat</span></span>
 <span><span class="va">MFT_R3</span></span></code></pre></div>
 <pre><code><span><span class="co">##             Freshwater Marine Terrestrial</span></span>
@@ -999,16 +1019,16 @@ default matrix provided by getStateMat4Dat:</p>
 <span><span class="co">## Marine               1      0           6</span></span>
 <span><span class="co">## Terrestrial          2      4           0</span></span></code></pre>
 <p>Let’s put all these matrices in a list,</p>
-<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MFT_ObsStateClasses</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">MFT_R1</span>, <span class="va">MFT_R2</span>, <span class="va">MFT_R3</span><span class="op">)</span></span></code></pre></div>
 <p>Since we only have 100 species in this example, let’s constrain our
 parameters a bit further and state that transitions between rate classes
 occur at the same rate:</p>
-<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">MFT_RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getRateCatMat</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span> <span class="co"># we have 3 rate classes</span></span>
+<div class="sourceCode" id="cb105"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">MFT_RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getRateCatMat</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>  <span class="co"># we have 3 rate classes</span></span>
 <span><span class="va">MFT_RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">MFT_RateClassMat</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">)</span></span></code></pre></div>
 <p>Next, we put it all together into a corHMM compatible rate.mat:</p>
-<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb106"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">MFT_FullMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getFullMat</a></span><span class="op">(</span><span class="va">MFT_ObsStateClasses</span>, <span class="va">MFT_RateClassMat</span><span class="op">)</span></span>
 <span><span class="va">MFT_FullMat</span></span></code></pre></div>
 <pre><code><span><span class="co">##        (1,R1) (2,R1) (3,R1) (1,R2) (2,R2) (3,R2) (1,R3) (2,R3) (3,R3)</span></span>
@@ -1023,13 +1043,14 @@ occur at the same rate:</p>
 <span><span class="co">## (3,R3)      0      0     15      0      0     15     10     12      0</span></span></code></pre>
 <p>That’s kind of difficult to interpret, so be sure to plot it out
 using <code><a href="../reference/plotMKmodel.html">plotMKmodel()</a></code></p>
-<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb108"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotMKmodel.html">plotMKmodel</a></span><span class="op">(</span><span class="va">MFT_FullMat</span>, rate.cat <span class="op">=</span> <span class="fl">3</span>, display <span class="op">=</span> <span class="st">"square"</span>, text.scale <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span></code></pre></div>
 <p>To run this model, we would only need to specify 1) the data, 2) the
 phylogeny, 3) this matrix, and 4) that this matrix has 3 rate
 categories:</p>
-<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## MFT_res.corHMM &lt;- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat, node.states = "none", root.p = "maddfitz")</span></span>
+<div class="sourceCode" id="cb109"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## MFT_res.corHMM &lt;- corHMM(phy = phy, data = MFT_dat, rate.cat = 3, rate.mat = MFT_FullMat,</span></span>
+<span><span class="co">##     node.states = "none", root.p = "maddfitz")</span></span>
 <span><span class="va">MFT_res.corHMM</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -1038,7 +1059,8 @@ categories:</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "d"</span></span>
-<span><span class="co">## [1] "Freshwater"  "Marine"      "Terrestrial"</span></span>
+<span><span class="co">## [1] "(1,R1)" "(2,R1)" "(3,R1)" "(1,R2)" "(2,R2)" "(3,R2)" "(1,R3)" "(2,R3)"</span></span>
+<span><span class="co">## [9] "(3,R3)"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##             (1,R1)      (2,R1)       (3,R1)      (1,R2)    (2,R2)      (3,R2)</span></span>
@@ -1077,7 +1099,7 @@ how you could design the canonical precursor model in
 <code>corHMM</code> using custom rate matrices.</p>
 <p>We will start by loading a simulated dataset of presence and absence
 of extrafloral nectaries a randomly generated birth-death tree:</p>
-<div class="sourceCode" id="cb83"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb111"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">Precur_Dat</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##      sp d</span></span>
 <span><span class="co">## s7   s7 0</span></span>
@@ -1088,7 +1110,7 @@ of extrafloral nectaries a randomly generated birth-death tree:</p>
 <span><span class="co">## s21 s21 0</span></span></code></pre>
 <p>Next, generate an observed states only matrix using the input single
 binary trait data set:</p>
-<div class="sourceCode" id="cb85"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb113"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Precur_LegendAndMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">Precur_Dat</span><span class="op">)</span></span>
 <span><span class="va">Precur_LegendAndMat</span></span></code></pre></div>
 <pre><code><span><span class="co">## $legend</span></span>
@@ -1114,9 +1136,9 @@ between presence and absence of EFNs.</p>
 absence of the precursor, which is not possible without first gaining
 the “precursor”. So, we will generate the default matrix, then drop all
 possible transitions from this matrix:</p>
-<div class="sourceCode" id="cb87"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb115"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Precur_R1</span> <span class="op">&lt;-</span> <span class="va">Precur_LegendAndMat</span><span class="op">$</span><span class="va">rate.mat</span></span>
-<span><span class="va">Precur_R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">Precur_R1</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Precur_R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">dropStateMatPars</a></span><span class="op">(</span><span class="va">Precur_R1</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">Precur_R1</span></span></code></pre></div>
 <pre><code><span><span class="co">##    0  1</span></span>
 <span><span class="co">## 0 NA NA</span></span>
@@ -1124,18 +1146,18 @@ possible transitions from this matrix:</p>
 <p>The second rate class, R2, will represent how our character changes
 in the presence of the precursor. In this rate class, we expect that
 species can either gain or lose EFNs at the same rate:</p>
-<div class="sourceCode" id="cb89"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb117"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Precur_R2</span> <span class="op">&lt;-</span> <span class="va">Precur_LegendAndMat</span><span class="op">$</span><span class="va">rate.mat</span></span>
-<span><span class="va">Precur_R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">Precur_R2</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Precur_R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">Precur_R2</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">Precur_R2</span></span></code></pre></div>
 <pre><code><span><span class="co">##    0  1</span></span>
 <span><span class="co">## 0 NA  1</span></span>
 <span><span class="co">## 1  1 NA</span></span></code></pre>
 <p>Finally, we set up a matrix for that governs the transitions
 <em>among</em> the rate classes:</p>
-<div class="sourceCode" id="cb91"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getRateCatMat</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span> <span class="co">#</span></span>
-<span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">RateClassMat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb119"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getRateCatMat</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span>  <span class="co">#</span></span>
+<span><span class="va">RateClassMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">equateStateMatPars</a></span><span class="op">(</span><span class="va">RateClassMat</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">RateClassMat</span></span></code></pre></div>
 <pre><code><span><span class="co">##    R1 R2</span></span>
 <span><span class="co">## R1 NA  1</span></span>
@@ -1144,9 +1166,9 @@ species can either gain or lose EFNs at the same rate:</p>
 we need to remove one extra transition rate between that connects rate
 class R1 and R2 in the presence of EFNs, because, again, the precursor
 model assumes that EFNs can <em>only</em> be gained in rate class 1.</p>
-<div class="sourceCode" id="cb93"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb121"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Precur_FullMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getFullMat.html">getFullMat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">Precur_R1</span>, <span class="va">Precur_R2</span><span class="op">)</span>, <span class="va">RateClassMat</span><span class="op">)</span></span>
-<span><span class="va">Precur_FullMat</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">4</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
+<span><span class="va">Precur_FullMat</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="va">Precur_FullMat</span></span></code></pre></div>
 <pre><code><span><span class="co">##        (1,R1) (2,R1) (1,R2) (2,R2)</span></span>
 <span><span class="co">## (1,R1)      0      0      2      0</span></span>
@@ -1156,15 +1178,17 @@ model assumes that EFNs can <em>only</em> be gained in rate class 1.</p>
 <p>We now run <code><a href="../reference/corHMM.html">corHMM()</a></code> making sure to specify that we have
 2 rate categories (or rate classes or hidden states - it’s all the
 same).</p>
-<div class="sourceCode" id="cb95"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">Precur_res.corHMM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">Precur_Dat</span>, rate.cat <span class="op">=</span> <span class="fl">2</span>, rate.mat <span class="op">=</span> <span class="va">Precur_FullMat</span>, root.p <span class="op">=</span> <span class="st">"maddfitz"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  0   1   </span></span>
-<span><span class="co">## Counts:  57  43  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<pre><code><span><span class="co">## Warning in getInfoPerNode(obj$lik.anc.states, Q): NaNs produced</span></span></code></pre>
-<div class="sourceCode" id="cb98"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb123"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">Precur_res.corHMM</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">Precur_Dat</span>, rate.cat <span class="op">=</span> <span class="fl">2</span>, rate.mat <span class="op">=</span> <span class="va">Precur_FullMat</span>,</span>
+<span>    root.p <span class="op">=</span> <span class="st">"maddfitz"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:01</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:5743</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb129"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Precur_res.corHMM</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -1173,7 +1197,7 @@ same).</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Legend</span></span>
 <span><span class="co">## [1] "d"</span></span>
-<span><span class="co">## [1] "0" "1"</span></span>
+<span><span class="co">## [1] "R1 0" "R1 1" "R2 0" "R2 1"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
 <span><span class="co">##       R1 0 R1 1        R2 0     R2 1</span></span>
@@ -1190,14 +1214,15 @@ same).</p>
 <p>Lets say we had a dataset with multiple characters: 1) presence or
 absence of limbs, 2) presence or absence of fingers, 3) corporeal or
 incorporeal form. It could look something like this:</p>
-<div class="sourceCode" id="cb100"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb131"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">primates</span><span class="op">)</span></span>
 <span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/multi2di.html" class="external-link">multi2di</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="va">Limbs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Limbs"</span>, <span class="st">"noLimbs"</span><span class="op">)</span><span class="op">[</span><span class="va">data</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span><span class="op">+</span><span class="fl">1</span><span class="op">]</span></span>
+<span><span class="va">Limbs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Limbs"</span>, <span class="st">"noLimbs"</span><span class="op">)</span><span class="op">[</span><span class="va">data</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span></span>
 <span><span class="va">Fings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">vector</a></span><span class="op">(</span><span class="st">"numeric"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">Fings</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">Limbs</span> <span class="op">==</span> <span class="st">"Limbs"</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">Limbs</span> <span class="op">==</span> <span class="st">"Limbs"</span><span class="op">)</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Fings</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">Limbs</span> <span class="op">==</span> <span class="st">"Limbs"</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">Limbs</span> <span class="op">==</span> <span class="st">"Limbs"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">Corpo</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"corporeal"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">Ont_Dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sp <span class="op">=</span> <span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span>, limbs <span class="op">=</span> <span class="va">Limbs</span>, fings <span class="op">=</span> <span class="va">Fings</span>, corp <span class="op">=</span> <span class="va">Corpo</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">Ont_Dat</span><span class="op">)</span></span></code></pre></div>
@@ -1213,7 +1238,7 @@ format that could be read by the <code><a href="../reference/rayDISC.html">rayDI
 task previously involved taking all possible unique combinations and
 creating a multistate character, but this version of
 <code><a href="../reference/corHMM.html">corHMM()</a></code> will internally do this for you:</p>
-<div class="sourceCode" id="cb102"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb133"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Ont_LegendAndMat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">Ont_Dat</span><span class="op">)</span></span>
 <span><span class="va">Ont_LegendAndMat</span></span></code></pre></div>
 <pre><code><span><span class="co">## $legend</span></span>
@@ -1233,8 +1258,9 @@ dataset and thus not included in the model. In addition, the transition
 from 3 (No Limbs, No Fingers) to 2 (Yes Limbs, Yes Fingers) is not
 allowed because it is impossible to have fingers without having limbs.
 Finally, all dual transitions have been removed.</p>
-<div class="sourceCode" id="cb104"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## Ont_res.corHMM &lt;- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat, node.states = "none")</span></span></code></pre></div>
+<div class="sourceCode" id="cb135"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Ont_res.corHMM &lt;- corHMM(phy = phy, data = Ont_Dat, rate.cat = 1, rate.mat = Ont_LegendAndMat$rate.mat,</span></span>
+<span><span class="co">##     node.states = "none")</span></span></code></pre></div>
 <p>Note that hidden states can be added to this model by following the
 examples above.</p>
 </div>
@@ -1266,12 +1292,12 @@ tree. Specifically, we are going to fix the most recent common ancestor
 (MRCA) of Gorilla gorilla and Homo sapiens as exhibiting estrus
 advertisement (i.e., State 1). The first step is to determine the the
 indices for each state:</p>
-<div class="sourceCode" id="cb105"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb136"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">primates</span><span class="op">)</span></span>
 <span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/multi2di.html" class="external-link">multi2di</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/getRateMat4Dat.html">getStateMat4Dat</a></span><span class="op">(</span><span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## $legend</span></span>
 <span><span class="co">## [1] "T1"</span></span>
 <span><span class="co">## </span></span>
@@ -1286,9 +1312,9 @@ nodes plus the number of tips in the tree. The <code>NA</code> simply
 tells <code><a href="../reference/corHMM.html">corHMM()</a></code> to ignore as these are nodes that are not
 fixed. We then have to determine which node is the MRCA of <em>Gorilla
 gorilla</em> and <em>Homo sapiens</em>:</p>
-<div class="sourceCode" id="cb107"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb138"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">label.vector</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Nnode</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">homo_gorilla</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/mrca.html" class="external-link">getMRCA</a></span><span class="op">(</span><span class="va">phy</span>,tip<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Homo_sapiens"</span>, <span class="st">"Gorilla_gorilla"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">homo_gorilla</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/mrca.html" class="external-link">getMRCA</a></span><span class="op">(</span><span class="va">phy</span>, tip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Homo_sapiens"</span>, <span class="st">"Gorilla_gorilla"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">homo_gorilla</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 64</span></span></code></pre>
 <p>The node number should be 64. To set the state of the node, simply
@@ -1297,39 +1323,44 @@ replace the <code>NA</code> with the state of interest in the
 64th element. To set the node labels, we will clip off the first 60
 elements, as these represent the states of the tips, which we set
 differently:</p>
-<div class="sourceCode" id="cb109"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb140"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">label.vector</span><span class="op">[</span><span class="va">homo_gorilla</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
 <span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span> <span class="op">&lt;-</span> <span class="va">label.vector</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <p>Plotting the tree allows users to visually check whether the right
 node was fixed:</p>
-<div class="sourceCode" id="cb110"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">phy</span>, cex<span class="op">=</span><span class="fl">.5</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb141"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">phy</span>, cex <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/nodelabels.html" class="external-link">nodelabels</a></span><span class="op">(</span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span><span class="op">)</span></span></code></pre></div>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-53-1.png" width="576" style="display: block; margin: auto;"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-53-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>From here simply input the <code>tree</code> object in
 <code><a href="../reference/corHMM.html">corHMM()</a></code> as normal, but the option fix.nodes needs to be
 set to <code>TRUE</code>:</p>
 <pre><code><span><span class="co">## Warning in corHMM(phy, data[, c(1, 2)], model = "ER", rate.cat = 1, fixed.nodes</span></span>
 <span><span class="co">## = TRUE): Branch lengths of 0 detected. Adding 1.49011611938477e-08</span></span></code></pre>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  0   1   </span></span>
-<span><span class="co">## Counts:  39  21  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:01</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3921</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
 <p>We can then compare the fit of this model with another model where
 the same node is fixed to lacking estrus advertisement:</p>
-<div class="sourceCode" id="cb113"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb148"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">label.vector</span><span class="op">[</span><span class="va">homo_gorilla</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span> <span class="op">&lt;-</span> <span class="va">label.vector</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">fix.node64.noestrus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">]</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, fixed.nodes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">fix.node64.noestrus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    fixed.nodes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning in corHMM(phy, data[, c(1, 2)], model = "ER", rate.cat = 1, fixed.nodes</span></span>
 <span><span class="co">## = TRUE): Branch lengths of 0 detected. Adding 1.49011611938477e-08</span></span></code></pre>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  0   1   </span></span>
-<span><span class="co">## Counts:  39  21  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb116"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:01</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3921</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb155"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fix.node64.noestrus</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -1367,33 +1398,36 @@ something we can modify and input into <code><a href="../reference/corHMM.html">
 Specifically, we can take the <code>mpr.recon</code> object from
 <code>phangorn</code> and convert the output as a vector and add them as
 node states in the phylogeny:</p>
-<div class="sourceCode" id="cb118"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb157"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/KlausVigo/phangorn" class="external-link">phangorn</a></span><span class="op">)</span></span>
-<span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">data</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span>, row.names<span class="op">=</span><span class="va">data</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="va">data.sort</span><span class="op">[</span><span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span>,<span class="op">]</span></span>
-<span><span class="va">dat</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">data.sort</span><span class="op">)</span></span>
+<span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">data</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span>, row.names <span class="op">=</span> <span class="va">data</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">data.sort</span> <span class="op">&lt;-</span> <span class="va">data.sort</span><span class="op">[</span><span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span>, <span class="op">]</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">data.sort</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">phy</span><span class="op">$</span><span class="va">tip.label</span></span>
-<span><span class="va">dat</span><span class="op">&lt;-</span><span class="fu"><a href="https://klausvigo.github.io/phangorn/reference/as.phyDat.html" class="external-link">phyDat</a></span><span class="op">(</span><span class="va">dat</span>,type<span class="op">=</span><span class="st">"USER"</span>, levels<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>,<span class="st">"1"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://klausvigo.github.io/phangorn/reference/as.phyDat.html" class="external-link">phyDat</a></span><span class="op">(</span><span class="va">dat</span>, type <span class="op">=</span> <span class="st">"USER"</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"1"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mpr.recon</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://klausvigo.github.io/phangorn/reference/ancestral.pml.html" class="external-link">ancestral.pars</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">dat</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MPR"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mpr.recon.converted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ConvertPhangornReconstructions.html">ConvertPhangornReconstructions</a></span><span class="op">(</span><span class="va">mpr.recon</span><span class="op">)</span></span>
-<span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span> <span class="op">&lt;-</span> <span class="va">mpr.recon.converted</span><span class="op">[</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mpr.recon.converted</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+<span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span> <span class="op">&lt;-</span> <span class="va">mpr.recon.converted</span><span class="op">[</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mpr.recon.converted</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <p>Plotting the tree shows the parsimony reconstruction:</p>
-<div class="sourceCode" id="cb119"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">phy</span>, cex<span class="op">=</span><span class="fl">.5</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb158"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">phy</span>, cex <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/nodelabels.html" class="external-link">nodelabels</a></span><span class="op">(</span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span><span class="op">)</span></span></code></pre></div>
-<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-57-1.png" width="576" style="display: block; margin: auto;"></p>
+<p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-57-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>Next, input the tree into <code><a href="../reference/corHMM.html">corHMM()</a></code> and obtain a rate
 estimate for this reconstruction:</p>
-<div class="sourceCode" id="cb120"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fixed.parsimony.recon</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">]</span>, model<span class="op">=</span><span class="st">"ER"</span>, rate.cat<span class="op">=</span><span class="fl">1</span>, fixed.nodes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb159"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fixed.parsimony.recon</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span>, model <span class="op">=</span> <span class="st">"ER"</span>, rate.cat <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    fixed.nodes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning in corHMM(phy, data[, c(1, 2)], model = "ER", rate.cat = 1, fixed.nodes</span></span>
 <span><span class="co">## = TRUE): Branch lengths of 0 detected. Adding 1.49011611938477e-08</span></span></code></pre>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  0   1   </span></span>
-<span><span class="co">## Counts:  39  21  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
-<div class="sourceCode" id="cb123"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:01</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3921</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
+<div class="sourceCode" id="cb166"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fixed.parsimony.recon</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Fit</span></span>
@@ -1423,38 +1457,41 @@ the state of the node as ambiguous across all possible rate classes like
 we would a tip. Let’s run a quick example where we fix the MRCA of
 <em>Gorilla gorilla</em> and <em>Homo sapiens</em> as lacking estrus
 advertisement:</p>
-<div class="sourceCode" id="cb125"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb168"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">label.vector</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Nnode</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">homo_gorilla</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/mrca.html" class="external-link">getMRCA</a></span><span class="op">(</span><span class="va">phy</span>,tip<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Homo_sapiens"</span>, <span class="st">"Gorilla_gorilla"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">homo_gorilla</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/mrca.html" class="external-link">getMRCA</a></span><span class="op">(</span><span class="va">phy</span>, tip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Homo_sapiens"</span>, <span class="st">"Gorilla_gorilla"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">label.vector</span><span class="op">[</span><span class="va">homo_gorilla</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="va">phy</span><span class="op">$</span><span class="va">node.label</span> <span class="op">&lt;-</span> <span class="va">label.vector</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">fix.node64.noestrus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">]</span>, model<span class="op">=</span><span class="st">"ARD"</span>, rate.cat<span class="op">=</span><span class="fl">2</span>, fixed.nodes<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">fix.node64.noestrus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corHMM.html">corHMM</a></span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">]</span>, model <span class="op">=</span> <span class="st">"ARD"</span>, rate.cat <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>    fixed.nodes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning in corHMM(phy, data[, c(1, 2)], model = "ARD", rate.cat = 2,</span></span>
 <span><span class="co">## fixed.nodes = TRUE): Branch lengths of 0 detected. Adding 1.49011611938477e-08</span></span></code></pre>
-<pre><code><span><span class="co">## State distribution in data:</span></span>
-<span><span class="co">## States:  0   1   </span></span>
-<span><span class="co">## Counts:  39  21  </span></span>
-<span><span class="co">## Beginning thorough optimization search -- performing 0 random restarts </span></span>
-<span><span class="co">## Finished. Inferring ancestral states using marginal reconstruction.</span></span></code></pre>
+<pre><code><span><span class="co">## State distribution in data:</span></span></code></pre>
+<pre><code><span><span class="co">## States:01</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Counts:3921</span></span>
+<span><span class="co">##  </span></span></code></pre>
+<pre><code><span><span class="co">## Beginning thorough optimization search -- performing0random restarts</span></span></code></pre>
+<pre><code><span><span class="co">## Finished. Inferring ancestral states usingmarginalreconstruction.</span></span></code></pre>
 <p>Now, if we print out the line corresponding to our fixed node,</p>
-<div class="sourceCode" id="cb128"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fix.node64.noestrus</span><span class="op">$</span><span class="va">states</span><span class="op">[</span><span class="va">homo_gorilla</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span>,<span class="op">]</span> </span></code></pre></div>
+<div class="sourceCode" id="cb175"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fix.node64.noestrus</span><span class="op">$</span><span class="va">states</span><span class="op">[</span><span class="va">homo_gorilla</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span>, <span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">##      R1 0      R1 1      R2 0      R2 1 </span></span>
 <span><span class="co">## 0.8750962 0.0000000 0.1249038 0.0000000</span></span></code></pre>
 <p>there should be some uncertainty as to whether the absence of estrus
 advertisement is in R1 or R2. The total probability, however, of the
 node being in observed state 1 should sum to 1:</p>
-<div class="sourceCode" id="cb130"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">fix.node64.noestrus</span><span class="op">$</span><span class="va">states</span><span class="op">[</span><span class="va">homo_gorilla</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span>,<span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb177"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">fix.node64.noestrus</span><span class="op">$</span><span class="va">states</span><span class="op">[</span><span class="va">homo_gorilla</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/summary.phylo.html" class="external-link">Ntip</a></span><span class="op">(</span><span class="va">phy</span><span class="op">)</span>, <span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] 1</span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h3>
 <p>Beaulieu J.M., B.C. O’Meara, and M.J. Donoghue. 2013. Identifying
-hidden rate changes in the evolution of a binary morphologicalcharacter:
-the evolution of plant habit in campanulid angiosperms. Systematic
-Biology 62:725-737.</p>
+hidden rate changes in the evolution of a binary morphological
+character: the evolution of plant habit in campanulid angiosperms.
+Systematic Biology 62:725-737.</p>
 <p>Marazzi B., Ane C., Simon M.F., Delgado-Salinas A., Luckow M.,
 Sanderson M.J. 2012. Locating Evolutionary Precursors on a Phylogenetic
 Tree. Evolution. 66:3918-3930.</p>
@@ -1491,7 +1528,7 @@ for time series: an introduction using R. Chapman and Hall/CRC.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>
