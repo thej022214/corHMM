@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
       </span>
     </div>
 
@@ -57,7 +57,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ancRECON</span><span class="op">(</span><span class="va">phy</span>,<span class="va">data</span>, <span class="va">p</span>, method<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"joint"</span>, <span class="st">"marginal"</span>, <span class="st">"scaled"</span><span class="op">)</span>,</span>
 <span><span class="va">rate.cat</span>, ntraits<span class="op">=</span><span class="cn">NULL</span>, rate.mat<span class="op">=</span><span class="cn">NULL</span>,</span>
 <span>model<span class="op">=</span><span class="st">"ARD"</span>, root.p<span class="op">=</span><span class="cn">NULL</span>, get.likelihood<span class="op">=</span><span class="cn">FALSE</span>, get.tip.states <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>tip.fog<span class="op">=</span><span class="cn">NULL</span>, collapse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span>tip.fog<span class="op">=</span><span class="cn">NULL</span>, get.info<span class="op">=</span><span class="cn">FALSE</span>, collapse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -100,6 +100,9 @@
 <dt id="arg-tip-fog">tip.fog<a class="anchor" aria-label="anchor" href="#arg-tip-fog"></a></dt>
 <dd><p>provides the probability that an observed state is not actually in the state it is assigned to the reconstruction algorithm. These values are assumed either optimized in “corHMM” or supplied by the user.
 <code>tip.fog=NULL</code> when using this as a standalone function.</p></dd>
+
+<dt id="arg-get-info">get.info<a class="anchor" aria-label="anchor" href="#arg-get-info"></a></dt>
+<dd><p>Whether to return information measures at nodes (Boyko and Beaulieu 2021).</p></dd>
 
 <dt id="arg-collapse">collapse<a class="anchor" aria-label="anchor" href="#arg-collapse"></a></dt>
 <dd><p>a boolean indicating whether to collapse multiple character combinations into only the observed states. For example, if true a two character dataset contained (0,0), (1,0), and (1,1), this would be collapsed into 1,2,3. However, if set to false it would 1,2,4. In combination with a custom rate matrix this allows for the estimation of transitions between the unobserved character combination. The default is <code>TRUE</code></p></dd>
@@ -148,11 +151,13 @@
 <span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">MK_3state</span> <span class="op">&lt;-</span> <span class="fu"><a href="corHMM.html">corHMM</a></span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, rate.cat <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> States:	0|0	0|1	1|1	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Counts:	29	10	21	</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing 0 random restarts </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states using marginal reconstruction. </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> States:0|00|11|1</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Counts:291021</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing0random restarts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states usingmarginalreconstruction.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># # one way to get the parameters from your corHMM object in the correct order</span></span></span>
 <span class="r-in"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">MK_3state</span><span class="op">$</span><span class="va">index.mat</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> </span></span>
@@ -178,7 +183,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

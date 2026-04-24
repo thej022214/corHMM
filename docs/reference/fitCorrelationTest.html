@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
       </span>
     </div>
 
@@ -54,7 +54,12 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fitCorrelationTest</span><span class="op">(</span><span class="va">phy</span>, <span class="va">data</span>, simplified_models<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fitCorrelationTest</span><span class="op">(</span><span class="va">phy</span>, </span>
+<span>  <span class="va">data</span>, </span>
+<span>  root.p<span class="op">=</span><span class="st">"yang"</span>, </span>
+<span>  nstarts<span class="op">=</span><span class="fl">0</span>, </span>
+<span>  n.cores<span class="op">=</span><span class="fl">1</span>, </span>
+<span>  simplified_models<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -65,6 +70,15 @@
 
   <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>a data.frame containing species information. The first column must be species names matching the phylogeny. Additional columns contain discrete character data.</p></dd>
+
+  <dt id="arg-root-p">root.p<a class="anchor" aria-label="anchor" href="#arg-root-p"></a></dt>
+<dd><p>The root prior being used. Default is "yang", but see corHMM documentation for more details.</p></dd>
+
+  <dt id="arg-nstarts">nstarts<a class="anchor" aria-label="anchor" href="#arg-nstarts"></a></dt>
+<dd><p>the number of random restarts to be performed. The default is <code>nstarts=0</code>.</p></dd>
+
+  <dt id="arg-n-cores">n.cores<a class="anchor" aria-label="anchor" href="#arg-n-cores"></a></dt>
+<dd><p>the number of processor cores to spread out the random restarts.</p></dd>
 
   <dt id="arg-simplified-models">simplified_models<a class="anchor" aria-label="anchor" href="#arg-simplified-models"></a></dt>
 <dd><p>A boolean which indicates whether to include simplified independent and dependent models (currently only works for two binary-state characters; see Details).</p></dd>
@@ -97,7 +111,8 @@
 </dl></div>
     <div id="references">
     <h2>References</h2>
-    <p>Maddison W.P., FitzJohn R.G. 2015. The Unsolved Challenge to Phylogenetic Correlation Tests for Categorical Characters. Syst Biol. 64:127-136.</p>
+    <p>Maddison W.P., FitzJohn R.G. 2015. The Unsolved Challenge to Phylogenetic Correlation Tests for Categorical Characters. Systematic Biology. 64:127-136.
+Boyko J.D., Beaulieu J.M. 2023. Reducing the Biases in False Correlations Between Discrete Characters. Systematic Biology. 72:476-488.</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -108,7 +123,7 @@
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">primates</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu">multi2di</span><span class="op">(</span><span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/multi2di.html" class="external-link">multi2di</a></span><span class="op">(</span><span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="co"># not run because of long run times</span></span></span>
 <span class="r-in"><span><span class="co">#corr_test_fits &lt;- fitCorrelationTest(phy = phy, data = data, simplified_models = TRUE)</span></span></span>
@@ -128,7 +143,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>
