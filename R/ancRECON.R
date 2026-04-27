@@ -1253,7 +1253,7 @@ GetTipStateBruteForce <- function(p, phy, data, rate.mat, rate.cat, ntraits, mod
 		num.dropped.states <- NULL
 	}
 	
-	if(!is.null(tip.fog)){
+	if(sum(tip.fog) != 0){
 		if(length(tip.fog) == 1){
 			#Default option, but need to replicate these values across the observed states
 			tip.fog <- rep(tip.fog, dim(data.for.likelihood.function$Q)[2])
@@ -1530,7 +1530,8 @@ GetEdgeMarginal <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, ro
 	num.dropped.states <- NULL
   }
   
-  if(!is.null(tip.fog) | tip.fog == 0){
+
+  if(sum(tip.fog) != 0){
 	  if(length(tip.fog) == 1){
 		  #Default option, but need to replicate these values across the observed states
 		  tip.fog <- rep(tip.fog, dim(data.for.likelihood.function$Q)[2])
@@ -1579,6 +1580,8 @@ GetEdgeMarginal <- function(p, phy, data, rate.mat, rate.cat, ntraits, model, ro
   return(marginal.probs.final)
 }
 
+
+
 # creates a table for locating where to add nodes. first column is the node index (tip or internal). second column is the time period from the node to add
 getNodePlacementsForSlice <- function(phy, time_slice){
   to_add <- data.frame(node = 1:length(phy$tip.label), position = time_slice)
@@ -1589,6 +1592,8 @@ getNodePlacementsForSlice <- function(phy, time_slice){
   to_add <- to_add[edge_lengths - to_add[,2] > 0,] # exludes nodes too far away
   return(to_add)
 }
+
+
 
 # the main function for doing a marginal time slice reconstruction
 ancRECON_slice <- function(corhmm.obj, time_slice, collapse=TRUE, ncores = 1){
