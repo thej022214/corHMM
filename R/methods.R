@@ -1,8 +1,10 @@
+#' @export
 coef.corhmm <- function(object, log = TRUE, ...) {
   p <- object$args.list$p
   if (log) p else exp(p)
 }
 
+#' @export
 logLik.corhmm <- function(object, ...) {
   L <- object$loglik
   attr(L, "df") <- length(coef(object))
@@ -12,6 +14,7 @@ logLik.corhmm <- function(object, ...) {
 }
 
 ## SEQUENTIAL anova
+#' @export
 anova.corhmm <- function(object, ...) {
   lklist <- lapply(c(list(object),list(...)), logLik)
   dvec <- -2*vapply(lklist, c, FUN.VALUE = numeric(1))

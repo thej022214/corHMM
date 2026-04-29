@@ -340,6 +340,7 @@ rayDISC<-function(phy,data, ntraits=1, charnum=1, rate.mat=NULL, model=c("ER","S
 
 
 #Print function
+#' @export
 print.raydisc<-function(x,...){
 
 	ntips=Ntip(x$phy)

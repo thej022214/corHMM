@@ -1,113 +1,3 @@
-#' Compute confidence around rate estimates
-#'
-#' corHMM gives a single point estimate of rates, but this point estimate could be very uncertain. A traditional way to evaluate confidence is to vary each parameter until the log likelihood gets 2 units worse, while holding other parameters at their maximum likelihood estimates. That's fine and fast, but it can be misled by ridges. So, instead, we want all values that lead to a likelihood within two log likelihood units of the best. The range will be at least as wide as the univariate estimates but probably much larger.
-#'
-#' @param corhmm.object The result of a corHMM search
-#' @param desired.delta How many log likelihood units to deviate from the optimal likelihood from
-#' @param n.points How many points to use
-#' @param verbose If TRUE, print details of the search to the screen
-#' @param good.only If TRUE, only return the ones within the desired delta
-#' @param use.pbapply If TRUE, use the pbapply package to give output for the multivariate fitting
-#' @param n.cores If using pbapply, batch the analyses across this many cores
-#' @param ... Other arguments to pass into the likelihood function.
-#' @export
-#' @examples
-#' 	data(primates)
-#'	phy <- multi2di(primates[[1]])
-#'	data <- primates[[2]]
-#'	MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
-#'	confidence_results <- ComputeConfidenceIntervals(MK_3state)
-#'  print(confidence_results)
-#'  plot(confidence_results, pch=".", col=rgb(0,0,0,.5))
-#' @author Brian C. O'Meara
-# ComputeConfidenceIntervals <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE, good.only=TRUE, use.pbapply=FALSE, n.cores=1, ...) {
-# 	best.lnl <- corhmm.object$loglik
-# 	index.mat <- corhmm.object$index.mat
-# 	raw.rates <- corhmm.object$solution
-# 	corhmm.object$node.states <- "none" #we don't want to waste time on this
-# 
-# 	par <- MatrixToPars(corhmm.object)
-# 	par.best <- par
-# 
-# 	# Univariate
-# 	results<-data.frame(data.frame(matrix(nrow=1, ncol=1+length(par))))
-# 	results[1,] <- c(best.lnl, par.best)
-# 	for(par_index in seq_along(par)) {
-# 		par <- par.best
-# 		current.lnl <- best.lnl
-# 		while(current.lnl > best.lnl - 5*desired.delta) {
-# 			par[par_index] <- par[par_index]*.97
-# 			current.lnl <- compute_neglnlikelihood(par, corhmm.object)
-# 			results[nrow(results)+1,] <- c(current.lnl, par)
-# 			if(verbose & nrow(results)%%100==0) {
-# 				print(tail(results,100))
-# 			}
-# 		}
-# 		current.lnl <- best.lnl
-# 		while(current.lnl > best.lnl - 5*desired.delta) {
-# 			par[par_index] <- par[par_index]*1.03
-# 			current.lnl <- compute_neglnlikelihood(par, corhmm.object)
-# 			results[nrow(results)+1,] <- c(current.lnl, par)
-# 			if(verbose & nrow(results)%%100==0) {
-# 				print(tail(results,100))
-# 			}
-# 		}
-# 	}
-# 	dim_univariate <- nrow(results)-1
-# 
-# 	# Multivariate
-# 	lower <- apply(results[,-1], 2, min, na.rm=TRUE)
-# 	upper <- apply(results[,-1], 2, max, na.rm=TRUE)
-# 	#new.params <- GetGridPoints(lower, upper, n.points)
-# 	new.params <- GetLHSPoints(lower, upper, n.points)
-# 
-# 	if(verbose) {
-# 		print("About to estimate multivariate uncertainty")
-# 	}
-# 	new.lnl <- rep(NA, nrow(new.params))
-# 	if(use.pbapply) {
-# 		new.lnl <- pbapply::pbapply(new.params, 1, compute_neglnlikelihood, corhmm.object, cl=n.cores)
-# 	} else {
-# 		new.lnl <- apply(new.params, 1, compute_neglnlikelihood, corhmm.object)
-# 	}
-# 
-# 	more_results <- cbind(matrix(new.lnl, ncol=1), new.params)
-# 	colnames(more_results) <- colnames(results)
-# 
-# 
-# 	results <- rbind(results, more_results)
-# 	#results$type <- c("start", rep("univariate", dim_univariate), rep("multivariate", n.points))
-# 
-# 	results.good.enough <- subset(results, results[,1]>max(results[,1])-desired.delta)
-# 
-# 	if(good.only) {
-# 		results <- results.good.enough
-# 	}
-# 	colnames(results) <- c("lnL", names(par))
-# 	class(results) <- append("corhmm_confidence", class(results))
-#     return(results)
-# }
-
-#' Compute confidence around rate estimates
-#'
-#' corHMM gives a single point estimate of rates, but this point estimate could be very uncertain. A traditional way to evaluate confidence is to vary each parameter until the log likelihood gets 2 units worse, while holding other parameters at their maximum likelihood estimates. That's fine and fast, but it can be misled by ridges. So, instead, we want all values that lead to a likelihood within two log likelihood units of the best. The range will be at least as wide as the univariate estimates but probably much larger.
-#'
-#' @param corhmm.object The result of a corHMM search
-#' @param desired.delta How many log likelihood units to deviate from the optimal likelihood from
-#' @param n.points How many points to use
-#' @param print_freq Output progress every print_freq steps.
-#' @param verbose If TRUE, print details of the search to the screen
-#' @param ... Other arguments to pass into the likelihood function.
-#' @export
-#' @examples
-#' 	data(primates)
-#'	phy <- multi2di(primates[[1]])
-#'	data <- primates[[2]]
-#'	MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
-#'	confidence_results <- ComputeConfidenceIntervals(MK_3state)
-#'  print(confidence_results)
-#'  plot(confidence_results, pch=".", col=rgb(0,0,0,.5))
-#' @author Brian C. O'Meara
 ComputeCI <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=TRUE,  print_freq=50, ...) {
 	best.neglnl <- -corhmm.object$loglik
 	index.mat <- corhmm.object$index.mat
@@ -129,6 +19,7 @@ ComputeCI <- function(corhmm.object, desired.delta = 2, n.points=5000, verbose=T
     return(dented_results)
 }
 
+#' @export
 print.corhmm_confidence <- function(x, ...) {
 	obj_rates <- as.data.frame(x[,-1])
 	best_index <- which.max(x$lnL)[1]
@@ -212,7 +103,7 @@ compute_neglnlikelihood <- function(par, corhmm.object) {
 	return(result)
 }
 
-#' Gets random numbers to try
+
 GenerateValues <- function(par, lower, upper, max.tries=100, expand.prob=0, examined.max, examined.min) {
     if(is.null(lower)) {
         lower <- 0.1*par
@@ -246,6 +137,7 @@ GenerateValues <- function(par, lower, upper, max.tries=100, expand.prob=0, exam
     return(new.vals)
 }
 
+
 GetGridPoints <- function(lower, upper, n.points) {
 	n.grains <- ceiling(n.points^(1/length(lower)))
 	vector.list <- list()
@@ -255,6 +147,7 @@ GetGridPoints <- function(lower, upper, n.points) {
 	parameter.matrix <- expand.grid(vector.list)
 	return(parameter.matrix)
 }
+
 
 GetLHSPoints <- function(lower, upper, n.points) {
 	raw.points <- randomLHS(n=n.points, k=length(lower))

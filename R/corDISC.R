@@ -220,6 +220,7 @@ corDISC <- function(phy, data, ntraits=2, rate.mat=NULL, model=c("ER","SYM","ARD
 
 
 #Print function
+#' @export
 print.cordisc<-function(x,...){
 	ntips=Ntip(x$phy)
 	output<-data.frame(x$loglik,x$AIC,x$AICc,x$ntraits,ntips, row.names="")

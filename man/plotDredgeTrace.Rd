@@ -6,9 +6,8 @@ This function visualizes the search history of a \code{\link{corHMMDredge}} run.
 }
 \usage{
 plotDredgeTrace(dredge_fits, break_size = 5, 
-                palette = c("drop" = "#A23B72", "merge" = "#2E86AB", 
-                            "free" = "#F18F01", "restart" = "#7209B7", 
-                            "none" = "grey60"), 
+                palette = c(drop = "#A23B72", merge = "#2E86AB", free = "#F18F01", 
+                restart = "#7209B7", eigen_merge = "#C73E1D", none = "grey60"), 
                 legend = TRUE, legend.pos = "topright", ...)
 }
 \arguments{

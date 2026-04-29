@@ -60,7 +60,7 @@ getModelTable <- function(model_list, type="AIC"){
   return(out)
 }
 
-
+#' @export
 print.corhmm_list <- function(x, ...){
   model_table <- getModelTable(x)
   model_names <- gsub("_", " ", gsub("_fit", "", names(x)))

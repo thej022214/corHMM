@@ -8,7 +8,7 @@ utils::globalVariables(c("liks", "Q"))
 ######################################################################################################################################
 ######################################################################################################################################
 
-corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=NULL, ip=NULL, fog.ip = 0.01, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse=TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL, return.devfun = FALSE, use_RTMB = FALSE) {
+corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=NULL, ip=NULL, fog.ip = 0.01, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse=TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL, return.devfun = FALSE, use_RTMB = FALSE, verbose=TRUE) {
 
     call <- match.call()
 
@@ -152,11 +152,14 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     if(length(grep("&", names(counts))) > 0){
       counts <- counts[-grep("&", names(counts))]
     }
-    print_counts[as.numeric(names(counts))] <- counts
-    message("State distribution in data:\n")
-    message("States:",StateNames,"\n",sep="\t")
-    message("Counts:",print_counts,"\n",sep="\t")
-    
+	
+	if(verbose == TRUE){
+		print_counts[as.numeric(names(counts))] <- counts
+		message("State distribution in data:\n")
+		message("States:",StateNames,"\n",sep="\t")
+		message("Counts:",print_counts,"\n",sep="\t")
+    }
+	
     lower = rep(lb, model.set.final$np)
     upper = rep(ub, model.set.final$np)
     
@@ -222,7 +225,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     opts <- list("algorithm"="NLOPT_LN_SBPLX", "maxeval"="1000000", "ftol_rel"=.Machine$double.eps^0.5)
   }
   if (!is.null(p)){
-        message("Calculating likelihood from a set of fixed parameters", "\n")
+        if(verbose == TRUE){
+			message("Calculating likelihood from a set of fixed parameters", "\n")
+		}
         out <- NULL
         est.pars <- log(p)
         out$objective <- with(model.set.final,
@@ -246,7 +251,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
             ## If a user-specified starting value(s) is not supplied this begins loop through a set of randomly chosen starting values:
             ## Sets parameter settings for random restarts by taking the parsimony score and dividing
             ## by the total length of the tree
-            message("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
+            if(verbose == TRUE){
+				message("Beginning thorough optimization search -- performing", nstarts, "random restarts", "\n")
+			}
             taxa.missing.data.drop <- which(is.na(data.sort[,1]))
             if(length(taxa.missing.data.drop) != 0){
                 tip.labs <- names(taxa.missing.data.drop)
@@ -342,7 +349,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 			}
         }else{
             # the user has specified initial params
-            message("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
+			if(verbose == TRUE){
+				message("Beginning subplex optimization routine -- Starting value(s):", ip, "\n")
+			}
             ip <- ip
 			if(set.fog == TRUE){
 				ip <- c(rep(0.01, length(unique(model.set.final$fog.vec))), ip)
@@ -372,7 +381,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 
     #Starts the ancestral state reconstructions:
     if(node.states != "none") {
-        message("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
+		if(verbose == TRUE){
+			message("Finished. Inferring ancestral states using", node.states, "reconstruction.","\n")
+		}
     }
     TIPS <- 1:nb.tip
     if (node.states == "marginal" || node.states == "scaled"){
@@ -794,7 +805,8 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
 }
 
 
-print.corhmm<-function(x,...){
+#' @export
+print.corhmm <- function(x,...){
 
   ntips=Ntip(x$phy)
   output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
@@ -832,6 +844,7 @@ print.corhmm<-function(x,...){
         cat("Arrived at a reliable solution","\n")
     }
 }
+
 
 # function for calculating PIR according to gardner and organ (2021)
 getPIR <- function(phy, data, collapse){

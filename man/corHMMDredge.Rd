@@ -186,7 +186,7 @@ James D. Boyko
 \code{\link{kFoldCrossValidation}}, \code{\link{getModelTable}}
 }
 \examples{
-\donttest{
+\dontrun{
 library(corHMM)
 data(primates)
 phy <- multi2di(primates[[1]])
