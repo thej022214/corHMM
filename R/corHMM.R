@@ -806,43 +806,93 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
 
 
 #' @export
-print.corhmm <- function(x,...){
+#print.corhmm <- function(x,...){
 
-  ntips=Ntip(x$phy)
-  output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
-  names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
-  cat("\nFit\n")
-  print(output)
-  cat("\n")
-  UserStates <- colnames(x$solution)
-  ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
+#  ntips=Ntip(x$phy)
+#  output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
+#  names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
+#  cat("\nFit\n")
+#  print(output)
+#  cat("\n")
+#  UserStates <- colnames(x$solution)
+#  ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
   
-  cat("Legend\n")
-  print(ColNames)
-  print(UserStates)
-  cat("\n")
+#  cat("Legend\n")
+#  print(ColNames)
+#  print(UserStates)
+#  cat("\n")
   
-  param.est<- x$solution
-  cat("Rates\n")
-  print(param.est)
-  cat("\n")
+#  param.est<- x$solution
+#  cat("Rates\n")
+#  print(param.est)
+#  cat("\n")
+
+#	if(!is.null(x$tip.fog.probs)){
+#               cat("Tip fog\n")
+#		print(x$tip.fog.probs)
+#		cat("\n")
+#	}
+	
+#    if(any(x$eigval<0)){
+#        index.matrix <- x$index.mat
+        #If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
+#        if (any(x$eigval<0)) {
+#            warning("The objective function may be at a saddle point", "\n")
+#        }
+#    }
+#    else{
+#        cat("Arrived at a reliable solution","\n")
+#    }
+#}
+
+#' @export
+print.corhmm <- function(x,...){
+	if (!is.null(x$phy_list)){
+		ntips=Ntip(x$phy)
+		output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips,x$ntrees, row.names="")
+		names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax","ntrees")
+		cat("\nFit\n")
+		print(output)
+		cat("\n")
+	} else {
+		ntips=Ntip(x$phy)
+		output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
+		names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
+		cat("\nFit\n")
+		print(output)
+		cat("\n")
+	}
+
+	UserStates <- gsub("_", "|", corHMM:::corProcessData(x$data)$PossibleTraits)
+	ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
+
+	cat("Legend\n")
+	print(ColNames)
+	print(UserStates)
+	cat("\n")
+	
+	param.est<- x$solution
+	cat("Rates\n")
+	print(param.est)
+	cat("\n")
 
 	if(!is.null(x$tip.fog.probs)){
-                cat("Tip fog\n")
+		cat("Tip fog\n")
 		print(x$tip.fog.probs)
 		cat("\n")
 	}
 	
-    if(any(x$eigval<0)){
-        index.matrix <- x$index.mat
-        #If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
-        if (any(x$eigval<0)) {
-            warning("The objective function may be at a saddle point", "\n")
-        }
-    }
-    else{
-        cat("Arrived at a reliable solution","\n")
-    }
+	if(any(x$eigval<0)){
+		index.matrix <- x$index.mat
+		#If any eigenvalue is less than 0 then the solution is not the maximum likelihood solution
+		if (any(x$eigval<0)) {
+			cat("The objective function may be at a saddle point", "\n")
+		}
+	}
+	else{
+		cat("Arrived at a reliable solution","\n")
+	}
+
 }
 
 
