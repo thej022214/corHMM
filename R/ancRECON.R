@@ -1596,38 +1596,64 @@ getNodePlacementsForSlice <- function(phy, time_slice){
 
 
 # the main function for doing a marginal time slice reconstruction
-ancRECON_slice <- function(corhmm.obj, time_slice, collapse=TRUE, ncores = 1){
-  if(max(time_slice) >= max(branching.times(corhmm.obj$phy))){
-	stop("time_slice must be less than the maximum branching time of the tree")
-  }
-  # get the fake node locations for the reconstruction based on the time slice
-  to_recon <- sapply(time_slice, function(x) getNodePlacementsForSlice(corhmm.obj$phy, x))
-  to_recon <- (apply(to_recon, 2, function(x) do.call(cbind, x)))
-  for(i in seq_len(length(time_slice))){
-	to_recon[[i]] <- cbind(time_slice = time_slice[i], to_recon[[i]])
-  }
-  to_recon <- do.call(rbind, to_recon)
-  # create a dummy tip and dummy data
-  tip.name <- "FakeyMcFakerson"
-  tip <- list(edge=matrix(c(2,1),1,2), tip.label=tip.name, edge.length=0, Nnode=1)
-  class(tip) <- "phylo"
-  new.data <- corhmm.obj$data.legend
-  new.data[,1] <- as.character(new.data[,1])
-  new.data <- rbind(new.data, "?")
-  new.data[nrow(new.data), 1] <- "FakeyMcFakerson"
-  ntraits <- max(as.numeric(corhmm.obj$data.legend$d))
-  # get all the new phys
-  print(paste0("Reconstructing ", nrow(to_recon), " nodes for ", length(time_slice), " time slices..."))
-  corhmm.obj$phy$node.label <- NULL
-  all_trees <- apply(to_recon, 1, function(x) bind.tree(corhmm.obj$phy, tip, x[2], x[3]))
-  #Now lets calculate some marginals!
+ancRECON_slice <- function(corhmm.obj, time_slice, edge=NULL, collapse=TRUE, ncores = 1){
+	phy <- corhmm.obj$phy
+	tree_height <- max(branching.times(phy))
+
+	if(any(time_slice >= tree_height)){
+	  stop("All time_slice values must be less than the maximum branching time of the tree.")
+	}
+
+	to_recon <- lapply(time_slice, function(x) {
+	  tmp <- getNodePlacementsForSlice(phy, x)
+	  cbind(time_slice = x, tmp)
+	})
+
+	to_recon <- do.call(rbind, to_recon)
+
+	# Reconstruct only one specified edge when edge is not NULL:
+	if(!is.null(edge)){
+	  edge <- unlist(edge)
+	  ## treat edge as descendant node numbers
+	  to_recon <- to_recon[to_recon$node %in% edge, , drop = FALSE]
+	  if(nrow(to_recon) == 0){
+		stop("The requested time_slice does not fall on the specified edge(s)")
+	  }
+	  ncores <- 1
+	}
+	
+	tip.name <- "FakeyMcFakerson"
+	if(tip.name %in% phy$tip.label){
+	  stop("Dummy tip name already exists in the tree.")
+	}
+
+	tip <- list(edge = matrix(c(2, 1), 1, 2), tip.label = tip.name,edge.length = 0, Nnode = 1)
+	class(tip) <- "phylo"
+
+	new.data <- corhmm.obj$data.legend
+	new.data[,1] <- as.character(new.data[,1])
+
+	fake_row <- new.data[1, , drop = FALSE]
+	fake_row[,] <- "?"
+	fake_row[1, 1] <- tip.name
+	new.data <- rbind(new.data, fake_row)
+
+	phy$node.label <- NULL
+
+	all_trees <- apply(to_recon, 1, function(x) {
+		bind.tree(phy, tip, where = as.numeric(x["node"]), position = as.numeric(x["position"]))
+	})
+
   p <- sapply(1:max(corhmm.obj$index.mat, na.rm = TRUE), function(x) na.omit(c(corhmm.obj$solution))[na.omit(c(corhmm.obj$index.mat) == x)][1])
-  all_recon <- mclapply(all_trees, function(x) GetEdgeMarginal(p=p, phy=x, data=new.data, rate.mat=corhmm.obj$index.mat, rate.cat=corhmm.obj$rate.cat, ntraits=ntraits, root.p=corhmm.obj$root.p, model = "ARD", collapse = collapse), mc.cores = ncores)
+##### Check #####
+  ntraits <- max(as.numeric(corhmm.obj$data.legend$d))
+  all_recon <- mclapply(all_trees, function(x) corHMM:::GetEdgeMarginal(p=p, phy=x, data=new.data, rate.mat=corhmm.obj$index.mat, rate.cat=corhmm.obj$rate.cat, ntraits=ntraits, root.p=corhmm.obj$root.p, model = "ARD", collapse = collapse), mc.cores = ncores)
   all_recon <-  do.call(rbind, all_recon)
   colnames(all_recon) <- colnames(corhmm.obj$solution)
   out <- cbind(to_recon, all_recon)
   return(out)
 }
+
 
 plot_slice_recon <- function(phy, slice_df, col=NULL){
   plot(phy, show.tip.label = FALSE)
