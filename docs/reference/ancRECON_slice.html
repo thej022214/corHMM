@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.3</span>
       </span>
     </div>
 
@@ -54,7 +54,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ancRECON_slice</span><span class="op">(</span><span class="va">corhmm.obj</span>, <span class="va">time_slice</span>, collapse<span class="op">=</span><span class="cn">TRUE</span>, ncores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ancRECON_slice</span><span class="op">(</span><span class="va">corhmm.obj</span>, <span class="va">time_slice</span>, edge<span class="op">=</span><span class="cn">NULL</span>, collapse<span class="op">=</span><span class="cn">TRUE</span>, ncores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -66,6 +66,9 @@
 
 <dt id="arg-time-slice">time_slice<a class="anchor" aria-label="anchor" href="#arg-time-slice"></a></dt>
 <dd><p>a vector of times to reconstruct (present = 0, root = max(branching.times(phy)))</p></dd>
+
+<dt id="arg-edge">edge<a class="anchor" aria-label="anchor" href="#arg-edge"></a></dt>
+<dd><p>specifies specific edges to reconstruct only. default is <code>NULL</code> meaning all edges along a slice are reconstructed.</p></dd>
 
 <dt id="arg-collapse">collapse<a class="anchor" aria-label="anchor" href="#arg-collapse"></a></dt>
 <dd><p>set collapse to be the same as it was during the corhmm run.</p></dd>
@@ -95,15 +98,26 @@
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
-<span class="r-in"><span><span class="co"># library(corHMM)</span></span></span>
-<span class="r-in"><span><span class="co"># library(viridis)</span></span></span>
-<span class="r-in"><span><span class="co"># data(primates)</span></span></span>
-<span class="r-in"><span><span class="co"># phy &lt;- multi2di(primates[[1]])</span></span></span>
-<span class="r-in"><span><span class="co"># data &lt;- primates[[2]]</span></span></span>
-<span class="r-in"><span><span class="co"># corhmm.obj &lt;- corHMM(phy = phy, data = data, rate.cat = 1)</span></span></span>
-<span class="r-in"><span><span class="co"># test &lt;- ancRECON_slice(corhmm.obj, time_slice = c(1, 10, 20, 30, 40, 49), </span></span></span>
-<span class="r-in"><span><span class="co">#         collapse = TRUE, ncores = 4)</span></span></span>
-<span class="r-in"><span><span class="co"># corHMM:::plot_slice_recon(phy, test, col = viridis(3))</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">corHMM</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sjmgarnier.github.io/viridis/" class="external-link">viridis</a></span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required package: viridisLite</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">primates</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/multi2di.html" class="external-link">multi2di</a></span><span class="op">(</span><span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">corhmm.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="corHMM.html">corHMM</a></span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, rate.cat <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> State distribution in data:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> States:0|00|11|1</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Counts:291021</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Beginning thorough optimization search -- performing0random restarts</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Finished. Inferring ancestral states usingmarginalreconstruction.</span>
+<span class="r-in"><span><span class="va">test</span> <span class="op">&lt;-</span> <span class="fu">ancRECON_slice</span><span class="op">(</span><span class="va">corhmm.obj</span>, time_slice <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">49</span><span class="op">)</span>, </span></span>
+<span class="r-in"><span>         collapse <span class="op">=</span> <span class="cn">TRUE</span>, ncores <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span> <span class="fu">corHMM</span><span class="fu">:::</span><span class="fu">plot_slice_recon</span><span class="op">(</span><span class="va">phy</span>, <span class="va">test</span>, col <span class="op">=</span> <span class="fu"><a href="https://sjmgarnier.github.io/viridisLite/reference/viridis.html" class="external-link">viridis</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="ancRECON_slice-1.png" alt="" width="700" height="433"></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in lastPP$xx[focal[2]]:</span> invalid subscript type 'list'</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

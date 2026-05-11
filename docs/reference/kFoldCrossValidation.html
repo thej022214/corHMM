@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.3</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># run your dredge</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">primates</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">phy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/multi2di.html" class="external-link">multi2di</a></span><span class="op">(</span><span class="va">primates</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
@@ -113,292 +113,18 @@
 <span class="r-in"><span><span class="va">dredge_fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="corHMMDredge.html">corHMMDredge</a></span><span class="op">(</span>phy <span class="op">=</span> <span class="va">phy</span>, data <span class="op">=</span> <span class="va">data</span>, </span></span>
 <span class="r-in"><span>  max.rate.cat <span class="op">=</span> <span class="fl">1</span>, pen.type <span class="op">=</span> <span class="st">"l1"</span>, </span></span>
 <span class="r-in"><span>  root.p <span class="op">=</span> <span class="st">"maddfitz"</span>, lambda <span class="op">=</span> <span class="fl">1</span>, nstarts <span class="op">=</span> <span class="fl">10</span>, n.cores <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Beginning SA dredge...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SA parameters: max_iter = 1000 , init_temp = 2 , cooling = 0.95 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> === RATE CATEGORY 1 ===</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Initial AIC : 101.5139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA   3   5  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0   1  NA  NA   7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   2  NA  NA   8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   4   6  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Starting SA with AIC = 101.514 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Restart strategy: fixed_steps </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 1 - New AIC: 97.647 - Best AIC: 97.647 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 1.9 - Steps since restart: 1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA   2   4  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   3   5  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 2 - New AIC: 95.647 - Best AIC: 95.647 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 1.805 - Steps since restart: 2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA   2   3  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   5   4  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 3 - New AIC: 93.647 - Best AIC: 93.647 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 1.7147 - Steps since restart: 3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA   4   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   4   3  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 4 - New AIC: 91.647 - Best AIC: 91.647 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 1.629 - Steps since restart: 4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   3  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 5 - New AIC: 91.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 1.5476 - Steps since restart: 5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 7 - New AIC: 95.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: free - Temp: 1.3967 - Steps since restart: 7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0   4  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   3   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 9 - New AIC: 93.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 1.2605 - Steps since restart: 9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0   3  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   3   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 12 - New AIC: 93.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 1.0807 - Steps since restart: 12 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0   3  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 13 - New AIC: 91.773 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 1.0267 - Steps since restart: 13 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0   2  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RESTART 1 at iteration 33 ( fixed_steps ) - Back to a previous model AIC : 93.647 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 34 - New AIC: 93.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 0.3496 - Steps since restart: 1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA   3   3  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   3   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 37 - New AIC: 91.792 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 0.2998 - Steps since restart: 4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA   3  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 40 - New AIC: 91.647 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 0.257 - Steps since restart: 7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA   3  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 45 - New AIC: 91.544 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 0.1989 - Steps since restart: 12 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RESTART 2 at iteration 65 ( fixed_steps ) - Back to a previous model AIC : 93.647 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 67 - New AIC: 93.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 0.0643 - Steps since restart: 2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA   3  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   3   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 70 - New AIC: 93.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 0.0552 - Steps since restart: 5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 75 - New AIC: 91.977 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: merge - Temp: 0.0427 - Steps since restart: 10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA   2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA  NA   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RESTART 3 at iteration 95 ( fixed_steps ) - Back to a previous model AIC : 91.544 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RESTART 4 at iteration 115 ( fixed_steps ) - Back to a previous model AIC : 95.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iter 121 - New AIC: 93.141 - Best AIC: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Move: drop - Temp: 0.004 - Steps since restart: 6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Index Matrix:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0|0 1|0 0|1 1|1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|0  NA  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0|1   1  NA  NA  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1|1  NA   3   2  NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> RESTART 5 at iteration 141 ( fixed_steps ) - Back to a previous model AIC : 91.544 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Best AIC for Rate Class 1 after SA: 91.141 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SA iterations: 149 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SA acceptance rate: 0.274 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Done.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># select the best model and run CV</span></span></span>
 <span class="r-in"><span><span class="va">model_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="getModelTable.html">getModelTable</a></span><span class="op">(</span><span class="va">dredge_fits</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dredge_model</span> <span class="op">&lt;-</span> <span class="va">dredge_fits</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.min</a></span><span class="op">(</span><span class="va">model_table</span><span class="op">$</span><span class="va">dAIC</span><span class="op">)</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">k_fold_res</span> <span class="op">&lt;-</span> <span class="fu">kFoldCrossValidation</span><span class="op">(</span><span class="va">dredge_model</span>,</span></span>
 <span class="r-in"><span>k <span class="op">=</span> <span class="fl">5</span>, lambdas <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span>,<span class="fl">0.75</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Evaluating lambda = 0 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 0 Score: 0.04513702 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 1 Score: 0.03252338 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 2 Score: 0.02020864 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 3 Score: 0.02721126 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 4 Score: 0.02740597 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Average Cross-Validation Score: 0.03049725 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Evaluating lambda = 0.25 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 0 Score: 0.04504975 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 1 Score: 0.03252082 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 2 Score: 0.02018284 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 3 Score: 0.02718753 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 4 Score: 0.02741115 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Average Cross-Validation Score: 0.03047042 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Evaluating lambda = 0.5 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 0 Score: 0.04496942 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 1 Score: 0.03251816 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 2 Score: 0.02016062 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 3 Score: 0.02716733 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 4 Score: 0.02742075 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Average Cross-Validation Score: 0.03044726 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Evaluating lambda = 0.75 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 0 Score: 0.04489525 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 1 Score: 0.03251539 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 2 Score: 0.02014147 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 3 Score: 0.02715007 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 4 Score: 0.02743372 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Average Cross-Validation Score: 0.03042718 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Evaluating lambda = 1 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 0 Score: 0.04482662 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 1 Score: 0.0325125 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 2 Score: 0.02012498 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 3 Score: 0.02713534 </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Branch lengths of 0 detected. Adding 1.49011611938477e-08</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA/NaN function evaluation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold 4 Score: 0.02744932 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Average Cross-Validation Score: 0.03040975 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">cv_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="getCVTable.html">getCVTable</a></span><span class="op">(</span><span class="va">k_fold_res</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># choose lowest average score for lambda</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cv_table</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $score_table</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          Lambda:0 Lambda:0.25 Lambda:0.5 Lambda:0.75   Lambda:1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold:0 0.04513702  0.04504975 0.04496942  0.04489525 0.04482662</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold:1 0.03252338  0.03252082 0.03251816  0.03251539 0.03251250</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold:2 0.02020864  0.02018284 0.02016062  0.02014147 0.02012498</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold:3 0.02721126  0.02718753 0.02716733  0.02715007 0.02713534</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold:4 0.02740597  0.02741115 0.02742075  0.02743372 0.02744932</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $avg_scores</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Lambda:0 Lambda:0.25  Lambda:0.5 Lambda:0.75    Lambda:1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  0.03049725  0.03047042  0.03044726  0.03042718  0.03040975 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </div>
