@@ -8,7 +8,8 @@ fitCorrelationTest(phy,
   root.p="yang", 
   nstarts=0, 
   n.cores=1, 
-  simplified_models=FALSE)
+  simplified_models=FALSE,
+  use_RTMB=TRUE)
 }
 \arguments{
   \item{phy}{a phylogenetic tree, in \code{ape} \dQuote{phylo} format.}
@@ -17,6 +18,7 @@ fitCorrelationTest(phy,
   \item{nstarts}{the number of random restarts to be performed. The default is \code{nstarts=0}.}
   \item{n.cores}{the number of processor cores to spread out the random restarts.}
   \item{simplified_models}{A boolean which indicates whether to include simplified independent and dependent models (currently only works for two binary-state characters; see Details).}
+  \item{use_RTMB}{A boolean indicating whether to use autodifferentiation (much faster).}
 }
 \details{
 This function automatically fit a set of multi-rate independent and dependent models (with default corHMM options) to drastically reduce false support for correlation. Currently, the simplified models are only available for two binary-state characters, but it is straightforward for users to use the tools available in corHMM to create model structures specific to their questions when the datasets are more complex. 
