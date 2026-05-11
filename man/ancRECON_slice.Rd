@@ -3,11 +3,12 @@
 \title{Ancestral state reconstruction for a particular time}
 \description{Infers marginal ancestral states based on a set of model parameters at a particular time}
 \usage{
-ancRECON_slice(corhmm.obj, time_slice, collapse=TRUE, ncores = 1)
+ancRECON_slice(corhmm.obj, time_slice, edge=NULL, collapse=TRUE, ncores = 1)
 }       
 \arguments{
 \item{corhmm.obj}{a corhmm object which is the output of the main corhmm function.}
 \item{time_slice}{a vector of times to reconstruct (present = 0, root = max(branching.times(phy)))}
+\item{edge}{specifies specific edges to reconstruct only. default is \code{NULL} meaning all edges along a slice are reconstructed.}
 \item{collapse}{set collapse to be the same as it was during the corhmm run.}
 \item{ncores}{number of cores to use during parallelization.}
 }
@@ -19,15 +20,15 @@ a data.frame. Each row of time_slice is the time period that was specified. node
 }
 \examples{
 \donttest{
-# library(corHMM)
-# library(viridis)
-# data(primates)
-# phy <- multi2di(primates[[1]])
-# data <- primates[[2]]
-# corhmm.obj <- corHMM(phy = phy, data = data, rate.cat = 1)
-# test <- ancRECON_slice(corhmm.obj, time_slice = c(1, 10, 20, 30, 40, 49), 
-#         collapse = TRUE, ncores = 4)
-# corHMM:::plot_slice_recon(phy, test, col = viridis(3))
+library(corHMM)
+library(viridis)
+data(primates)
+phy <- multi2di(primates[[1]])
+data <- primates[[2]]
+corhmm.obj <- corHMM(phy = phy, data = data, rate.cat = 1)
+test <- ancRECON_slice(corhmm.obj, time_slice = c(1, 10, 20, 30, 40, 49), 
+         collapse = TRUE, ncores = 4)
+ corHMM:::plot_slice_recon(phy, test, col = viridis(3))
 }
 }
 \references{

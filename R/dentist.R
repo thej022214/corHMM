@@ -24,6 +24,7 @@
 #' @return A dentist object containing results, the data.frame of negative log likelihoods and the parameters associated with them; acceptances, the vector of whether a proposed move was accepted each step; best_neglnL, the best value passed into the analysis; delta, the desired offset; all_ranges, a summary of the results.
 #' @export
 #' @examples
+#' @dontrun
 #' # Univariate case
 #' sims <- stats::rnorm(100, mean=17)
 #' possible_means <- seq(from=16, to=18, length.out=100) # for optimize
@@ -226,6 +227,7 @@ dent_propose <- function(old_params, lower_bound=-Inf, upper_bound=Inf, sd=1) {
 #' @return The transformed negative log likelihood
 #' @export
 #' @examples
+#' @dontrun
 #' sims <- stats::rnorm(100, mean=17)
 #' possible_means <- seq(from=16, to=18, length.out=100)
 #' results_normal <- rep(NA, length(possible_means))

@@ -47,7 +47,7 @@ This function implements a two-pass sampling approach to quantify the uncertaint
 \item{Assembling \code{state_df} and \code{tip_state_df} from the remaining histories.} }
 
 }
-\examples{ \donttest{
+\examples{ \dontrun{
 ## res is a corHMM-style result object produced earlier in your workflow
 ci <- compute_joint_ci(res)
 str(ci)

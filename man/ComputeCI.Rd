@@ -22,16 +22,5 @@ In general, the idea of this is not to give you a pleasingly narrow range of pos
 \value{
 A dentist object containing results, the data.frame of negative log likelihoods and the parameters associated with them; acceptances, the vector of whether a proposed move was accepted each step; best_neglnL, the best value passed into the analysis; delta, the desired offset; all_ranges, a summary of the results.
 }
-\examples{
-\donttest{
-# data(primates)
-# phy <- multi2di(primates[[1]])
-# data <- primates[[2]]
-# MK_3state <- corHMM(phy = phy, data = data, rate.cat = 1)
-# confidence_results <- ComputeCI(MK_3state, desired.delta = 2, 200)
-# print(confidence_results)
-# plot.dentist(confidence_results)
-}
-}
 \author{Brian O'Meara (see also the R package Dentist) & exported by James D. Boyko}
 \keyword{models}

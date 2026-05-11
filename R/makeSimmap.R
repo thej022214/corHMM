@@ -59,7 +59,9 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     }
     tree.simmap$mapped.edge <- tree.simmap$mapped.edge[,match(StateNames, colnames(tree.simmap$mapped.edge))]
     tree.simmap$Q <- model
-    colnames(tree.simmap$Q) <- rownames(tree.simmap$Q) <- StateNames
+    try({
+		colnames(tree.simmap$Q) <- rownames(tree.simmap$Q) <- StateNames # try to handle case of different dimname length with missing states
+	}, silent=TRUE)
     attr(tree.simmap, "map.order") <- "right-to-left"
     if (!inherits(tree.simmap, "simmap"))
       class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))

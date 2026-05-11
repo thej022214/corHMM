@@ -28,7 +28,7 @@ save_model_dir = NULL, model_name = NULL)
   \item{averageScore}{The average cross-validation score across all folds.}
 }
 \examples{
-\donttest{
+\dontrun{
 # run your dredge
 data(primates)
 phy <- multi2di(primates[[1]])
