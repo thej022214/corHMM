@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.4</span>
       </span>
     </div>
 
@@ -374,7 +374,7 @@ the output.</p>
 <span><span class="co"># we import phytools plotSimmap for plotting</span></span>
 <span><span class="fu">phytools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/phytools/man/plotSimmap.html" class="external-link">plotSimmap</a></span><span class="op">(</span><span class="va">simmap</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, fsize <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## no colors provided. using the following legend:</span></span>
-<span><span class="co">##       0|0       0|1       1|1 </span></span>
+<span><span class="co">##    (1,R1)    (2,R1)    (3,R1) </span></span>
 <span><span class="co">##   "black" "#DF536B" "#61D04F"</span></span></code></pre>
 <p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="700"></p>
 <div class="section level5">
@@ -460,7 +460,7 @@ rates of evolution can vary drastically across the tree.</p>
 <span><span class="co"># we import phytools plotSimmap for plotting</span></span>
 <span><span class="fu">phytools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/phytools/man/plotSimmap.html" class="external-link">plotSimmap</a></span><span class="op">(</span><span class="va">simmap</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, fsize <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## no colors provided. using the following legend:</span></span>
-<span><span class="co">##    R1 0|0    R1 0|1    R1 1|1    R2 0|0    R2 0|1    R2 1|1 </span></span>
+<span><span class="co">##    (1,R1)    (1,R2)    (2,R1)    (2,R2)    (3,R1)    (3,R2) </span></span>
 <span><span class="co">##   "black" "#DF536B" "#61D04F" "#2297E6" "#28E2E5" "#CD0BBC"</span></span></code></pre>
 <p><img src="corHMMv2.1-vignette_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="700"></p>
 </div>
@@ -1199,11 +1199,11 @@ same).</p>
 <span><span class="co">## [1] "0" "1"</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Rates</span></span>
-<span><span class="co">##       R1 0 R1 1        R2 0     R2 1</span></span>
-<span><span class="co">## R1 0    NA   NA 0.000000001       NA</span></span>
-<span><span class="co">## R1 1    NA   NA          NA       NA</span></span>
-<span><span class="co">## R2 0 1e-09   NA          NA 1.562171</span></span>
-<span><span class="co">## R2 1    NA   NA 1.562170981       NA</span></span>
+<span><span class="co">##        (1,R1) (2,R1)      (1,R2)   (2,R2)</span></span>
+<span><span class="co">## (1,R1)     NA     NA 0.000000001       NA</span></span>
+<span><span class="co">## (2,R1)     NA     NA          NA       NA</span></span>
+<span><span class="co">## (1,R2)  1e-09     NA          NA 1.562171</span></span>
+<span><span class="co">## (2,R2)     NA     NA 1.562170981       NA</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Arrived at a reliable solution</span></span></code></pre>
 </div>

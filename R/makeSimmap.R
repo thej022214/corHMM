@@ -1,4 +1,5 @@
 makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 100000, collapse=TRUE){
+	model_colnames <- colnames(model)
   if(any(tree$edge.length<=.Machine$double.eps)){
     warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
     tree$edge.length <- tree$edge.length + sqrt(.Machine$double.eps) 
@@ -44,6 +45,9 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   if(rate.cat > 1){
     StateNames <- paste(RCNames, StateNames)
   }
+  if(!is.null(model_colnames[1])) {
+	StateNames <- model_colnames
+  }
   for(i in 1:nSim) {
     tree.simmap <- tree
     tree.simmap$maps <- maps[[i]]
@@ -59,9 +63,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     }
     tree.simmap$mapped.edge <- tree.simmap$mapped.edge[,match(StateNames, colnames(tree.simmap$mapped.edge))]
     tree.simmap$Q <- model
-    try({
 		colnames(tree.simmap$Q) <- rownames(tree.simmap$Q) <- StateNames # try to handle case of different dimname length with missing states
-	}, silent=TRUE)
     attr(tree.simmap, "map.order") <- "right-to-left"
     if (!inherits(tree.simmap, "simmap"))
       class(tree.simmap) <- c("simmap", setdiff(class(tree.simmap), "simmap"))

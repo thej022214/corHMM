@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.4</span>
       </span>
     </div>
 
@@ -88,6 +88,18 @@
         </td>
         <td><p>Fit a Single Penalized Hidden Markov Model</p></td>
       </tr><tr><td>
+          <p><code><a href="dent_likelihood.html">dent_likelihood()</a></code> </p>
+        </td>
+        <td><p>Dents the likelihood surface This takes any values that are better (lower) than the desired negative log likelihood and reflects them across the best_neglnL + delta line, "denting" the likelihood surface.</p></td>
+      </tr><tr><td>
+          <p><code><a href="dent_propose.html">dent_propose()</a></code> </p>
+        </td>
+        <td><p>Propose new values This proposes new values using a normal distribution centered on the original parameter values, with desired standard deviation. If any proposed values are outside the bounds, it will propose again.</p></td>
+      </tr><tr><td>
+          <p><code><a href="dent_walk.html">dent_walk()</a></code> </p>
+        </td>
+        <td><p>Sample points from along a ridge This "dents" the likelihood surface by reflecting points better than a threshold back across the threshold (think of taking a hollow plastic model of a mountain and punching the top so it's a volcano). It then uses essentially a Metropolis-Hastings walk to wander around the new rim. It adjusts the proposal width so that it samples points around the desired likelihood. This is better than using the curvature at the maximum likelihood estimate since it can actually sample points in case the assumptions of the curvature method do not hold. It is better than varying one parameter at a time while holding others constant because that could miss ridges: if I am fitting 5=x+y, and get a point estimate of (3,2), the reality is that there are an infinite range of values of x and y that will sum to 5, but if I hold x constant it looks like y is estimated very precisely. Of course, one could just fully embrace the Metropolis-Hastings lifestyle and use a full Bayesian approach.</p></td>
+      </tr><tr><td>
           <p><code><a href="fitCorrelationTest.html">fitCorrelationTest()</a></code> </p>
         </td>
         <td><p>Test for correlation</p></td>
@@ -120,6 +132,10 @@
         </td>
         <td><p>Simulate a character history</p></td>
       </tr><tr><td>
+          <p><code><a href="plot.dentist.html">plot(<i>&lt;dentist&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Plot the dented samples This will show the univariate plots of the parameter values versus the likelihood as well as bivariate plots of pairs of parameters to look for ridges.</p></td>
+      </tr><tr><td>
           <p><code><a href="plotDredgeTrace.html">plotDredgeTrace()</a></code> </p>
         </td>
         <td><p>Plot the Trace of a corHMMDredge Simulated Annealing Search</p></td>
@@ -144,6 +160,10 @@
         </td>
         <td><p>Example datasets</p></td>
       </tr><tr><td>
+          <p><code><a href="print.dentist.html">print(<i>&lt;dentist&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print dentist print summary of output from dent_walk</p></td>
+      </tr><tr><td>
           <p><code><a href="rayDISC.html">rayDISC()</a></code> </p>
         </td>
         <td><p>Evolution of categorical traits</p></td>
@@ -155,6 +175,10 @@
           <p><code><a href="summarize_simmaps.html">summarize_single_simmap()</a></code> <code><a href="summarize_simmaps.html">summarize_transition_stats()</a></code> </p>
         </td>
         <td><p>Summarize Transition Information from Stochastic Character Maps</p></td>
+      </tr><tr><td>
+          <p><code><a href="summary.dentist.html">summary(<i>&lt;dentist&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Summarize dentist Display summary of output from dent_walk</p></td>
       </tr><tr><td>
           <p><code><a href="tipHomology.html">tipHomology()</a></code> </p>
         </td>

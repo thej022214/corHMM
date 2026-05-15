@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">corHMM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">2.10.4</span>
       </span>
     </div>
 
@@ -59,7 +59,8 @@
 <span>  root.p<span class="op">=</span><span class="st">"yang"</span>, </span>
 <span>  nstarts<span class="op">=</span><span class="fl">0</span>, </span>
 <span>  n.cores<span class="op">=</span><span class="fl">1</span>, </span>
-<span>  simplified_models<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span>  simplified_models<span class="op">=</span><span class="cn">FALSE</span>,</span>
+<span>  use_RTMB<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -82,6 +83,9 @@
 
   <dt id="arg-simplified-models">simplified_models<a class="anchor" aria-label="anchor" href="#arg-simplified-models"></a></dt>
 <dd><p>A boolean which indicates whether to include simplified independent and dependent models (currently only works for two binary-state characters; see Details).</p></dd>
+
+  <dt id="arg-use-rtmb">use_RTMB<a class="anchor" aria-label="anchor" href="#arg-use-rtmb"></a></dt>
+<dd><p>A boolean indicating whether to use autodifferentiation (much faster).</p></dd>
 
 </dl></div>
     <div id="details">

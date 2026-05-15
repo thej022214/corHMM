@@ -11,6 +11,11 @@ utils::globalVariables(c("liks", "Q"))
 corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.states = "marginal", fixed.nodes=FALSE, p=NULL, root.p="yang", tip.fog=NULL, ip=NULL, fog.ip = 0.01, nstarts=0, n.cores=1, get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse=TRUE, lower.bound = 1e-9, upper.bound = 100, opts=NULL, return.devfun = FALSE, use_RTMB = FALSE, verbose=TRUE) {
 
     call <- match.call()
+	
+	input_rate_mat_states <- NULL
+	if(!is.null(rate.mat)) {
+		input_rate_mat_states <- colnames(rate.mat)
+	}
 
     # Checks to make sure node.states is not NULL.  If it is, just returns a diagnostic message asking for value.
     if(is.null(node.states)){
@@ -485,6 +490,9 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     devfun = fun,
     opt.time = out$opt.time
   )
+  if(!is.null(input_rate_mat_states[1])) {
+	colnames(obj$solution) <- rownames(obj$solution) <- input_rate_mat_states
+  }
     class(obj)<-"corhmm"
     return(obj)
 }

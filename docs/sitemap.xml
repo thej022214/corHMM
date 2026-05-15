@@ -13,6 +13,9 @@
 <url><loc>/reference/corHMM.html</loc></url>
 <url><loc>/reference/corHMMDredge.html</loc></url>
 <url><loc>/reference/corHMMDredgeBase.html</loc></url>
+<url><loc>/reference/dent_likelihood.html</loc></url>
+<url><loc>/reference/dent_propose.html</loc></url>
+<url><loc>/reference/dent_walk.html</loc></url>
 <url><loc>/reference/fitCorrelationTest.html</loc></url>
 <url><loc>/reference/getCVTable.html</loc></url>
 <url><loc>/reference/getFullMat.html</loc></url>
@@ -22,15 +25,18 @@
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/kFoldCrossValidation.html</loc></url>
 <url><loc>/reference/makeSimmap.html</loc></url>
+<url><loc>/reference/plot.dentist.html</loc></url>
 <url><loc>/reference/plotDredgeTrace.html</loc></url>
 <url><loc>/reference/plotMKmodel.html</loc></url>
 <url><loc>/reference/plotRECON.html</loc></url>
 <url><loc>/reference/plot_batch_profile_lik.html</loc></url>
 <url><loc>/reference/plot_transition_summary.html</loc></url>
 <url><loc>/reference/primates.html</loc></url>
+<url><loc>/reference/print.dentist.html</loc></url>
 <url><loc>/reference/rayDISC.html</loc></url>
 <url><loc>/reference/simMarkov.html</loc></url>
 <url><loc>/reference/summarize_simmaps.html</loc></url>
+<url><loc>/reference/summary.dentist.html</loc></url>
 <url><loc>/reference/tipHomology.html</loc></url>
 </urlset>
 
