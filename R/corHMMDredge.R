@@ -410,7 +410,8 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       opts=opts, p=NULL, use_RTMB=use_RTMB, prep=prep))
     
     if (inherits(proposed_fit, "try-error")) next
-    if (proposed_fit$loglik == -1e+06)        next
+    if (is.null(proposed_fit$loglik) || length(proposed_fit$loglik) == 0) next
+    if (proposed_fit$loglik == -1e+06) next
     
     ## record every genuinely evaluated model
     every_idx              <- every_idx + 1L
