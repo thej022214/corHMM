@@ -387,7 +387,8 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     move_result <- propose_sa_move_within_rate_cat(current_fit, drop.threshold,
       merge.threshold, max_index_mat)
     if (is.null(move_result$new_index_mat)) next
-    
+
+    if (!is_valid_index_mat(move_result$new_index_mat)) next
     if (rate_category > 1 && test_hmm(move_result$new_index_mat, rate_category)) next
     
     move_id <- paste0(c(move_result$new_index_mat), collapse = "_")
@@ -552,6 +553,10 @@ propose_stochastic_drop <- function(current_fit, drop.threshold) {
   }
   new_index_mat <- current_fit$index.mat
   new_index_mat[to_drop] <- NA
+  # a drop that empties the matrix or isolates a state is not a model
+  if(!is_valid_index_mat(new_index_mat)){
+    return(NULL)
+  }
   pars <- sort(unique(na.omit(as.vector(new_index_mat))))
   for(i in 1:length(pars)){
     new_index_mat[new_index_mat == pars[i]] <- i
@@ -806,6 +811,24 @@ merge_pars <- function(corhmm.obj, merge.threshold){
   return(index_mat_merged)
 }
 
+# Structural validity of an index matrix, independent of rate category.
+# A matrix is valid if it has at least one free parameter and no state is
+# isolated. A state is isolated when it has no rates in either direction; a
+# state with rates in only one direction is legitimate (e.g. an irreversible
+# model with an absorbing state), matching the leniency of test_hmm.
+is_valid_index_mat <- function(index_mat){
+  index_mat[index_mat == 0] <- NA
+  if(all(is.na(index_mat))){
+    return(FALSE)
+  }
+  for(i in seq_len(nrow(index_mat))){
+    if(all(is.na(index_mat[i, ])) & all(is.na(index_mat[, i]))){
+      return(FALSE)
+    }
+  }
+  return(TRUE)
+}
+
 test_hmm <- function(index_mat, rate_cat){
   rate_cat_tests <- vector(length = rate_cat)
   rate_class_labels <- paste0("R", 1:rate_cat)
@@ -850,7 +873,11 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
   pen.type="l1", lambda=1, rate.mat=NULL, node.states="marginal", fixed.nodes=FALSE, 
   ip=NULL, nstarts=0, n.cores=1,get.tip.states=FALSE, lewis.asc.bias=FALSE, collapse=FALSE, 
   lower.bound=1e-10, upper.bound=100, opts=NULL, p=NULL, use_RTMB=FALSE, prep=NULL) {
-  
+
+  if (!is.null(rate.mat) && !is_valid_index_mat(rate.mat)) {
+    stop("rate.mat is not a valid rate matrix: it must have at least one free parameter, and no state may be isolated (NA in both its row and its column).", call.=FALSE)
+  }
+
   ## --- use precomputed prep if available, otherwise compute it ---
   if (is.null(prep)) {
     prep <- corHMMDredgePrep(phy=phy, data=data, rate.cat=rate.cat, root.p=root.p,
