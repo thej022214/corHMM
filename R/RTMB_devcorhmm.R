@@ -27,6 +27,13 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
   TIPS <- seq.int(nb.tip)
   anc <- unique(phy$edge[,1])
   k.rates <- dim(Q)[2] / 2
+
+  ## The tree topology is fixed, so resolve every node's descendants and their
+  ## branch lengths once here rather than rescanning phy$edge inside the traced
+  ## function (which made tape construction quadratic in the number of tips).
+  desRowsList <- getDesRows(phy$edge[,1], anc)
+  desNodesList <- lapply(desRowsList, function(r) phy$edge[r, 2])
+  desLengthList <- lapply(desRowsList, function(r) phy$edge.length[r])
   
   ## Pre-compute static penalty indices outside prune_fun (no AD tracing needed)
   ## These depend only on rate/rate.cat structure, not on p
@@ -56,7 +63,8 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     NULL
   }
   
-  tmb_data <- namedList(nb.node, nb.tip, TIPS, anc, k.rates, nq, fog_idx)
+  tmb_data <- namedList(nb.node, nb.tip, TIPS, anc, k.rates, nq, fog_idx,
+                        desNodesList, desLengthList)
   
   prune_fun <- function(pars) {
     "[<-" <- RTMB::ADoverload("[<-")
@@ -127,10 +135,14 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
           ## Extract the off-diagonal sub-block for this rate class
           ## Q[idx, idx] has diagonal already set; we want only off-diagonal entries
           ## off-diag mask was computed outside (static structure)
-          rc_offdiag <- numeric(0)
+          rc_offdiag <- numeric(length(idx) * (length(idx) - 1))
+          off_k <- 0
           for (r in idx) {
             for (cc in idx) {
-              if (r != cc) rc_offdiag <- c(rc_offdiag, Q[r, cc])
+              if (r != cc) {
+                off_k <- off_k + 1
+                rc_offdiag[off_k] <- Q[r, cc]
+              }
             }
           }
           if (pen.type == "l1") {
@@ -151,11 +163,11 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     
     for (i in seq(from = 1, length.out = nb.node)) {
       focal <- anc[i]
-      desRows <- which(phy$edge[,1] == focal)
-      desNodes <- phy$edge[desRows, 2]
+      desNodes <- desNodesList[[i]]
+      desLengths <- desLengthList[[i]]
       v <- 1
-      for (desIndex in seq_along(desRows)) {
-        v <- drop(as.matrix(v * Matrix::expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]))
+      for (desIndex in seq_along(desNodes)) {
+        v <- drop(as.matrix(v * Matrix::expm(Q * desLengths[desIndex]) %*% liks[desNodes[desIndex],]))
       }
       
       if (!is.null(phy$node.label)) {
@@ -173,16 +185,14 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     
     root <- nb.tip + 1L
     
-    equil.root <- numeric(ncol(Q))
-    QQ <- Q
-    diag(QQ) <- NA
-    for (i in 1:ncol(Q)) {
-      rowsum <- sum(Q[, i], na.rm = TRUE)
-      colsum <- sum(Q[i, ], na.rm = TRUE)
-      equil.root[i] <- rowsum / (rowsum + colsum)
-    }
-    
     if (is.null(root.p)) {
+      ## only needed for the flat/equilibrium root; skip the AD work otherwise
+      equil.root <- numeric(ncol(Q))
+      for (i in 1:ncol(Q)) {
+        rowsum <- sum(Q[, i], na.rm = TRUE)
+        colsum <- sum(Q[i, ], na.rm = TRUE)
+        equil.root[i] <- rowsum / (rowsum + colsum)
+      }
       flat.root <- equil.root
       k.rates <- 1 / length(which(!is.na(equil.root)))
       flat.root[!is.na(flat.root)] <- k.rates

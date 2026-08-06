@@ -125,7 +125,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     nstarts <- nstarts
     ip <- ip
     
-    model.set.final <- rate.cat.set.corHMM.JDB(phy=phy, data=input.data, rate.cat=rate.cat, ntraits=nObs, model=model, rate.mat=rate.mat, collapse=collapse)
+    model.set.final <- rate.cat.set.corHMM.JDB(phy=phy, data=input.data, rate.cat=rate.cat, ntraits=nObs, model=model, rate.mat=rate.mat, collapse=collapse, CorData=CorData, matching=matching)
     phy <- reorder(phy, "pruningwise")
 
     # this allows for custom rate matricies!
@@ -514,47 +514,37 @@ dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewi
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
   #Obtain an object of all the unique ancestors
-  anc <- unique(phy$edge[,1])
+  edge1 <- phy$edge[,1]
+  edge2 <- phy$edge[,2]
+  edge.length <- phy$edge.length
+  anc <- unique(edge1)
+  #Map every edge to its ancestor in one pass instead of rescanning phy$edge per node
+  desRowsList <- getDesRows(edge1, anc)
   k.rates <- dim(Q)[2] / 2
   if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
-  
+
   #Sets up the liks matrix to account for tip fog:
   if(set.fog == TRUE){
 	  tip.fog.tmp <- p[1:length(unique(fog.vec))]
 	  p <- p[-c(1:length(unique(fog.vec)))]
 	  tip.fog <- numeric(length(fog.vec))
 	  tip.fog[] <- c(tip.fog.tmp, 0)[fog.vec]
-	  if(rate.cat > 1){
-		  #Error only applies to observed states, but need to replicate across the rate categories:
-		  #tip.fog <- rep(tip.fog, rate.cat)
-		  for(tip.index in 1:Ntip(phy)){
-			  #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
-			  num.zeros <- length(liks[tip.index,which(liks[tip.index,]==0)])
-			  if(num.zeros > 0){
-				  liks[tip.index,which(liks[tip.index,]==1)] <- 1 - (sum(tip.fog[which(liks[tip.index,]!=1)])/rate.cat)
-				  liks[tip.index,which(liks[tip.index,]==0)] <- tip.fog[which(liks[tip.index,]==0)]
-			  }
-		  }
-	  }else{
-		  for(tip.index in 1:Ntip(phy)){
-			  #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
-			  num.zeros <- length(liks[tip.index,which(liks[tip.index,]==0)])
-			  if(num.zeros > 0){
-				  liks[tip.index,which(liks[tip.index,]==1)] <- 1 - sum(tip.fog[which(liks[tip.index,]!=1)])
-				  liks[tip.index,which(liks[tip.index,]==0)] <- tip.fog[which(liks[tip.index,]==0)]
-			  }
-		  }
-	  }
+	  #Why is this here? What happens if someone does not know the state. We would code all states as 1. So here, we just alter if there are zeros for a tip:
+	  liks <- applyTipFog(liks, nb.tip, tip.fog, if(rate.cat > 1) rate.cat else 1)
   }
-  
+
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
-  
+
   # an error check for rates that are really weird
   test_mat <- expm(Q, method=c("Ward77"))
   if(any(round(rowSums(test_mat))> 2)){
     return(1000000)
   }
+  # Q is fixed for the rest of this call, so decompose it once and reuse it for
+  # every branch rather than exponentiating per edge (validated against test_mat).
+  expm.funs <- makeExpmFuns(Q, reference = test_mat, ref.t = 1)
+  Pv <- expm.funs$Pv
 
   # # if the q matrix has columns not estimated, remove them
   # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
@@ -587,20 +577,21 @@ dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewi
   }
 
   ## FIXME: can we do this part in TMB/Rcpp?
+  has.node.label <- !is.null(phy$node.label)
   for (i in seq(from = 1, length.out = nb.node)) {
       #the ancestral node at row i is called focal
       focal <- anc[i]
       #Get descendant information of focal
-      desRows <- which(phy$edge[,1]==focal)
-      desNodes <- phy$edge[desRows,2]
+      desRows <- desRowsList[[i]]
+      desNodes <- edge2[desRows]
       v <- 1
       #Loops through all descendants of focal (how we deal with polytomies):
-      for (desIndex in sequence(length(desRows))){
-          v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+      for (desIndex in seq_along(desRows)){
+          v <- v*Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
       }
 
       ##Allows for fixed nodes based on user input tree.
-      if(!is.null(phy$node.label)){
+      if(has.node.label){
           if(!is.na(phy$node.label[focal - nb.tip])){
               fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
               fixer.tmp[phy$node.label[focal - nb.tip]] <- 1
@@ -618,40 +609,35 @@ dev.corhmm <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.test, lewi
   #Specifies the root:
   root <- nb.tip + 1L
   #If any of the logs have NAs restart search:
-  if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
-  equil.root <- NULL
+  node.loglik <- sum(log(comp[-TIPS]))
+  if (is.na(node.loglik)){return(1000000)}
+  liks.root <- liks[root,]
 
-  for(i in 1:ncol(Q)){
-      posrows <- which(Q[,i] >= 0)
-      rowsum <- sum(Q[posrows,i])
-      poscols <- which(Q[i,] >= 0)
-      colsum <- sum(Q[i,poscols])
-      equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-  }
   if (is.null(root.p)){
+      equil.root <- getEquilRoot(Q)
       flat.root = equil.root
       k.rates <- 1/length(which(!is.na(equil.root)))
       flat.root[!is.na(flat.root)] = k.rates
       flat.root[is.na(flat.root)] = 0
-      loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
+      loglik<- -(node.loglik + log(sum(flat.root * liks.root)))
   }
   if(is.character(root.p)){
       # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
       if(root.p == "yang"){
-          root.p <- Null(Q)
-          root.p <- c(root.p/sum(root.p))
-          loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+          #root.test was already computed above from the same Q
+          root.p <- c(root.test/sum(root.test))
+          loglik <- -(node.loglik + log(sum(root.p * liks.root)))
           if(is.infinite(loglik)){
               return(1000000)
           }
       }else{
           # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-          root.p = liks[root,] / sum(liks[root,])
-          loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+          root.p = liks.root / sum(liks.root)
+          loglik <- -(node.loglik + log(sum(exp(log(root.p)+log(liks.root)))))
       }
   }else{
     if(is.numeric(root.p[1])){
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+      loglik <- -(node.loglik + log(sum(exp(log(root.p)+log(liks.root)))))
       if(is.infinite(loglik)){
         return(1000000)
       }
@@ -691,13 +677,18 @@ getLewisLikelihood <- function(p, phy, liks, Q, rate, root.p, rate.cat){
 }
 
 # JDB modified functions
-rate.cat.set.corHMM.JDB <- function(phy,data,rate.cat, ntraits, model, rate.mat=NULL, collapse=TRUE) {
+rate.cat.set.corHMM.JDB <- function(phy,data,rate.cat, ntraits, model, rate.mat=NULL, collapse=TRUE, CorData=NULL, matching=NULL) {
     obj <- NULL
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     obj$rate.cat<-rate.cat
+    # corProcessData / match.tree.data have usually already been run by the
+    # caller on this same data; reuse those results when they are supplied.
+    if(is.null(CorData)){
+      CorData <- corProcessData(data, collapse = collapse)
+    }
     if(is.null(rate.mat)){
-      rate <- getStateMat4Dat(data, model, collapse = collapse)$rate.mat
+      rate <- getStateMat4Dat(data, model, collapse = collapse, CorData = CorData)$rate.mat
       if(rate.cat > 1){
         StateMats <- vector("list", rate.cat)
         for(i in 1:rate.cat){
@@ -714,12 +705,12 @@ rate.cat.set.corHMM.JDB <- function(phy,data,rate.cat, ntraits, model, rate.mat=
     index.matrix<-rate
     rate[is.na(rate)]<-max(rate,na.rm=TRUE)+1
 
-    CorData <- corProcessData(data, collapse = collapse)
-
     data <- CorData$corData
     nObs <- length(CorData$ObservedTraits)
 
-    matching <- match.tree.data(phy,data)
+    if(is.null(matching)){
+      matching <- match.tree.data(phy,data)
+    }
     data <- matching$data
 
     # this is no longer needed since corProcessData will produce a dataset of a specific type every time
@@ -784,31 +775,30 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
     # }
   }
   # identify the possible trait combinations
-  TraitList <- expand.grid(LevelList)
-  Traits <- apply(TraitList, 1, function(x) paste(c(x), collapse = "_"))
+  TraitList <- expand.grid(LevelList, stringsAsFactors = FALSE)
+  Traits <- do.call(paste, c(TraitList, sep = "_"))
   # convert each column into a numeric value associated with a member of the trait combinations. ? are associated with all values of that column, & indicates the combination of two or more
-  search.strings <- observed.traits_index <- combined.data <- c()
-  for(i in 1:dim(data)[1]){
-    data_rowi <- data[i,2:nCol]
-    # and symbolizes it can be any of the separated states
-    search.string_i <- paste("^",paste(sapply(data_rowi, function(x) paste("(", gsub("&", "|", x), ")", sep = "")),collapse = "_"), "$", sep="")
-    # ? means it can be any of the states in that character
-    search.string_i <- gsub("(?)", ".*", search.string_i, fixed=TRUE)
-    # if the data is polymorphic it will now have ands separating the corHMM states
-    combined.data[i] <- paste(grep(search.string_i, Traits), collapse="&")
-    observed.traits_index <- c(observed.traits_index, grep(search.string_i, Traits))
-    search.strings[i] <- search.string_i
-  }
+  # and symbolizes it can be any of the separated states
+  col.patterns <- lapply(2:nCol, function(j)
+    paste("(", gsub("&", "|", as.character(data[,j]), fixed = TRUE), ")", sep = ""))
+  search.strings <- paste("^", do.call(paste, c(col.patterns, sep = "_")), "$", sep = "")
+  # ? means it can be any of the states in that character
+  search.strings <- gsub("(?)", ".*", search.strings, fixed=TRUE)
+  # There are only ever a handful of distinct coding patterns no matter how many
+  # taxa there are, so match each unique pattern against Traits once and reuse.
+  uniq.strings <- unique(search.strings)
+  string.index <- match(search.strings, uniq.strings)
+  trait.hits <- lapply(uniq.strings, function(x) grep(x, Traits))
+  observed.traits_index <- unlist(trait.hits, use.names = FALSE)
   ObservedTraits <- Traits[sort(unique(observed.traits_index))]
   if(collapse){
-    corData <- data.frame(sp = data[,1], 
-                          d = sapply(search.strings, function(x) 
-                            paste(grep(x, ObservedTraits), collapse="&")))
+    obs.hits <- vapply(uniq.strings, function(x)
+      paste(grep(x, ObservedTraits), collapse="&"), character(1), USE.NAMES = FALSE)
   }else{
-    corData <- data.frame(sp = data[, 1], 
-                          d = sapply(search.strings, function(x) 
-                            paste(grep(x, Traits),collapse = "&")))
+    obs.hits <- vapply(trait.hits, paste, character(1), collapse = "&")
   }
+  corData <- data.frame(sp = data[,1], d = obs.hits[string.index],
+                        stringsAsFactors = FALSE)
   return(list(StateMats = StateMats,  PossibleTraits = Traits, ObservedTraits = ObservedTraits, corData = corData))
 }
 

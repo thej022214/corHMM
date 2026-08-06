@@ -1430,12 +1430,20 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
   #Obtain an object of all the unique ancestors
-  anc <- unique(phy$edge[,1])
+  edge1 <- phy$edge[,1]
+  edge2 <- phy$edge[,2]
+  edge.length <- phy$edge.length
+  anc <- unique(edge1)
+  #Map every edge to its ancestor in one pass instead of rescanning phy$edge per node
+  desRowsList <- getDesRows(edge1, anc)
   k.rates <- dim(Q)[2] / 2
   if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
   
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
+  #Q is fixed for the rest of this call, so decompose it once and reuse it for
+  #every branch rather than exponentiating per edge:
+  Pv <- makeExpmFuns(Q)$Pv
   pen_score <- get_penalty_score(Q, p, pen.type, rate, rate.cat)
   # # if the q matrix has columns not estimated, remove them
   # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
@@ -1471,12 +1479,12 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
     #the ancestral node at row i is called focal
     focal <- anc[i]
     #Get descendant information of focal
-    desRows <- which(phy$edge[,1]==focal)
-    desNodes <- phy$edge[desRows,2]
+    desRows <- desRowsList[[i]]
+    desNodes <- edge2[desRows]
     v <- 1
     #Loops through all descendants of focal (how we deal with polytomies):
-    for (desIndex in sequence(length(desRows))){
-      v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+    for (desIndex in seq_along(desRows)){
+      v <- v*Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
     }
     
     ##Allows for fixed nodes based on user input tree.
@@ -1498,40 +1506,35 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
   #Specifies the root:
   root <- nb.tip + 1L
   #If any of the logs have NAs restart search:
-  if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
-  equil.root <- NULL
-  
-  for(i in 1:ncol(Q)){
-    posrows <- which(Q[,i] >= 0)
-    rowsum <- sum(Q[posrows,i])
-    poscols <- which(Q[i,] >= 0)
-    colsum <- sum(Q[i,poscols])
-    equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-  }
+  node.loglik <- sum(log(comp[-TIPS]))
+  if (is.na(node.loglik)){return(1000000)}
+  liks.root <- liks[root,]
+
   if (is.null(root.p)){
+    equil.root <- getEquilRoot(Q)
     flat.root = equil.root
     k.rates <- 1/length(which(!is.na(equil.root)))
     flat.root[!is.na(flat.root)] = k.rates
     flat.root[is.na(flat.root)] = 0
-    loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
+    loglik<- -(node.loglik + log(sum(flat.root * liks.root)))
   }
   if(is.character(root.p)){
     # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
     if(root.p == "yang"){
-      root.p <- Null(Q)
-      root.p <- c(root.p/sum(root.p))
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+      #root.test was already computed above from the same Q
+      root.p <- c(root.test/sum(root.test))
+      loglik <- -(node.loglik + log(sum(root.p * liks.root)))
       if(is.infinite(loglik)){
         return(1000000)
       }
     }else{
       # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-      root.p = liks[root,] / sum(liks[root,])
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+      root.p = liks.root / sum(liks.root)
+      loglik <- -(node.loglik + log(sum(exp(log(root.p)+log(liks.root)))))
     }
   }else{
     if(is.numeric(root.p[1])){
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+      loglik <- -(node.loglik + log(sum(exp(log(root.p)+log(liks.root)))))
       if(is.infinite(loglik)){
         return(1000000)
       }
