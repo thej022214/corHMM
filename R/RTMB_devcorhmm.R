@@ -21,6 +21,20 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
   if (lewis.asc.bias) stop("can't do lewis.asc.bias yet; recursive call to likelihood function ...")
   if (order.test) stop("can't do order.test (non-differentiable ...)")
   if (set.fog) warning("set.fog is untested in RTMB implementation")
+
+  ## dev.corhmm rejects a Q whose null space is more than one dimensional when
+  ## root.p is "yang", because the stationary distribution is then not unique.
+  ## The traced function cannot branch on values, but this only depends on which
+  ## transitions the model allows -- a static property of `rate` -- so check it
+  ## once here with every free rate set to 1.
+  if (is.character(root.p) && root.p == "yang") {
+    Q.struct <- Q
+    Q.struct[] <- c(rep(1, max(rate) - 1), 0)[rate]
+    diag(Q.struct) <- -rowSums(Q.struct)
+    if (ncol(Null(Q.struct)) > 1) {
+      stop("This rate matrix describes more than one set of communicating states, so root.p = \"yang\" has no unique stationary distribution. Use root.p = \"maddfitz\", a fixed vector of root probabilities, or NULL.", call. = FALSE)
+    }
+  }
   
   nb.node <- Nnode(phy)
   nb.tip <- Ntip(phy)
@@ -186,11 +200,14 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     root <- nb.tip + 1L
     
     if (is.null(root.p)) {
-      ## only needed for the flat/equilibrium root; skip the AD work otherwise
+      ## only needed for the flat/equilibrium root; skip the AD work otherwise.
+      ## dev.corhmm sums only the non-negative entries of the row/column, which
+      ## for a rate matrix means everything except the (negative) diagonal --
+      ## summing Q whole makes colsum identically 0 and the result degenerate.
       equil.root <- numeric(ncol(Q))
       for (i in 1:ncol(Q)) {
-        rowsum <- sum(Q[, i], na.rm = TRUE)
-        colsum <- sum(Q[i, ], na.rm = TRUE)
+        rowsum <- sum(Q[, i]) - Q[i, i]
+        colsum <- sum(Q[i, ]) - Q[i, i]
         equil.root[i] <- rowsum / (rowsum + colsum)
       }
       flat.root <- equil.root
@@ -202,7 +219,19 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     
     if (is.character(root.p)) {
       if (root.p == "yang") {
-        root.p <- Matrix::expm(10000 * Q)[1,]
+        ## The stationary distribution solves pi %*% Q = 0 with sum(pi) == 1.
+        ## Solving that directly is both cheaper and better conditioned than
+        ## exponentiating Q out to t = 10000 and reading off a row.
+        ## b must be an advector too: solve() with a mixed AD/numeric pair falls
+        ## through to base R, which reads the advector's complex storage and
+        ## silently returns a complex vector.
+        A <- t(Q)
+        A[nrow(A), ] <- 1
+        ## Both operands must be AD, and solve() has to be RTMB's S4 generic:
+        ## inside this namespace a bare solve() is base::solve, which reads the
+        ## advector's underlying complex storage and silently returns complex.
+        b <- RTMB::advector(c(rep(0, nrow(A) - 1), 1))
+        root.p <- RTMB::solve(A, b)
         loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
       } else {
         root.p <- liks[root,] / sum(liks[root,])
