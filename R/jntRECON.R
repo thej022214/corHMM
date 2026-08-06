@@ -15,8 +15,9 @@ compute_joint_ci <- function(res, batch_size = 100, max_samples = 1000,
   Q[index_mat > 0] <- p[index_mat[index_mat > 0]]
   diag(Q) <- -rowSums(Q)
   
-  # pre calculate all necessary matrix expm
-  p_mat <- vapply(phy$edge.length, function(x) expm(Q * x, method = "Ward77"), 
+  # pre calculate all necessary matrix expm (one Q decomposition, reused per branch)
+  Pfun <- makeExpmFuns(Q)$P
+  p_mat <- vapply(phy$edge.length, Pfun,
     FUN.VALUE = matrix(0, nrow(Q), ncol(Q)))
   # you've tried the best
   best_joint <- ancRECON_internal(phy = phy, data = res$data, corData = corData, 

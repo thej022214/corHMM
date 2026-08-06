@@ -208,8 +208,9 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.at
   Pij <- array(0, c(dim(model)[1], dim(model)[2], length(phy$edge.length)))
   # plus one because the root has no edge
   Pj <- array(0, c(dim(model)[1], dim(model)[2], length(phy$edge.length)+1))
+  Pfun <- makeExpmFuns(model, clamp = TRUE)$P
   for(i in 1:length(phy$edge.length)){
-    Pij[,,i] <- expm(model * phy$edge.length[i])
+    Pij[,,i] <- Pfun(phy$edge.length[i])
   }
   # then multiply Pij by l_sigma-1_j
   l_sigma_j <- rbind(tip.states, states)
@@ -325,8 +326,9 @@ simMarkov <- function(phy, Q, root.freqs){
 
   #standard simulation protocol
   # if(any(is.na(Q2)) | is.na(NoI)){
+  Pfun <- makeExpmFuns(Q, clamp = TRUE)$P
   for (i in N:1) {
-    p <- expm(Q * edge.length[i], method="Ward77")[CharacterHistory[anc[i]], ]
+    p <- Pfun(edge.length[i])[CharacterHistory[anc[i]], ]
     CharacterHistory[des[i]] <- sample.int(dim(Q)[2], size = 1, FALSE, prob = p)
   }
   # }

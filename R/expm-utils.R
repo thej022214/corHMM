@@ -43,7 +43,10 @@ expmAtv <- function(dec, t, x){
 # Builds a P(t) closure for Q, using the eigen decomposition when it is
 # trustworthy and expm() otherwise. `reference` is an already computed
 # expm(Q * ref.t) used to cross-check the decomposition; pass NULL to skip.
-makeExpmFuns <- function(Q, reference = NULL, ref.t = 1, tol = 1e-8){
+# Set clamp = TRUE when the result is used as a probability vector (e.g. fed to
+# sample.int, which rejects negative weights): both this and expm() can return
+# entries a hair below zero through rounding.
+makeExpmFuns <- function(Q, reference = NULL, ref.t = 1, tol = 1e-8, clamp = FALSE){
   dec <- getQdecomp(Q, tol = tol)
   if(!is.null(dec) && !is.null(reference)){
     if(max(abs(expmAt(dec, ref.t) - reference)) > 1e-6){
@@ -51,14 +54,21 @@ makeExpmFuns <- function(Q, reference = NULL, ref.t = 1, tol = 1e-8){
     }
   }
   if(is.null(dec)){
-    list(P = function(t) expm(Q * t, method = c("Ward77")),
-         Pv = function(t, x) expm(Q * t, method = c("Ward77")) %*% x,
-         exact = FALSE)
+    P <- function(t) expm(Q * t, method = c("Ward77"))
+    Pv <- function(t, x) expm(Q * t, method = c("Ward77")) %*% x
+    exact <- FALSE
   }else{
-    list(P = function(t) expmAt(dec, t),
-         Pv = function(t, x) expmAtv(dec, t, x),
-         exact = TRUE)
+    P <- function(t) expmAt(dec, t)
+    Pv <- function(t, x) expmAtv(dec, t, x)
+    exact <- TRUE
   }
+  if(clamp){
+    inner.P <- P
+    inner.Pv <- Pv
+    P <- function(t){ out <- inner.P(t); out[out < 0] <- 0; out }
+    Pv <- function(t, x){ out <- inner.Pv(t, x); out[out < 0] <- 0; out }
+  }
+  list(P = P, Pv = Pv, exact = exact)
 }
 
 # The pruning loops repeatedly ask "which edges descend from this node?".
