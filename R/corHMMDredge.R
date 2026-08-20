@@ -352,7 +352,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
   save_checkpoint <- function(iteration, finished = FALSE, result = NULL) {
     if (is.null(checkpoint.file)) return(invisible(NULL))
     saveRDS(list(
-      version            = 3L,
+      version            = 4L,
       model_space_id     = checkpoint_id,
       criterion          = criterion,
       finished           = finished,
@@ -417,19 +417,48 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       rate_category, merge.threshold, require.entry)
   }
 
+  fit_polish_candidate <- function(candidate, fixed_rates = NULL,
+    initial_rates = ip) {
+    candidate_rc <- candidate$rate_cat
+    try(corHMMDredgeBase(phy=phy, data=data, rate.cat=candidate_rc,
+      root.p=get_root_p(candidate_rc), pen.type=pen.type, lambda=lambda,
+      rate.mat=candidate$new_index_mat, node.states=node.states,
+      fixed.nodes=fixed.nodes, ip=initial_rates, nstarts=nstarts,
+      n.cores=n.cores, get.tip.states=get.tip.states,
+      lewis.asc.bias=lewis.asc.bias, collapse=collapse, fog.ip=fog.ip,
+      lower.bound=lower.bound, upper.bound=upper.bound, tip.fog=tip.fog,
+      opts=opts, p=fixed_rates, use_RTMB=use_RTMB,
+      prep=get_prep(candidate_rc)))
+  }
+
   polish_score_fn <- function(candidate) {
     candidate_rc <- candidate$rate_cat
     id <- canonical_id(candidate$new_index_mat, candidate_rc)
     fit <- score_cache[[id]]
+    fitted <- FALSE
+    source_score <- candidate$source_scores[[criterion]]
+    if(identical(candidate$move_type, "polish_cell_drop") &&
+      !is.null(candidate$initial_rates) &&
+      !isTRUE(get_prep(candidate_rc)$set.fog) &&
+      (is.null(fit) || fit[[criterion]] > source_score + 1e-8)) {
+      fit <- NULL
+      inherited_fit <- fit_polish_candidate(candidate,
+        fixed_rates=candidate$initial_rates)
+      if(!inherits(inherited_fit, "try-error") &&
+        !is.null(inherited_fit[[criterion]]) &&
+        inherited_fit[[criterion]] <= source_score + 1e-8) {
+        fit <- inherited_fit
+        fitted <- TRUE
+      }
+    }
     if(is.null(fit)) {
-      fit <- try(corHMMDredgeBase(phy=phy, data=data, rate.cat=candidate_rc,
-        root.p=get_root_p(candidate_rc), pen.type=pen.type, lambda=lambda,
-        rate.mat=candidate$new_index_mat, node.states=node.states,
-        fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts, n.cores=n.cores,
-        get.tip.states=get.tip.states, lewis.asc.bias=lewis.asc.bias,
-        collapse=collapse, fog.ip=fog.ip, lower.bound=lower.bound,
-        upper.bound=upper.bound, tip.fog=tip.fog, opts=opts, p=NULL,
-        use_RTMB=use_RTMB, prep=get_prep(candidate_rc)))
+      initial_rates <- if(isTRUE(get_prep(candidate_rc)$set.fog) ||
+        is.null(candidate$initial_rates)) ip else
+        candidate$initial_rates * get_prep(candidate_rc)$H
+      fit <- fit_polish_candidate(candidate, initial_rates=initial_rates)
+      fitted <- TRUE
+    }
+    if(fitted) {
       if(inherits(fit, "try-error")) return(NULL)
       if(is.null(fit$loglik) || length(fit$loglik) == 0) return(NULL)
       if(fit$loglik == -1e+06) return(NULL)
@@ -463,6 +492,14 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     result
   }
 
+  run_cell_cleanup <- function(fit) {
+    polish_neighborhood(fit, function(current) {
+      Filter(function(candidate)
+        identical(candidate$move_type, "polish_cell_drop"),
+        polish_neighbor_fn(current))
+    }, polish_score_fn, criterion)
+  }
+
   accept_polish_path <- function(path) {
     if(length(path) == 0) return()
     for(fit in path) {
@@ -489,7 +526,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     if (polish_due(steps_since_best, steps_since_new, stall.limit,
       restart.interval)) {
       polished <- run_polish(best_fit)
-      if(polished$best_fit[[criterion]] < best_score - 1e-10) {
+      if(dredge_fit_is_better(polished$best_fit, best_fit, criterion)) {
         accept_polish_path(polished$path)
         best_fit <- current_fit <- polished$best_fit
         best_index_mat <- current_index_mat <- best_fit$index.mat
@@ -670,7 +707,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
         model_ids[model_count]        <- move_id
       }
       
-      if (current_score < best_score) {
+      if (dredge_fit_is_better(current_fit, best_fit, criterion)) {
         best_fit        <- current_fit
         best_index_mat  <- current_index_mat
         best_score      <- current_score
@@ -694,7 +731,7 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
 
   if(stop_reason == "max.iterations") {
     polished <- run_polish(best_fit)
-    if(polished$best_fit[[criterion]] < best_score - 1e-10) {
+    if(dredge_fit_is_better(polished$best_fit, best_fit, criterion)) {
       accept_polish_path(polished$path)
       best_fit <- current_fit <- polished$best_fit
       best_index_mat <- current_index_mat <- best_fit$index.mat
@@ -703,6 +740,16 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     }
     stop_reason <- if(polished$complete) "max.iterations (polished)" else
       "max.iterations (partial polish)"
+  }
+
+  cleaned <- run_cell_cleanup(best_fit)
+  if(dredge_fit_is_better(cleaned$best_fit, best_fit, criterion)) {
+    accept_polish_path(cleaned$path)
+    best_fit <- current_fit <- cleaned$best_fit
+    best_index_mat <- current_index_mat <- best_fit$index.mat
+    best_score <- current_score <- best_fit[[criterion]]
+    if(verbose) cat("Final cell cleanup reduced the best model to",
+      sum(!is.na(best_index_mat)), "transitions.\n")
   }
 
   if(!fits_in_model_space(c(accepted_models, every_model), max_index_mat,
@@ -1153,7 +1200,7 @@ fits_in_model_space <- function(fits, max_index_mat, full_rate_category,
 
 checkpoint_is_compatible <- function(ckpt, max_index_mat, rate_category,
   require.entry = FALSE, criterion = "AIC") {
-  if(is.null(ckpt) || !identical(ckpt$version, 3L) ||
+  if(is.null(ckpt) || !identical(ckpt$version, 4L) ||
     !identical(ckpt$criterion, criterion) ||
     !identical(ckpt$model_space_id,
       model_space_id(max_index_mat, rate_category)) ||
@@ -1211,9 +1258,13 @@ polish_neighborhood <- function(initial_fit, neighbor_fn, score_fn, criterion,
     if(!any(keep)) break
     fits <- fits[keep]
     scores <- vapply(fits, function(x) x[[criterion]], numeric(1))
-    better <- is.finite(scores) & scores < current[[criterion]] - 1e-10
+    better <- vapply(fits, dredge_fit_is_better, logical(1), current = current,
+      criterion = criterion)
     if(!any(better)) break
-    best <- which.min(ifelse(better, scores, Inf))
+    best_score <- min(scores[better])
+    eligible <- which(better & scores <= best_score + 1e-8)
+    complexity <- t(vapply(fits[eligible], dredge_fit_complexity, numeric(2)))
+    best <- eligible[order(complexity[, 1], complexity[, 2], scores[eligible])[1]]
     current <- fits[[best]]
     path[[length(path) + 1L]] <- current
   }
@@ -1222,21 +1273,62 @@ polish_neighborhood <- function(initial_fit, neighbor_fn, score_fn, criterion,
     complete = deferred == 0L)
 }
 
+dredge_fit_complexity <- function(fit) {
+  c(max(fit$index.mat, na.rm = TRUE), sum(!is.na(fit$index.mat)))
+}
+
+dredge_inherited_rates <- function(current_fit, candidate_mat) {
+  pars <- sort(unique(na.omit(as.vector(candidate_mat))))
+  parent_rates <- unname(MatrixToPars(current_fit))
+  parent_rates <- parent_rates[is.finite(parent_rates) & parent_rates > 0]
+  if(length(parent_rates) == 0) return(NULL)
+  fallback <- median(parent_rates)
+  if(!identical(dim(current_fit$index.mat), dim(candidate_mat))) {
+    return(rep(fallback, length(pars)))
+  }
+  rates <- vapply(pars, function(par) {
+    values <- current_fit$solution[which(candidate_mat == par)]
+    values <- unique(values[is.finite(values) & values > 0])
+    if(length(values) == 0) fallback else mean(values)
+  }, numeric(1))
+  if(any(!is.finite(rates))) return(NULL)
+  rates
+}
+
+dredge_fit_is_better <- function(candidate, current, criterion, tolerance = 1e-8) {
+  candidate_score <- candidate[[criterion]]
+  current_score <- current[[criterion]]
+  if(!is.finite(candidate_score)) return(FALSE)
+  if(!is.finite(current_score)) return(TRUE)
+  if(candidate_score < current_score - tolerance) return(TRUE)
+  if(abs(candidate_score - current_score) > tolerance) return(FALSE)
+  candidate_complexity <- dredge_fit_complexity(candidate)
+  current_complexity <- dredge_fit_complexity(current)
+  candidate_complexity[1] < current_complexity[1] ||
+    (candidate_complexity[1] == current_complexity[1] &&
+      candidate_complexity[2] < current_complexity[2])
+}
+
 deterministic_neighbors <- function(current_fit, max_index_mat, full_rate_category,
   merge.threshold = 0, require.entry = FALSE) {
   index_mat <- current_fit$index.mat
   rc <- current_fit$rate.cat
   out <- list()
   ids <- canonical_id(index_mat, rc)
-  add <- function(mat, candidate_rc, move_type) {
+  add <- function(mat, candidate_rc, move_type, inherit = TRUE) {
     candidate_max <- sub_max(max_index_mat, candidate_rc, rc)
     if(!is.null(validate_index_mat(mat, candidate_rc, require.entry,
       candidate_max))) return()
     id <- canonical_id(mat, candidate_rc)
     if(id %in% ids) return()
     ids <<- c(ids, id)
-    out[[length(out) + 1L]] <<- list(new_index_mat = mat,
-      rate_cat = candidate_rc, move_type = move_type)
+    candidate <- list(new_index_mat = mat, rate_cat = candidate_rc,
+      move_type = move_type)
+    if(inherit) {
+      candidate$initial_rates <- dredge_inherited_rates(current_fit, mat)
+      candidate$source_scores <- current_fit[c("AIC", "AICc", "BIC")]
+    }
+    out[[length(out) + 1L]] <<- candidate
   }
 
   pars <- sort(unique(na.omit(as.vector(index_mat))))
@@ -1244,6 +1336,17 @@ deterministic_neighbors <- function(current_fit, max_index_mat, full_rate_catego
     dropped <- prune_isolated_states(dropStateMatPars(index_mat, par), rc)
     candidate_rc <- if(is.null(dropped$rate_cat)) rc else dropped$rate_cat
     add(dropped$new_index_mat, candidate_rc, "polish_drop")
+  }
+
+  frequencies <- tabulate(index_mat, nbins = if(length(pars)) max(pars) else 0)
+  tied <- !is.na(index_mat)
+  tied[tied] <- frequencies[index_mat[tied]] > 1
+  for(position in which(tied)) {
+    reduced <- index_mat
+    reduced[position] <- NA
+    reduced <- prune_isolated_states(reduced, rc)
+    candidate_rc <- if(is.null(reduced$rate_cat)) rc else reduced$rate_cat
+    add(reduced$new_index_mat, candidate_rc, "polish_cell_drop", inherit=TRUE)
   }
 
   par_values <- vapply(pars, function(par)
@@ -1284,9 +1387,6 @@ deterministic_neighbors <- function(current_fit, max_index_mat, full_rate_catego
     }
   }
 
-  frequencies <- tabulate(index_mat, nbins = if(length(pars)) max(pars) else 0)
-  tied <- !is.na(index_mat)
-  tied[tied] <- frequencies[index_mat[tied]] > 1
   dropped <- is.na(index_mat) & !is.na(max_index_mat)
   free_positions <- which((tied | dropped) & !is.na(max_index_mat))
   for(position in free_positions) {
