@@ -17,7 +17,9 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
   lower.bound=1e-10, upper.bound=100, opts=NULL, verbose=TRUE,
   p=NULL, rate.cat=NULL, use_RTMB=TRUE, max.iterations=1000,
   initial.temp=2, cooling.rate=0.95, temp.schedule="exponential",
-  seed=NULL, checkpoint.file=NULL, checkpoint.interval=50)
+  seed=NULL, require.entry=FALSE, stall.limit=500, polish.restarts=2,
+  polish.max.fits=5,
+  checkpoint.file=NULL, checkpoint.interval=50)
 }
 \arguments{
   \item{phy}{A phylogenetic tree of class \code{"phylo"}.}
@@ -25,10 +27,10 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
     species names and the second onwards containing the discrete character
     states.}
   \item{max.rate.cat}{The maximum number of hidden rate categories to
-    explore. The search runs sequentially from \code{init.rate.cat} up to
+    explore. The search runs sequentially from one rate category up to
     this value.}
-  \item{init.rate.cat}{The initial number of hidden rate categories to
-    begin the search. Defaults to 1.}
+  \item{init.rate.cat}{Ignored. The search always begins at one rate
+    category so that the simplest model is always fit and reported.}
   \item{root.p}{Specifies the prior on the root state probabilities. Can
     be \code{"maddfitz"}, \code{"yang"}, a numeric vector of
     probabilities, or \code{NULL} (see \code{\link{corHMM}}).}
@@ -47,14 +49,18 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
   \item{drop.threshold}{The rate value below which a parameter becomes a
     candidate for being dropped (fixed to zero) during a drop move.}
   \item{criterion}{The information criterion used to evaluate and compare
-    models during the search. Either \code{"AIC"} or \code{"AICc"}.
+    models during the search. One of \code{"AIC"}, \code{"AICc"}, or
+    \code{"BIC"}.
     Defaults to \code{"AIC"}.}
   \item{merge.threshold}{The absolute difference between two rate
     estimates below which they become candidates for merging (constrained
     equal) during a merge move.}
-  \item{index_mat}{An optional user-specified starting rate matrix. If
-    \code{NULL} the search starts from a fully parameterized (all rates
-    different) model.}
+  \item{index_mat}{An optional user-specified starting rate matrix and
+    transition mask. If \code{NULL} the search starts from a fully
+    parameterized model using the transitions inferred from the data.
+    An \code{NA} cell can never be freed; a non-\code{NA} off-diagonal
+    cell is eligible even when it represents a simultaneous transition.
+    Diagonal cells must be \code{NA}.}
   \item{node.states}{The method for ancestral state reconstruction.
     Options are \code{"marginal"}, \code{"joint"}, \code{"scaled"}, or
     \code{"none"}. Defaults to \code{"none"} during the search for speed;
@@ -95,11 +101,23 @@ corHMMDredge(phy, data, max.rate.cat=1, init.rate.cat=1,
     annealing algorithm. Higher values allow broader exploration by
     accepting worse models with higher probability early in the search.}
   \item{cooling.rate}{The multiplicative rate at which temperature
-    decreases per iteration (\eqn{T_{new} = T_{old} \times
-    \mathrm{cooling.rate}}). Must be between 0 and 1. Defaults to 0.95.}
+    determines the target final temperature before scaling the cooling
+    schedule across the iteration budget. Must be between 0 and 1.
+    Defaults to 0.95.}
   \item{temp.schedule}{The cooling schedule. Options are
-    \code{"exponential"} and \code{"linear"}.}
+    \code{"exponential"}, \code{"linear"}, and \code{"logarithmic"}. The
+    selected schedule spans the available iteration budget.}
+  \item{require.entry}{If \code{TRUE} states with no incoming rates are
+    treated as invalid. Defaults to \code{FALSE}, which permits
+    irreversible models with absorbing states.}
   \item{seed}{An integer random seed for reproducibility.}
+  \item{stall.limit}{Number of iterations without a new best score before
+    deterministic neighbor polishing runs. Defaults to 500.}
+  \item{polish.restarts}{Number of bounded reheats allowed after polishing
+    finds no improving neighbor. Defaults to 2.}
+  \item{polish.max.fits}{Maximum number of uncached candidate models fitted
+    during one polishing pass. Defaults to 5. Cached neighbors do not count
+    against the limit.}
   \item{checkpoint.file}{Optional path to an RDS file used for
     checkpointing. If the file already exists the search resumes from the
     saved state; otherwise a new checkpoint is created at regular
@@ -116,39 +134,69 @@ annealing heuristic that explores the space of discrete character
 evolution models combined with optional regularization.
 
 \strong{Proposal moves.} At each iteration the algorithm proposes one of
-four modifications to the current model's rate matrix index structure:
+five modifications to the current model's rate matrix index structure:
 \enumerate{
   \item \strong{Drop:} A rate parameter is removed from the model (fixed
-    to zero). Parameters with smaller estimated values are preferentially
-    targeted.
+    to zero), every cell carrying it at once. Parameters with smaller
+    estimated values are preferentially targeted. If the drop strands a
+    whole hidden class that class is removed and the rate category falls
+    by one.
   \item \strong{Merge:} Two or more rate parameters are constrained to be
     equal. Pairs with similar estimated values are preferentially
-    targeted.
+    targeted. Rates sitting at the optimizer floor are excluded: the data
+    calls them zero, so they belong to a drop rather than a merge.
   \item \strong{Free:} A currently constrained or dropped parameter is
     freed to be estimated independently, expanding model complexity[1].
     
-  \item \strong{Eigen-merge:} Parameters are merged based on the
-    eigenstructure of the current rate matrix rather than raw value
-    proximity[2]. 
-    
+  \item \strong{Lump:} An exactly lumpable pair of states (Kemeny and
+    Snell) is found by checking whether the fitted rates from each state
+    into every other state agree, and the corresponding parameters are
+    equated. Because the likelihood is unchanged such a move needs no
+    refit and lowers the selected criterion through its parameter penalty.
+  \item \strong{Collapse:} All rows and columns belonging to a dead
+    hidden class -- one the rest of the model cannot reach -- are deleted
+    and the rate category is decremented. Only dead classes are eligible,
+    since no move ever adds a class back.
+
 \strong{[1]} Only positions permitted by the maximum index matrix are eligible,
     preventing proposals that violate the structural constraints of the
     model space.
-    
-\strong{[2]} Each free parameter is represented as a profile of its
-    absolute loadings onto the eigenvectors of Q. Parameters whose
-    profiles have high cosine similarity -- meaning they drive transitions
-    along the same directions in state space -- are identified as
-    functionally redundant and proposed for merging. This move can
-    identify candidates that value-based merging would miss, and is
-    particularly effective for complex multi-state or multi-rate-category
-    models.
 }
 
-\strong{Acceptance criterion.} A proposed model that improves the
-information criterion score is always accepted. A worse model may still
-be accepted with probability \eqn{\exp(-\Delta / T)}, where \eqn{\Delta}
-is the score difference and \eqn{T} is the current temperature. As
+\strong{Canonical form.} Models are hashed after relabelling parameters by
+first appearance in a row-major scan and after taking the lexicographic
+minimum over permutations of the hidden classes, so label-switched
+duplicates of the same model are visited only once.
+
+\strong{Saturated bound.} When \code{lambda = 0} and \code{criterion} is
+\code{"AIC"} or \code{"BIC"}, a proposal is skipped without fitting
+whenever the log likelihood of the fully parameterized model cannot make
+it beat the incumbent.
+
+\strong{Rejected proposals.} Every proposal is put through a single
+coherence check that returns the reason it is not a model (an isolated
+state, multiple source components, an empty rate class, or no free
+parameters left), and the rejections are tallied by move type. The tally is printed with the object and is
+stored in each element of \code{attr(x, "dredge_history")}.
+
+\strong{Stopping.} A search ends either at \code{max.iterations} or when
+repeated deterministic polishing and reheating finds no improvement. The
+polisher evaluates valid one-parameter drops, eligible merges, frees,
+hidden-class collapses, and relocations of floor-supported transitions.
+Which condition ended each rate-category search is stored in the search
+history.
+
+\strong{Score cache.} Fitted models are cached by canonical form, so a
+structure is never fit twice. The chain is still free to revisit one: a
+cached proposal goes through the usual acceptance test using its stored
+fit.
+
+\strong{Acceptance criterion.} A proposed model within two units of the
+current score is always accepted, since models that close are
+indistinguishable and the chain should be free to cross the plateau. A
+worse model may still be accepted with probability \eqn{\exp(-(\Delta -
+2) / T)}, where \eqn{\Delta} is the score difference and \eqn{T} is the
+current temperature. As
 temperature cools the algorithm transitions from broad exploration to
 focused exploitation.
 

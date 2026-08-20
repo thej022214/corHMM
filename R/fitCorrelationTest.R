@@ -47,11 +47,17 @@ fitCorrelationTest <- function(phy, data, root.p="yang", nstarts=0, n.cores=1, s
 }
 
 getModelTable <- function(model_list, type="AIC"){
-  # checks
+  type <- match.arg(type, c("AIC", "AICc", "BIC"))
   ParCount <- unlist(lapply(model_list, function(x) max(x$index.mat, na.rm = TRUE)))
   rate.cat <- unlist(lapply(model_list, function(x) x$rate.cat))
   nTip <- length(model_list[[1]]$phy$tip.label)
-  AIC <- simplify2array(lapply(model_list, "[[", type))
+  AIC <- vapply(model_list, function(x) {
+    value <- x[[type]]
+    if(!is.null(value)) return(value)
+    np <- x$AIC / 2 + x$loglik
+    information_criteria(x$loglik, np,
+      length(x$phy$tip.label))[[type]]
+  }, numeric(1))
   dAIC <- AIC - min(AIC)
   AICwt <- exp(-0.5 * dAIC)/sum(exp(-0.5 * dAIC))
   LogLik <- simplify2array(lapply(model_list, "[[", "loglik"))
@@ -85,4 +91,3 @@ print.corhmm_list <- function(x, ...){
 # 
 # test <- fitCorrelationTest(phy, data, TRUE)
 # test
-

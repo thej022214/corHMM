@@ -847,15 +847,25 @@ corProcessData <- function(data, rate.mat=NULL, collapse=FALSE){
 print.corhmm <- function(x,...){
 	if (!is.null(x$phy_list)){
 		ntips=Ntip(x$phy)
-		output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips,x$ntrees, row.names="")
-		names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax","ntrees")
+		if(is.null(x$BIC)) {
+			output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips,x$ntrees, row.names="")
+			names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax","ntrees")
+		} else {
+			output<-data.frame(x$loglik,x$AIC,x$AICc,x$BIC,x$rate.cat,ntips,x$ntrees, row.names="")
+			names(output)<-c("lnL","AIC","AICc","BIC","Rate.cat","ntax","ntrees")
+		}
 		cat("\nFit\n")
 		print(output)
 		cat("\n")
 	} else {
 		ntips=Ntip(x$phy)
-		output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
-		names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
+		if(is.null(x$BIC)) {
+			output<-data.frame(x$loglik,x$AIC,x$AICc,x$rate.cat,ntips, row.names="")
+			names(output)<-c("lnL","AIC","AICc","Rate.cat","ntax")
+		} else {
+			output<-data.frame(x$loglik,x$AIC,x$AICc,x$BIC,x$rate.cat,ntips, row.names="")
+			names(output)<-c("lnL","AIC","AICc","BIC","Rate.cat","ntax")
+		}
 		cat("\nFit\n")
 		print(output)
 		cat("\n")

@@ -95,6 +95,8 @@ An object of class \code{"corhmm"} with elements:
 \item{$loglik}{Maximum log-likelihood.}
 \item{$AIC}{Akaike information criterion.}
 \item{$AICc}{AIC corrected for small sample size.}
+\item{$BIC}{Bayesian information criterion using the number of tips as
+the sample size.}
 \item{$rate.cat}{Number of rate categories.}
 \item{$solution}{Matrix of maximum likelihood rate estimates.}
 \item{$index.mat}{Index matrix of estimated parameters.}
