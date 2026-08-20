@@ -7,7 +7,8 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   get.tip.states = FALSE, lewis.asc.bias = FALSE, collapse = FALSE, lower.bound = 1e-10, 
   upper.bound = 100, opts=NULL, verbose=TRUE, p=NULL, rate.cat=NULL, use_RTMB=TRUE, 
   max.iterations = 1000, initial.temp = 2, cooling.rate = 0.95, 
-  temp.schedule = "exponential", seed = NULL,
+  temp.schedule = "exponential", seed = NULL, require.entry = FALSE,
+  stall.limit = 500, polish.restarts = 2, polish.max.fits = 5,
   checkpoint.file = NULL, checkpoint.interval = 50){
 
   if((is.null(p) & !is.null(rate.cat))){
@@ -18,6 +19,11 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     print("A parameter vector (p) was given without specifying a rate category")
     return(NULL)
   }
+  criterion <- match.arg(criterion, c("AIC", "AICc", "BIC"))
+  if(length(polish.max.fits) != 1 || !is.finite(polish.max.fits) ||
+    polish.max.fits < 1) stop("polish.max.fits must be a positive number.",
+      call. = FALSE)
+  polish.max.fits <- as.integer(polish.max.fits)
   
   # Set seed for reproducibility
   if(!is.null(seed)) set.seed(seed)
@@ -39,30 +45,34 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
   }
   
   # Initialize
+  default_index_mat <- getStateMat4Dat(data, collapse = collapse,
+    indep = FALSE)$rate.mat
+  default_index_mat[default_index_mat == 0] <- NA
   if(is.null(index_mat)){
-    curr_index_mat <- getStateMat4Dat(data, collapse = FALSE, indep = FALSE)$rate.mat
-    max_index_mat <- curr_index_mat
-    max_index_mat[max_index_mat == 0] <- NA
-    max_index_mat_cp <- max_index_mat
+    curr_index_mat <- default_index_mat
   } else {
-    max_index_mat <- index_mat
-    max_index_mat[max_index_mat == 0] <- NA
-    max_index_mat_cp <- max_index_mat
     curr_index_mat <- index_mat
   }
+  curr_index_mat[curr_index_mat == 0] <- NA
+  initial_reason <- validate_index_mat(curr_index_mat, 1, require.entry)
+  if(!is.null(initial_reason)) {
+    stop("index_mat is outside the legal model space: ", initial_reason,
+      call. = FALSE)
+  }
+  max_index_mat_cp <- curr_index_mat
+  max_index_mat <- curr_index_mat
+  max_index_mat[max_index_mat == 0] <- NA
   
   fit_set <- list()
   model_improved <- TRUE
   hmm_valid <- TRUE
   count <- 0
-  current_rate_category <- init.rate.cat
-  
+  # always fit the simplest model
   if(init.rate.cat > 1){
-    max_index_mat <- getFullMat(replicate(current_rate_category, max_index_mat_cp, simplify = FALSE), 
-      getStateMat(current_rate_category))
-    max_index_mat[max_index_mat > 0] <- 1:sum(max_index_mat > 0, na.rm = TRUE)
-    max_index_mat[max_index_mat==0] <- NA
+    warning("init.rate.cat ignored: the dredge always starts at rate.cat = 1")
   }
+  current_rate_category <- 1
+  
   
   if(verbose){
     cat("Beginning SA dredge...\n")
@@ -99,7 +109,8 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     checkpoint_has_state <- !is.null(rc_checkpoint_file) && 
       file.exists(rc_checkpoint_file) && {
         ckpt <- tryCatch(readRDS(rc_checkpoint_file), error = function(e) NULL)
-        !is.null(ckpt) && (!is.null(ckpt$current_fit) || isTRUE(ckpt$finished))
+        checkpoint_is_compatible(ckpt, max_index_mat,
+          current_rate_category, require.entry, criterion)
       }
     
     if (checkpoint_has_state) {
@@ -142,7 +153,9 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
       upper.bound, opts, use_RTMB, criterion,
       drop.threshold, merge.threshold,
       max.iterations, initial.temp, cooling.rate, 
-      temp.schedule, verbose, prep=curr_prep,
+      temp.schedule, verbose, prep=curr_prep, require.entry=require.entry,
+      stall.limit=stall.limit, polish.restarts=polish.restarts,
+      polish.max.fits=polish.max.fits,
       tip.fog=tip.fog, fog.ip=fog.ip,
       checkpoint.file = rc_checkpoint_file, 
       checkpoint.interval = checkpoint.interval)
@@ -183,7 +196,10 @@ corHMMDredge <- function(phy, data, max.rate.cat=1, init.rate.cat=1,
     accepted_models[[i]]$data.legend <- curr_fit$data.legend
   }
   class(accepted_models) <- "corhmm.dredge"
+  attr(accepted_models, "criterion") <- criterion
   attr(accepted_models, "dredge_history") <- fit_set
+  attr(accepted_models, "flat_directions") <- flat_directions(
+    unlist(lapply(fit_set, function(x) x$every_model), recursive = FALSE))
   return(accepted_models)
 }
 
@@ -191,6 +207,25 @@ strip_corhmm <- function(fit) {
   fit$phy         <- NULL
   fit$data        <- NULL
   fit$data.legend <- NULL
+  fit
+}
+
+information_criteria <- function(loglik, np, ntax) {
+  list(
+    AIC = -2 * loglik + 2 * np,
+    AICc = -2 * loglik + 2 * np * ntax / (ntax - np - 1),
+    BIC = -2 * loglik + log(ntax) * np
+  )
+}
+
+# An exact move: same likelihood, fewer parameters
+reindex_fit <- function(fit, index_mat) {
+  old_np <- fit$AIC / 2 + fit$loglik
+  ntax <- old_np + 1 + 2 * old_np * (old_np + 1) / (fit$AICc - fit$AIC)
+  np <- old_np - max(fit$index.mat, na.rm = TRUE) + max(index_mat, na.rm = TRUE)
+  fit$index.mat <- index_mat
+  fit[names(information_criteria(fit$loglik, np, ntax))] <-
+    information_criteria(fit$loglik, np, ntax)
   fit
 }
 
@@ -202,13 +237,24 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
   merge.threshold, max.iterations, initial.temp, cooling.rate, temp.schedule, 
   verbose, restart.strategy = "fixed_steps", tip.fog=tip.fog, fog.ip=fog.ip,
   restart.interval = 20, restart.threshold = 1.5, restart.probability = 0.05,
-  restart.temp.reset = FALSE, prep=NULL,
+  restart.temp.reset = FALSE, prep=NULL, require.entry = FALSE, stall.limit = 500,
+  polish.restarts = 2, polish.max.fits = 5,
   checkpoint.file = NULL, checkpoint.interval = 50) {
   
-  ## --- attempt to resume from checkpoint ---
+  checkpoint_id <- model_space_id(max_index_mat, rate_category)
+  ckpt <- NULL
   if (!is.null(checkpoint.file) && file.exists(checkpoint.file)) {
+    ckpt <- tryCatch(readRDS(checkpoint.file), error = function(e) NULL)
+    checkpoint_ok <- checkpoint_is_compatible(ckpt, max_index_mat,
+      rate_category, require.entry, criterion)
+    if(!checkpoint_ok) {
+      warning("Ignoring incompatible dredge checkpoint; starting fresh.",
+        immediate. = TRUE)
+      ckpt <- NULL
+    }
+  }
+  if (!is.null(ckpt)) {
     if (verbose) cat("Resuming from checkpoint:", checkpoint.file, "\n")
-    ckpt <- readRDS(checkpoint.file)
     ## unpack checkpoint state and return early if already finished
     if (ckpt$finished) {
       if (verbose) cat("Checkpoint marks run as finished. Returning saved result.\n")
@@ -229,20 +275,28 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     every_score        <- ckpt$every_score
     every_move         <- ckpt$every_move
     accepted           <- ckpt$accepted
-    index_id           <- ckpt$index_id
+    score_cache        <- list2env(ckpt$score_cache, hash = TRUE)
+    rejections         <- ckpt$rejections
     accepted_moves     <- ckpt$accepted_moves
     total_moves        <- ckpt$total_moves
     restart_count      <- ckpt$restart_count
     steps_since_restart <- ckpt$steps_since_restart
     steps_since_accept <- ckpt$steps_since_accept
     steps_since_best   <- ckpt$steps_since_best
+    steps_since_new    <- ckpt$steps_since_new
     current_temp       <- ckpt$current_temp
+    temperature_epoch_start <- if(is.null(ckpt$temperature_epoch_start)) 1L else ckpt$temperature_epoch_start
+    polish_runs        <- if(is.null(ckpt$polish_runs)) 0L else ckpt$polish_runs
+    polish_evaluations <- if(is.null(ckpt$polish_evaluations)) 0L else ckpt$polish_evaluations
+    polish_failures    <- if(is.null(ckpt$polish_failures)) 0L else ckpt$polish_failures
+    loglik_sat         <- ckpt$loglik_sat
     start_iteration    <- ckpt$iteration + 1L
     every_idx          <- ckpt$every_idx
   } else {
     ## --- fresh start ---
     current_fit        <- initial_fit
-    index_id           <- paste0(c(current_fit$index.mat), collapse = "_")
+    score_cache        <- new.env(hash = TRUE)
+    rejections         <- character()
     current_index_mat  <- initial_index_mat
     current_score      <- current_fit[[criterion]]
     
@@ -254,7 +308,8 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     every_move     <- character()
     accepted       <- numeric()
     
-    initial_id <- paste0(c(initial_index_mat), collapse = "_")
+    initial_id <- canonical_id(current_fit$index.mat, rate_category)
+    score_cache[[initial_id]] <- strip_corhmm(initial_fit)
     every_model[[1]]    <- accepted_models[[1]] <- initial_fit
     accepted_index_mats[[1]] <- initial_index_mat
     every_score[1]      <- accepted_scores[1] <- current_score
@@ -266,6 +321,8 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     best_fit           <- current_fit
     best_index_mat     <- current_index_mat
     best_score         <- current_score
+    ## upper bound on the likelihood of any submodel
+    loglik_sat         <- initial_fit$loglik
     current_temp       <- initial.temp
     accepted_moves     <- 0L
     total_moves        <- 0L
@@ -273,6 +330,11 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     steps_since_restart <- 0L
     steps_since_accept  <- 0L
     steps_since_best    <- 0L
+    steps_since_new     <- 0L
+    temperature_epoch_start <- 1L
+    polish_runs         <- 0L
+    polish_evaluations  <- 0L
+    polish_failures     <- 0L
     start_iteration    <- 1L
   }
   
@@ -281,10 +343,18 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     cat("Restart strategy:", restart.strategy, "\n")
   }
   
+  ## why a proposal died, tallied per move type
+  reject <- function(reason) {
+    rejections <<- c(rejections, paste(move_result$move_type, reason, sep = ": "))
+  }
+  
   ## helper to save checkpoint
   save_checkpoint <- function(iteration, finished = FALSE, result = NULL) {
     if (is.null(checkpoint.file)) return(invisible(NULL))
     saveRDS(list(
+      version            = 3L,
+      model_space_id     = checkpoint_id,
+      criterion          = criterion,
       finished           = finished,
       result             = result,
       iteration          = iteration,
@@ -302,22 +372,170 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       every_score        = every_score,
       every_move         = every_move,
       accepted           = accepted,
-      index_id           = index_id,
+      score_cache        = as.list(score_cache),
+      rejections         = rejections,
       accepted_moves     = accepted_moves,
       total_moves        = total_moves,
       restart_count      = restart_count,
       steps_since_restart = steps_since_restart,
       steps_since_accept = steps_since_accept,
       steps_since_best   = steps_since_best,
+      steps_since_new    = steps_since_new,
       current_temp       = current_temp,
+      temperature_epoch_start = temperature_epoch_start,
+      polish_runs        = polish_runs,
+      polish_evaluations = polish_evaluations,
+      polish_failures    = polish_failures,
+      loglik_sat         = loglik_sat,
       every_idx          = every_idx
     ), checkpoint.file)
   }
   
+  ## number of tip fog parameters, constant across models
+  fog_np <- current_fit$AIC / 2 + current_fit$loglik -
+    max(current_fit$index.mat, na.rm = TRUE)
+  
+  ## preps and root.p are rate category specific
+  preps <- list()
+  preps[[rate_category]] <- prep
+  get_root_p <- function(rc) if (is.character(root.p)) root.p else rep(root.p[1], rc)
+  get_prep <- function(rc) {
+    if (is.null(preps[[rc]])) {
+      preps[[rc]] <<- corHMMDredgePrep(phy=phy, data=data, rate.cat=rc,
+        root.p=get_root_p(rc), pen.type=pen.type, lambda=lambda,
+        node.states=node.states, fixed.nodes=fixed.nodes, collapse=collapse,
+        lower.bound=lower.bound, upper.bound=upper.bound,
+        lewis.asc.bias=lewis.asc.bias, use_RTMB=use_RTMB, opts=opts,
+        tip.fog=tip.fog, fog.ip=fog.ip)
+    }
+    preps[[rc]]
+  }
+
+  polish_neighbor_fn <- function(fit) {
+    rc <- fit$rate.cat
+    deterministic_neighbors(fit, sub_max(max_index_mat, rc, rate_category),
+      rate_category, merge.threshold, require.entry)
+  }
+
+  polish_score_fn <- function(candidate) {
+    candidate_rc <- candidate$rate_cat
+    id <- canonical_id(candidate$new_index_mat, candidate_rc)
+    fit <- score_cache[[id]]
+    if(is.null(fit)) {
+      fit <- try(corHMMDredgeBase(phy=phy, data=data, rate.cat=candidate_rc,
+        root.p=get_root_p(candidate_rc), pen.type=pen.type, lambda=lambda,
+        rate.mat=candidate$new_index_mat, node.states=node.states,
+        fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts, n.cores=n.cores,
+        get.tip.states=get.tip.states, lewis.asc.bias=lewis.asc.bias,
+        collapse=collapse, fog.ip=fog.ip, lower.bound=lower.bound,
+        upper.bound=upper.bound, tip.fog=tip.fog, opts=opts, p=NULL,
+        use_RTMB=use_RTMB, prep=get_prep(candidate_rc)))
+      if(inherits(fit, "try-error")) return(NULL)
+      if(is.null(fit$loglik) || length(fit$loglik) == 0) return(NULL)
+      if(fit$loglik == -1e+06) return(NULL)
+      fit <- strip_corhmm(fit)
+      score_cache[[id]] <- fit
+      steps_since_new <<- 0L
+      polish_evaluations <<- polish_evaluations + 1L
+      every_idx <<- every_idx + 1L
+      every_model[[every_idx]] <<- fit
+      every_score[every_idx] <<- fit[[criterion]]
+      every_move[every_idx] <<- candidate$move_type
+      accepted[every_idx] <<- 0L
+    }
+    fit
+  }
+
+  run_polish <- function(fit) {
+    polish_runs <<- polish_runs + 1L
+    if(verbose) cat("Polishing best", criterion, ":",
+      round(fit[[criterion]], 3), "- fitting at most", polish.max.fits,
+      "new neighbors.\n")
+    result <- polish_neighborhood(fit, polish_neighbor_fn, polish_score_fn,
+      criterion, max.new.evaluations = polish.max.fits,
+      is.cached = function(candidate) {
+        id <- canonical_id(candidate$new_index_mat, candidate$rate_cat)
+        !is.null(score_cache[[id]])
+      })
+    if(verbose && result$deferred > 0) cat("Polishing deferred",
+      result$deferred, "neighbors after", result$new_evaluations,
+      "new fits.\n")
+    result
+  }
+
+  accept_polish_path <- function(path) {
+    if(length(path) == 0) return()
+    for(fit in path) {
+      id <- canonical_id(fit$index.mat, fit$rate.cat)
+      model_count <- length(accepted_models) + 1L
+      accepted_models[[model_count]] <<- fit
+      accepted_index_mats[[model_count]] <<- fit$index.mat
+      accepted_scores[model_count] <<- fit[[criterion]]
+      model_ids[model_count] <<- id
+      seen <- which(vapply(every_model, function(x)
+        !is.null(x) && identical(canonical_id(x$index.mat, x$rate.cat), id),
+        logical(1)))
+      if(length(seen)) accepted[max(seen)] <<- 1L
+    }
+  }
+  
+  stop_reason <- "max.iterations"
   for (iteration in start_iteration:max.iterations) {
     steps_since_restart <- steps_since_restart + 1L
     steps_since_accept  <- steps_since_accept  + 1L
     steps_since_best    <- steps_since_best    + 1L
+    steps_since_new     <- steps_since_new     + 1L
+
+    if (polish_due(steps_since_best, steps_since_new, stall.limit,
+      restart.interval)) {
+      polished <- run_polish(best_fit)
+      if(polished$best_fit[[criterion]] < best_score - 1e-10) {
+        accept_polish_path(polished$path)
+        best_fit <- current_fit <- polished$best_fit
+        best_index_mat <- current_index_mat <- best_fit$index.mat
+        best_score <- current_score <- best_fit[[criterion]]
+        steps_since_best <- 0L
+        steps_since_new <- 0L
+        steps_since_accept <- 0L
+        steps_since_restart <- 0L
+        temperature_epoch_start <- iteration
+        current_temp <- initial.temp
+        polish_failures <- 0L
+        if(verbose) cat("Polishing improved", criterion, "to", round(best_score, 3), "- reheating.\n")
+        next
+      }
+      if(!polished$complete) {
+        current_fit <- best_fit
+        current_index_mat <- best_index_mat
+        current_score <- best_score
+        steps_since_best <- 0L
+        steps_since_new <- 0L
+        steps_since_accept <- 0L
+        steps_since_restart <- 0L
+        temperature_epoch_start <- iteration
+        current_temp <- initial.temp
+        if(verbose) cat("Returning to SA before the next polishing batch.\n")
+        next
+      }
+      polish_failures <- polish_failures + 1L
+      if(polish_failures > polish.restarts) {
+        stop_reason <- "local optimum"
+        if(verbose) cat("No improving neighbor after", polish_failures, "polish runs.\n")
+        break
+      }
+      current_fit <- best_fit
+      current_index_mat <- best_index_mat
+      current_score <- best_score
+      steps_since_best <- 0L
+      steps_since_new <- 0L
+      steps_since_accept <- 0L
+      steps_since_restart <- 0L
+      temperature_epoch_start <- iteration
+      current_temp <- initial.temp
+      if(verbose) cat("No improving neighbor - reheating", polish_failures, "of", polish.restarts, ".\n")
+      next
+    }
+    
     
     ## --- periodic checkpoint ---
     if (!is.null(checkpoint.file) && iteration %% checkpoint.interval == 0) {
@@ -341,23 +559,26 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     }
     
     if (should_restart && restart.strategy != "none") {
+      current_id <- canonical_id(current_fit$index.mat, current_fit$rate.cat)
+      available_indices <- which(model_ids != current_id)
+      if(length(available_indices) == 0) {
+        steps_since_new <- restart.interval
+        next
+      }
       every_idx <- every_idx + 1L
       every_move[every_idx]  <- "restart"
       every_score[every_idx] <- current_score
-      every_model[[every_idx]] <- NULL   ## no new fit on a restart
+      every_model[every_idx] <- list(NULL)   ## no new fit on a restart
+      accepted[every_idx]    <- NA_integer_
       
-      available_indices <- which(accepted_scores != best_score)
-      if (length(available_indices) > 0) {
-        restart_idx       <- sample(available_indices, 1)
-        current_fit       <- accepted_models[[restart_idx]]
-        current_index_mat <- accepted_index_mats[[restart_idx]]
-        current_score     <- accepted_scores[restart_idx]
-      } else {
-        current_fit       <- best_fit
-        current_index_mat <- best_index_mat
-        current_score     <- best_score
+      restart_idx       <- sample(available_indices, 1)
+      current_fit       <- accepted_models[[restart_idx]]
+      current_index_mat <- accepted_index_mats[[restart_idx]]
+      current_score     <- accepted_scores[restart_idx]
+      if (restart.temp.reset) {
+        current_temp <- initial.temp
+        temperature_epoch_start <- iteration
       }
-      if (restart.temp.reset) current_temp <- initial.temp
       restart_count       <- restart_count + 1L
       steps_since_restart <- 0L
       if (verbose) cat("RESTART", restart_count, "at iteration", iteration,
@@ -366,96 +587,128 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
       next
     }
     
-    ## --- temperature update ---
-    if (temp.schedule == "exponential") {
-      current_temp <- if (restart.temp.reset) {
-        initial.temp * (cooling.rate ^ steps_since_restart)
-      } else {
-        initial.temp * (cooling.rate ^ iteration)
-      }
-    } else if (temp.schedule == "linear") {
-      current_temp <- if (restart.temp.reset) {
-        restart_window <- min(restart.interval, max.iterations - iteration)
-        initial.temp * (1 - steps_since_restart / restart_window)
-      } else {
-        initial.temp * (1 - iteration / max.iterations)
-      }
-    }
-    if (current_temp < 0.001) break
+    current_temp <- annealing_temperature(iteration, max.iterations,
+      initial.temp, cooling.rate, temp.schedule, temperature_epoch_start)
     
     ## --- propose move ---
+    current_rc  <- current_fit$rate.cat
+    current_max <- sub_max(max_index_mat, current_rc, rate_category)
     move_result <- propose_sa_move_within_rate_cat(current_fit, drop.threshold,
-      merge.threshold, max_index_mat)
-    if (is.null(move_result$new_index_mat)) next
+      merge.threshold, current_max)
+    proposed_rc <- if (is.null(move_result$rate_cat)) current_rc else move_result$rate_cat
 
-    if (!is_valid_index_mat(move_result$new_index_mat)) next
-    if (rate_category > 1 && test_hmm(move_result$new_index_mat, rate_category)) next
+    proposed_max <- sub_max(max_index_mat, proposed_rc, rate_category)
+    reason <- validate_index_mat(move_result$new_index_mat, proposed_rc,
+      require.entry, proposed_max)
+    if (!is.null(reason)) { reject(reason); next }
     
-    move_id <- paste0(c(move_result$new_index_mat), collapse = "_")
-    
-    ## skip already-evaluated models without recording a NULL
-    if (move_id %in% index_id) next
-    
-    index_id    <- c(index_id, move_id)
+    move_id <- canonical_id(move_result$new_index_mat, proposed_rc)
     total_moves <- total_moves + 1L
     
-    ## --- fit proposed model ---
-    proposed_fit <- try(corHMMDredgeBase(phy=phy, data=data, rate.cat=rate_category,
-      root.p=root.p, pen.type=pen.type, lambda=lambda,
-      rate.mat=move_result$new_index_mat, node.states=node.states,
-      fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts,
-      n.cores=n.cores, get.tip.states=get.tip.states,
-      lewis.asc.bias=lewis.asc.bias, collapse=collapse, fog.ip=fog.ip,
-      lower.bound=lower.bound, upper.bound=upper.bound,tip.fog=tip.fog,
-      opts=opts, p=NULL, use_RTMB=use_RTMB, prep=prep))
+    ## --- a structure seen before is scored, not refit ---
+    proposed_fit <- score_cache[[move_id]]
+    cache_hit <- !is.null(proposed_fit)
     
-    if (inherits(proposed_fit, "try-error")) next
-    if (is.null(proposed_fit$loglik) || length(proposed_fit$loglik) == 0) next
-    if (proposed_fit$loglik == -1e+06) next
+    if (is.null(proposed_fit)) {
+      ## saturated bound: no submodel can beat this
+      if (lambda == 0 && criterion %in% c("AIC", "BIC") && !is.null(loglik_sat) &&
+          proposed_rc == rate_category) {
+        k <- max(move_result$new_index_mat, na.rm = TRUE) + fog_np
+        optimistic_score <- if(criterion == "AIC") -2 * loglik_sat + 2 * k else
+          -2 * loglik_sat + log(length(phy$tip.label)) * k
+        if (optimistic_score > best_score) { reject("saturated bound"); next }
+      }
+      
+      ## an exact move keeps the current likelihood, so it needs no fit
+      if (isTRUE(move_result$exact)) {
+        proposed_fit <- reindex_fit(current_fit, move_result$new_index_mat)
+      } else {
+        proposed_fit <- try(corHMMDredgeBase(phy=phy, data=data, rate.cat=proposed_rc,
+          root.p=get_root_p(proposed_rc), pen.type=pen.type, lambda=lambda,
+          rate.mat=move_result$new_index_mat, node.states=node.states,
+          fixed.nodes=fixed.nodes, ip=ip, nstarts=nstarts,
+          n.cores=n.cores, get.tip.states=get.tip.states,
+          lewis.asc.bias=lewis.asc.bias, collapse=collapse, fog.ip=fog.ip,
+          lower.bound=lower.bound, upper.bound=upper.bound,tip.fog=tip.fog,
+          opts=opts, p=NULL, use_RTMB=use_RTMB, prep=get_prep(proposed_rc)))
+      }
+      
+      if (inherits(proposed_fit, "try-error")) { reject("fit failed"); next }
+      if (is.null(proposed_fit$loglik) || length(proposed_fit$loglik) == 0) { reject("fit failed"); next }
+      if (proposed_fit$loglik == -1e+06) { reject("no likelihood"); next }
+      score_cache[[move_id]] <- strip_corhmm(proposed_fit)
+      steps_since_new <- 0L
+    }
     
-    ## record every genuinely evaluated model
-    every_idx              <- every_idx + 1L
     proposed_score         <- proposed_fit[[criterion]]
-    every_model[[every_idx]] <- strip_corhmm(proposed_fit)
-    every_score[every_idx]   <- proposed_score
-    every_move[every_idx]    <- move_result$move_type
+    if(!cache_hit) {
+      every_idx              <- every_idx + 1L
+      every_model[[every_idx]] <- strip_corhmm(proposed_fit)
+      every_score[every_idx]   <- proposed_score
+      every_move[every_idx]    <- move_result$move_type
+    }
     
     ## --- accept/reject ---
+    ## models within 2 AIC are indistinguishable, so the chain moves freely
+    ## across that band and anneals only on the excess
     delta       <- proposed_score - current_score
-    accept_prob <- if (delta <= 0) 1.0 else exp(-delta / current_temp)
+    accept_prob <- if (delta <= 2) 1.0 else exp(-(delta - 2) / current_temp)
     
     if (runif(1) < accept_prob) {
-      accepted[every_idx]  <- 1L
+      if(!cache_hit) accepted[every_idx] <- 1L
       current_fit          <- proposed_fit
-      current_index_mat    <- move_result$new_index_mat
+      current_index_mat    <- current_fit$index.mat
       current_score        <- proposed_score
       accepted_moves       <- accepted_moves + 1L
       steps_since_accept   <- 0L
       
-      model_count            <- length(accepted_models) + 1L
-      accepted_models[[model_count]]     <- strip_corhmm(current_fit)
-      accepted_index_mats[[model_count]] <- current_index_mat
-      accepted_scores[model_count]       <- current_score
-      model_ids[model_count]        <- move_id
+      if(!(move_id %in% model_ids)) {
+        model_count            <- length(accepted_models) + 1L
+        accepted_models[[model_count]]     <- strip_corhmm(current_fit)
+        accepted_index_mats[[model_count]] <- current_index_mat
+        accepted_scores[model_count]       <- current_score
+        model_ids[model_count]        <- move_id
+      }
       
       if (current_score < best_score) {
         best_fit        <- current_fit
         best_index_mat  <- current_index_mat
         best_score      <- current_score
         steps_since_best <- 0L
+        polish_failures <- 0L
       }
       if (verbose) {
-        cat("Iter", iteration, "- New", paste0(criterion, ":"), round(current_score, 3),
+        cat("Iter", iteration, "-", if(cache_hit) "Revisited" else "New",
+          paste0(criterion, ":"), round(current_score, 3),
           "- Best", paste0(criterion, ":"), round(best_score, 3), "\n",
           "Move:", move_result$move_type, "- Temp:", round(current_temp, 4),
           "- Steps since restart:", steps_since_restart, "\n",
           "Index Matrix:\n")
-        print(move_result$new_index_mat)
+        print(current_index_mat)
         cat("\n")
       }
     } else {
-      accepted[every_idx] <- 0L
+      if(!cache_hit) accepted[every_idx] <- 0L
     }
+  }
+
+  if(stop_reason == "max.iterations") {
+    polished <- run_polish(best_fit)
+    if(polished$best_fit[[criterion]] < best_score - 1e-10) {
+      accept_polish_path(polished$path)
+      best_fit <- current_fit <- polished$best_fit
+      best_index_mat <- current_index_mat <- best_fit$index.mat
+      best_score <- current_score <- best_fit[[criterion]]
+      steps_since_best <- 0L
+    }
+    stop_reason <- if(polished$complete) "max.iterations (polished)" else
+      "max.iterations (partial polish)"
+  }
+
+  if(!fits_in_model_space(c(accepted_models, every_model), max_index_mat,
+    rate_category, require.entry)) {
+    stop("Internal error: dredge produced a model outside the permitted transition mask.",
+      call. = FALSE)
   }
   
   acceptance_rate <- if (total_moves > 0) accepted_moves / total_moves else 0
@@ -479,7 +732,17 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
     iterations           = iteration,
     acceptance_rate      = acceptance_rate,
     total_unique_models  = length(accepted_models),
+    rate_category        = rate_category,
+    criterion            = criterion,
+    stop_reason          = stop_reason,
+    total_moves          = total_moves,
+    rejections           = table(rejections),
+    unique_structures    = length(score_cache),
     restart_count        = restart_count,
+    polish_runs           = polish_runs,
+    polish_evaluations    = polish_evaluations,
+    polish_failures       = polish_failures,
+    final_temperature     = current_temp,
     final_steps_since_best = steps_since_best,
     every_model          = every_model,
     every_score          = every_score,
@@ -497,125 +760,132 @@ sa_within_rate_category <- function(phy, data, initial_fit, initial_index_mat,
 propose_sa_move_within_rate_cat <- function(current_fit, drop.threshold,
   merge.threshold, max_index_mat) {
   
-  move_type <- sample(c("drop", "merge", "free", "eigen_merge"), 1,
-    prob = c(0.3, 0.3, 0.2, 0.2))
+  moves <- c("drop", "merge", "free", "lump")
+  probs <- c(0.3, 0.3, 0.2, 0.2)
+  if (current_fit$rate.cat > 1) {
+    moves <- c(moves, "collapse")
+    probs <- c(0.275, 0.275, 0.2, 0.2, 0.05)
+  }
+  move_type <- sample(moves, 1, prob = probs)
   
   if (move_type == "drop") {
-    new_index_mat <- propose_stochastic_drop(current_fit, drop.threshold)
+    return(c(list(move_type = move_type),
+      propose_stochastic_drop(current_fit, drop.threshold)))
   }
   if (move_type == "merge") {
-    new_index_mat <- propose_stochastic_merge(current_fit, merge.threshold)
+    return(list(move_type = move_type,
+      new_index_mat = propose_stochastic_merge(current_fit, merge.threshold)))
   }
   if (move_type == "free") {
-    new_index_mat <- propose_stochastic_free(current_fit, max_index_mat)
+    return(list(move_type = move_type,
+      new_index_mat = propose_stochastic_free(current_fit, max_index_mat)))
   }
-  if (move_type == "eigen_merge") {
-    new_index_mat <- propose_eigen_merge(current_fit)
+  if (move_type == "lump") {
+    # exact: the likelihood is unchanged, so no refit is needed
+    return(c(list(move_type = move_type), propose_lumpable_merge(current_fit)))
   }
-  
-  return(list(move_type = move_type, new_index_mat = new_index_mat))
+  return(c(list(move_type = move_type), propose_collapse_class(current_fit)))
 }
 
 # Stochastic parameter dropping
 propose_stochastic_drop <- function(current_fit, drop.threshold) {
   Q <- current_fit$solution
   Q[is.na(Q)] <- Inf
+  index_mat <- current_fit$index.mat
   
-  # Find parameters below threshold
-  small_pars <- which(Q < drop.threshold)
+  # parameter values, one per free parameter
+  pars <- sort(unique(na.omit(as.vector(index_mat))))
+  par_values <- sapply(pars, function(i) min(Q[which(index_mat == i)]))
+  small_pars <- pars[par_values < drop.threshold]
   
-  # If no small parameters, consider dropping from smallest quartile
+  # nothing tiny, so consider the smallest quartile
   if(length(small_pars) == 0) {
-    all_pars <- Q[!is.infinite(Q)]
-    if(length(all_pars) == 0) return(NULL)
-    
-    threshold_25 <- quantile(all_pars, 0.25)
-    candidate_pars <- which(Q <= threshold_25)
-    if(length(candidate_pars) > 0) {
-      small_pars <- candidate_pars
-    }
+    if(length(pars) == 0) return(NULL)
+    small_pars <- pars[par_values <= quantile(par_values, 0.25)]
   }
-  
   if(length(small_pars) == 0) return(NULL)
   
-  # Stochastically select parameters to drop
-  # Probability inversely related to parameter size
-  par_values <- Q[small_pars]
-  drop_probs <- 1 / (par_values + 1e-10)
-  drop_probs <- drop_probs / sum(drop_probs)
-  
-  # Select parameter(s) to drop
+  drop_probs <- 1 / (par_values[match(small_pars, pars)] + 1e-10)
   n_to_drop <- sample(1:min(3, length(small_pars)), 1)
   if(length(small_pars) == 1){
     to_drop <- small_pars
   }else{
-    to_drop <- sample(small_pars, n_to_drop, prob = drop_probs)
+    to_drop <- sample(small_pars, n_to_drop, prob = drop_probs / sum(drop_probs))
   }
-  new_index_mat <- current_fit$index.mat
-  new_index_mat[to_drop] <- NA
-  # a drop that empties the matrix or isolates a state is not a model
-  if(!is_valid_index_mat(new_index_mat)){
-    return(NULL)
-  }
-  pars <- sort(unique(na.omit(as.vector(new_index_mat))))
-  for(i in 1:length(pars)){
-    new_index_mat[new_index_mat == pars[i]] <- i
-  }
-  return(new_index_mat)
+  new_index_mat <- dropStateMatPars(index_mat, to_drop)
+  return(prune_isolated_states(new_index_mat, current_fit$rate.cat))
 }
 
-propose_eigen_merge <- function(current_fit) {
+# A drop that strands a whole hidden class removes it and lowers the rate
+# category
+prune_isolated_states <- function(index_mat, rate_cat) {
+  isolated <- vapply(seq_len(nrow(index_mat)), function(i)
+    all(is.na(index_mat[i, ])) && all(is.na(index_mat[, i])), logical(1))
+  if(!any(isolated)) return(list(new_index_mat = renumber_index_mat(index_mat)))
+  
+  n <- nrow(index_mat) / rate_cat
+  class_of <- rep(seq_len(rate_cat), each = n)
+  gone <- which(vapply(split(isolated, class_of), all, logical(1)))
+  # nothing to collapse: hand it on and let the validator name the problem
+  if(length(gone) == 0 || length(gone) == rate_cat) {
+    return(list(new_index_mat = renumber_index_mat(index_mat)))
+  }
+  
+  rc <- rate_cat - length(gone)
+  new_index_mat <- renumber_index_mat(index_mat[!class_of %in% gone, !class_of %in% gone])
+  rownames(new_index_mat) <- colnames(new_index_mat) <-
+    paste0("(", rep(seq_len(n), rc), ",R", rep(seq_len(rc), each = n), ")")
+  list(new_index_mat = new_index_mat, rate_cat = rc)
+}
+
+# Delete a whole hidden class and drop the rate category by one
+propose_collapse_class <- function(current_fit) {
+  rc <- current_fit$rate.cat
+  index_mat <- current_fit$index.mat
+  n <- nrow(index_mat) / rc
   Q <- current_fit$solution
   Q[is.na(Q)] <- 0
-  diag(Q) <- -rowSums(Q)
+  class_of <- rep(seq_len(rc), each = n)
   
-  # Need at least 2 free parameters to merge
-  n_free <- max(current_fit$index.mat, na.rm = TRUE)
-  if (is.na(n_free) || n_free < 2) return(NULL)
-  
-  # Catch degenerate Q (e.g. all zeros)
-  eig <- tryCatch(eigen(Q), error = function(e) NULL)
-  if (is.null(eig)) return(NULL)
-  
-  # Each free parameter corresponds to a set of off-diagonal positions
-  # in the index matrix. Represent each parameter by the mean absolute
-  # loading of its entries across all eigenvectors -- this is a vector
-  # in eigenvector space describing what that parameter "does".
-  par_profiles <- matrix(0, nrow = n_free, ncol = ncol(Q))
-  for (p in seq_len(n_free)) {
-    positions <- which(current_fit$index.mat == p, arr.ind = TRUE)
-    # Sum the absolute eigenvector loadings for the rows involved
-    par_profiles[p, ] <- colMeans(abs(eig$vectors[positions[, 1], , drop = FALSE]))
-  }
-  
-  # Cosine similarity between all pairs of parameter profiles
-  norms <- sqrt(rowSums(par_profiles^2))
-  # If any parameter has zero norm it contributes nothing -- skip
-  if (any(norms < 1e-10)) return(NULL)
-  par_profiles_norm <- par_profiles / norms
-  sim_mat <- par_profiles_norm %*% t(par_profiles_norm)
-  diag(sim_mat) <- -Inf
-  
-  # Find the most similar pair -- these are the best candidates to merge
-  best_pair <- which(sim_mat == max(sim_mat), arr.ind = TRUE)[1, ]
-  
-  # With some probability also pull in a third parameter if it's similarly
-  # aligned, giving the occasional larger move
-  cluster <- best_pair
-  avg_profile <- colMeans(par_profiles_norm[best_pair, ])
-  third_sims <- par_profiles_norm %*% avg_profile
-  third_sims[best_pair] <- -Inf
-  if (max(third_sims) > 0.95 && runif(1) < 0.3) {
-    cluster <- c(cluster, which.max(third_sims))
-  }
-  
-  new_index_mat <- equateStateMatPars(current_fit$index.mat, cluster)
-  pars <- sort(unique(na.omit(as.vector(new_index_mat))))
-  for (i in seq_along(pars)) {
-    new_index_mat[new_index_mat == pars[i]] <- i
-  }
-  return(new_index_mat)
+  dead <- which(sapply(seq_len(rc), function(k)
+    all(Q[class_of != k, class_of == k] == 0)))
+  if (length(dead) == 0) return(list(new_index_mat = NULL))
+  gone <- dead[sample(length(dead), 1)]
+  keep <- setdiff(seq_len(nrow(index_mat)), ((gone - 1) * n + 1):(gone * n))
+  new_index_mat <- renumber_index_mat(index_mat[keep, keep])
+  rownames(new_index_mat) <- colnames(new_index_mat) <-
+    paste0("(", rep(seq_len(n), rc - 1), ",R", rep(seq_len(rc - 1), each = n), ")")
+  list(new_index_mat = new_index_mat, rate_cat = rc - 1)
 }
+
+# Kemeny-Snell lumpability: two states lump exactly when their rates into
+# every other state agree. Equating those rates costs no likelihood.
+propose_lumpable_merge <- function(current_fit) {
+  Q <- current_fit$solution
+  Q[is.na(Q)] <- 0
+  index_mat <- current_fit$index.mat
+  n <- nrow(Q)
+  if (n < 3 || max(index_mat, na.rm = TRUE) < 2) return(list(new_index_mat = NULL))
+  tol <- 1e-8 * max(Q)
+  
+  candidates <- combn(n, 2)
+  candidates <- candidates[, sample(ncol(candidates)), drop = FALSE]
+  for (k in seq_len(ncol(candidates))) {
+    i <- candidates[1, k]; j <- candidates[2, k]
+    others <- setdiff(seq_len(n), c(i, j))
+    if (any(abs(Q[i, others] - Q[j, others]) > tol)) next
+    # only structurally equatable when both cells are free
+    pairs <- others[!is.na(index_mat[i, others]) & !is.na(index_mat[j, others])]
+    pairs <- pairs[index_mat[i, pairs] != index_mat[j, pairs]]
+    if (length(pairs) == 0) next
+    if (any(xor(is.na(index_mat[i, others]), is.na(index_mat[j, others])))) next
+    new_index_mat <- equateStateMatPars(index_mat,
+      lapply(pairs, function(m) c(index_mat[i, m], index_mat[j, m])))
+    return(list(new_index_mat = renumber_index_mat(new_index_mat), exact = TRUE))
+  }
+  return(list(new_index_mat = NULL))
+}
+
 # Stochastic parameter merging
 propose_stochastic_merge <- function(current_fit, merge.threshold) {
   if(current_fit$rate.cat > 1) {
@@ -657,33 +927,35 @@ propose_stochastic_merge <- function(current_fit, merge.threshold) {
     
     new_index_mat <- equateStateMatPars(current_fit$index.mat, focal_merger)
   }
-  pars <- sort(unique(na.omit(as.vector(new_index_mat))))
-  for(i in 1:length(pars)){
-    new_index_mat[new_index_mat == pars[i]] <- i
-  }
-  return(new_index_mat)
+  return(renumber_index_mat(new_index_mat))
 }
 
 propose_stochastic_free <- function(current_fit, max_index_mat) {
+  if(!identical(dim(current_fit$index.mat), dim(max_index_mat))) return(NULL)
+  max_index_mat[max_index_mat == 0] <- NA
+  diag(max_index_mat) <- NA
   duplicates <- !is.na(current_fit$index.mat) & 
     !is.na(max_index_mat) &
     duplicated(current_fit$index.mat, MARGIN = 0)
   dropped <- is.na(current_fit$index.mat) & !is.na(max_index_mat)
   if(sum(dropped | duplicates) == 0) return(NULL)
-  n_free <- sample(1:min(3, sum(dropped | duplicates)), 1)
-  focal_free <- sample(which(dropped | duplicates), n_free)
+  candidates <- which(dropped | duplicates)
+  n_free <- sample.int(min(3, length(candidates)), 1)
+  focal_free <- candidates[sample.int(length(candidates), n_free)]
   new_index_mat <- current_fit$index.mat
   new_index_mat[focal_free] <- max(current_fit$index.mat, na.rm = TRUE)+1:n_free
-  pars <- sort(unique(na.omit(as.vector(new_index_mat))))
-  for(i in 1:length(pars)){
-    new_index_mat[new_index_mat == pars[i]] <- i
-  }
-  return(new_index_mat)
+  return(renumber_index_mat(new_index_mat))
 }
 
 # Stochastic version of merge_current_pars
 stochastic_merge_pars <- function(current_pars, merge.threshold) {
   if(length(current_pars) <= 1) return(NULL)
+
+  estimated <- which(current_pars > 1e-8)
+  if(length(estimated) < length(current_pars)){
+    merger <- stochastic_merge_pars(current_pars[estimated], merge.threshold)
+    return(if(is.null(merger)) NULL else estimated[merger])
+  }
   
   # Compute distance matrix
   dist_mat <- as.matrix(dist(current_pars))
@@ -722,6 +994,21 @@ stochastic_merge_pars <- function(current_pars, merge.threshold) {
   }
   
   return(focal_merger)
+}
+
+# Models sharing a likelihood but not a parameter count mark a flat direction
+flat_directions <- function(model_list){
+  model_list <- model_list[!sapply(model_list, is.null)]
+  if(length(model_list) < 2) return(NULL)
+  lnLik <- round(sapply(model_list, "[[", "loglik"), 6)
+  np <- sapply(model_list, function(x) max(x$index.mat, na.rm = TRUE))
+  groups <- split(np, lnLik)
+  groups <- groups[sapply(groups, function(x) length(unique(x)) > 1)]
+  if(length(groups) == 0) return(NULL)
+  data.frame(lnLik = as.numeric(names(groups)),
+    n_models = sapply(groups, length),
+    np = sapply(groups, function(x) paste(range(x), collapse = "-")),
+    row.names = NULL)
 }
 
 prune_redundant <- function(model_list){
@@ -811,33 +1098,266 @@ merge_pars <- function(corhmm.obj, merge.threshold){
   return(index_mat_merged)
 }
 
-# Structural validity of an index matrix, independent of rate category.
-# A matrix is valid if it has at least one free parameter and no state is
-# isolated. A state is isolated when it has no rates in either direction; a
-# state with rates in only one direction is legitimate (e.g. an irreversible
-# model with an absorbing state), matching the leniency of test_hmm.
-is_valid_index_mat <- function(index_mat){
-  index_mat[index_mat == 0] <- NA
-  if(all(is.na(index_mat))){
-    return(FALSE)
-  }
-  for(i in seq_len(nrow(index_mat))){
-    if(all(is.na(index_mat[i, ])) & all(is.na(index_mat[, i]))){
-      return(FALSE)
-    }
-  }
-  return(TRUE)
+# Relabel parameters by first appearance in a row-major scan
+renumber_index_mat <- function(index_mat){
+  labs <- unique(na.omit(c(t(index_mat))))
+  out <- index_mat
+  out[] <- match(index_mat, labs)
+  out
 }
 
-test_hmm <- function(index_mat, rate_cat){
-  rate_cat_tests <- vector(length = rate_cat)
-  rate_class_labels <- paste0("R", 1:rate_cat)
-  for(i in 1:length(rate_cat_tests)){
-    to_rc <- index_mat[,grep(rate_class_labels[i], colnames(index_mat))]
-    from_rc <- index_mat[grep(rate_class_labels[i], rownames(index_mat)),]
-    rate_cat_tests[i]<- !all(is.na(to_rc)) | !all(is.na(from_rc))
+perms <- function(x){
+  if(length(x) == 1) return(matrix(x))
+  do.call(rbind, lapply(seq_along(x), function(i) cbind(x[i], perms(x[-i]))))
+}
+
+# Hash invariant to hidden class relabelling
+canonical_id <- function(index_mat, rate_cat){
+  if(rate_cat < 2){
+    return(paste0(c(renumber_index_mat(index_mat)), collapse = "_"))
   }
-  return(any(!rate_cat_tests))
+  n <- nrow(index_mat) / rate_cat
+  ids <- apply(perms(seq_len(rate_cat)), 1, function(perm){
+    ord <- as.vector(sapply(perm, function(k) ((k - 1) * n + 1):(k * n)))
+    paste0(c(renumber_index_mat(index_mat[ord, ord])), collapse = "_")
+  })
+  min(ids)
+}
+
+# The upper bound matrix restricted to the first rc rate classes
+sub_max <- function(max_index_mat, rc, full_rc){
+  if(rc >= full_rc) return(max_index_mat)
+  n <- nrow(max_index_mat) / full_rc
+  keep <- seq_len(rc * n)
+  renumber_index_mat(max_index_mat[keep, keep])
+}
+
+model_space_id <- function(max_index_mat, rate_cat) {
+  paste(c(rate_cat, dim(max_index_mat), as.integer(!is.na(max_index_mat))),
+    collapse = "_")
+}
+
+fits_in_model_space <- function(fits, max_index_mat, full_rate_category,
+  require.entry = FALSE) {
+  if(length(fits) == 0) return(TRUE)
+  all(vapply(fits, function(fit) {
+    if(is.null(fit)) return(TRUE)
+    if(is.null(fit$index.mat) || length(fit$rate.cat) != 1 ||
+      !is.finite(fit$rate.cat) || fit$rate.cat < 1 ||
+      fit$rate.cat > full_rate_category) return(FALSE)
+    allowed <- sub_max(max_index_mat, fit$rate.cat, full_rate_category)
+    is.null(validate_index_mat(fit$index.mat, fit$rate.cat, require.entry,
+      allowed))
+  }, logical(1)))
+}
+
+checkpoint_is_compatible <- function(ckpt, max_index_mat, rate_category,
+  require.entry = FALSE, criterion = "AIC") {
+  if(is.null(ckpt) || !identical(ckpt$version, 3L) ||
+    !identical(ckpt$criterion, criterion) ||
+    !identical(ckpt$model_space_id,
+      model_space_id(max_index_mat, rate_category)) ||
+    (is.null(ckpt$current_fit) && !isTRUE(ckpt$finished))) return(FALSE)
+  fits <- c(list(ckpt$current_fit, ckpt$best_fit), ckpt$accepted_models,
+    ckpt$every_model, ckpt$score_cache,
+    if(isTRUE(ckpt$finished)) ckpt$result$accepted_models else list())
+  fits_in_model_space(fits, max_index_mat, rate_category, require.entry)
+}
+
+polish_due <- function(steps_since_best, steps_since_new, stall.limit,
+  restart.interval) {
+  steps_since_best >= stall.limit || steps_since_new >= restart.interval
+}
+
+annealing_temperature <- function(iteration, max.iterations, initial.temp,
+  cooling.rate, temp.schedule, epoch.start = 1L) {
+  final.temp <- max(0.001, initial.temp * cooling.rate ^ max.iterations)
+  span <- max(1, max.iterations - epoch.start)
+  progress <- min(1, max(0, (iteration - epoch.start) / span))
+  if(temp.schedule == "exponential") {
+    return(initial.temp * exp(log(final.temp / initial.temp) * progress))
+  }
+  if(temp.schedule == "linear") {
+    return(initial.temp + (final.temp - initial.temp) * progress)
+  }
+  if(temp.schedule == "logarithmic") {
+    scaled <- log1p(9 * progress) / log(10)
+    return(initial.temp * exp(log(final.temp / initial.temp) * scaled))
+  }
+  stop("Unknown temperature schedule: ", temp.schedule, call. = FALSE)
+}
+
+polish_neighborhood <- function(initial_fit, neighbor_fn, score_fn, criterion,
+  max.new.evaluations = Inf, is.cached = function(candidate) FALSE) {
+  current <- initial_fit
+  path <- list()
+  evaluations <- 0L
+  new_evaluations <- 0L
+  deferred <- 0L
+  repeat {
+    proposals <- neighbor_fn(current)
+    if(length(proposals) == 0) break
+    fits <- lapply(proposals, function(candidate) {
+      cached <- isTRUE(is.cached(candidate))
+      if(!cached && new_evaluations >= max.new.evaluations) {
+        deferred <<- deferred + 1L
+        return(NULL)
+      }
+      if(!cached) new_evaluations <<- new_evaluations + 1L
+      evaluations <<- evaluations + 1L
+      score_fn(candidate)
+    })
+    keep <- !vapply(fits, is.null, logical(1))
+    if(!any(keep)) break
+    fits <- fits[keep]
+    scores <- vapply(fits, function(x) x[[criterion]], numeric(1))
+    better <- is.finite(scores) & scores < current[[criterion]] - 1e-10
+    if(!any(better)) break
+    best <- which.min(ifelse(better, scores, Inf))
+    current <- fits[[best]]
+    path[[length(path) + 1L]] <- current
+  }
+  list(best_fit = current, path = path, evaluations = evaluations,
+    new_evaluations = new_evaluations, deferred = deferred,
+    complete = deferred == 0L)
+}
+
+deterministic_neighbors <- function(current_fit, max_index_mat, full_rate_category,
+  merge.threshold = 0, require.entry = FALSE) {
+  index_mat <- current_fit$index.mat
+  rc <- current_fit$rate.cat
+  out <- list()
+  ids <- canonical_id(index_mat, rc)
+  add <- function(mat, candidate_rc, move_type) {
+    candidate_max <- sub_max(max_index_mat, candidate_rc, rc)
+    if(!is.null(validate_index_mat(mat, candidate_rc, require.entry,
+      candidate_max))) return()
+    id <- canonical_id(mat, candidate_rc)
+    if(id %in% ids) return()
+    ids <<- c(ids, id)
+    out[[length(out) + 1L]] <<- list(new_index_mat = mat,
+      rate_cat = candidate_rc, move_type = move_type)
+  }
+
+  pars <- sort(unique(na.omit(as.vector(index_mat))))
+  for(par in pars) {
+    dropped <- prune_isolated_states(dropStateMatPars(index_mat, par), rc)
+    candidate_rc <- if(is.null(dropped$rate_cat)) rc else dropped$rate_cat
+    add(dropped$new_index_mat, candidate_rc, "polish_drop")
+  }
+
+  par_values <- vapply(pars, function(par)
+    min(current_fit$solution[which(index_mat == par)]), numeric(1))
+  floor_pars <- pars[par_values <= 1e-8]
+  for(par in floor_pars) {
+    dropped <- dropStateMatPars(index_mat, par)
+    targets <- sort(unique(na.omit(as.vector(dropped))))
+    positions <- which(is.na(dropped) & !is.na(max_index_mat))
+    for(position in positions) {
+      for(target in targets) {
+        relocated <- dropped
+        relocated[position] <- target
+        add(renumber_index_mat(relocated), rc, "polish_relocate")
+      }
+    }
+  }
+
+  current_pars <- MatrixToPars(current_fit)
+  eligible <- which(current_pars > 1e-8)
+  groups <- list(seq_along(current_pars))
+  if(rc > 1) {
+    within <- lapply(seq_len(rc), function(i)
+      grep(paste0("R", i, " .* -> R", i), names(current_pars)))
+    groups <- c(within, list(setdiff(seq_along(current_pars), unlist(within))))
+  }
+  for(group in groups) {
+    group <- intersect(group, eligible)
+    if(length(group) < 2) next
+    pairs <- combn(group, 2)
+    distances <- abs(current_pars[pairs[1, ]] - current_pars[pairs[2, ]])
+    chosen <- which(distances <= merge.threshold)
+    if(length(chosen) == 0) chosen <- which(distances == min(distances))
+    for(i in chosen) {
+      merged <- renumber_index_mat(equateStateMatPars(index_mat,
+        c(pairs[1, i], pairs[2, i])))
+      add(merged, rc, "polish_merge")
+    }
+  }
+
+  frequencies <- tabulate(index_mat, nbins = if(length(pars)) max(pars) else 0)
+  tied <- !is.na(index_mat)
+  tied[tied] <- frequencies[index_mat[tied]] > 1
+  dropped <- is.na(index_mat) & !is.na(max_index_mat)
+  free_positions <- which((tied | dropped) & !is.na(max_index_mat))
+  for(position in free_positions) {
+    freed <- index_mat
+    freed[position] <- max(index_mat, na.rm = TRUE) + 1
+    add(renumber_index_mat(freed), rc, "polish_free")
+  }
+
+  if(rc > 1) {
+    n <- nrow(index_mat) / rc
+    Q <- current_fit$solution
+    Q[is.na(Q)] <- 0
+    class_of <- rep(seq_len(rc), each = n)
+    dead <- which(vapply(seq_len(rc), function(k)
+      all(Q[class_of != k, class_of == k] == 0), logical(1)))
+    for(gone in dead) {
+      keep <- which(class_of != gone)
+      collapsed <- renumber_index_mat(index_mat[keep, keep])
+      rownames(collapsed) <- colnames(collapsed) <-
+        paste0("(", rep(seq_len(n), rc - 1), ",R",
+          rep(seq_len(rc - 1), each = n), ")")
+      add(collapsed, rc - 1, "polish_collapse")
+    }
+  }
+
+  out
+}
+
+root_connected <- function(index_mat) {
+  reachable <- !is.na(index_mat)
+  diag(reachable) <- TRUE
+  for(k in seq_len(nrow(reachable))) {
+    reachable <- reachable | outer(reachable[, k], reachable[k, ], `&`)
+  }
+  any(apply(reachable, 1, all))
+}
+
+# The one coherence check for a proposed model. Returns NULL when the matrix
+# is a model, otherwise the reason it is not. A state with rates in only one
+# direction is legitimate (e.g. an irreversible model with an absorbing
+# state); set require.entry to forbid unenterable states.
+validate_index_mat <- function(index_mat, rate_cat = 1, require.entry = FALSE,
+  allowed_mat = NULL){
+  if(is.null(index_mat)) return("no proposal")
+  index_mat[index_mat == 0] <- NA
+  if(length(dim(index_mat)) != 2 || nrow(index_mat) != ncol(index_mat)) return("not square")
+  if(any(!is.na(diag(index_mat)))) return("diagonal parameter")
+  if(!is.null(allowed_mat)) {
+    allowed_mat[allowed_mat == 0] <- NA
+    if(!identical(dim(index_mat), dim(allowed_mat))) return("dimensions do not match model space")
+    if(any(!is.na(index_mat) & is.na(allowed_mat))) return("transition outside model space")
+  }
+  if(all(is.na(index_mat))) return("no free parameters")
+  
+  entered <- apply(!is.na(index_mat), 2, any)
+  left <- apply(!is.na(index_mat), 1, any)
+  if(any(!entered & !left)) return("isolated state")
+  if(!root_connected(index_mat)) return("multiple source components")
+  if(require.entry && any(!entered)) return("unenterable state")
+  
+  if(rate_cat > 1){
+    if(nrow(index_mat) %% rate_cat != 0) return("dimensions do not match rate.cat")
+    class_of <- rep(seq_len(rate_cat), each = nrow(index_mat) / rate_cat)
+    if(any(!tapply(entered | left, class_of, any))) return("empty rate class")
+  }
+  NULL
+}
+
+is_valid_index_mat <- function(index_mat, require.entry = FALSE, allowed_mat = NULL){
+  is.null(validate_index_mat(index_mat, require.entry = require.entry,
+    allowed_mat = allowed_mat))
 }
 
 test_validity_hmm <- function(corhmm_obj){
@@ -874,8 +1394,11 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
   ip=NULL, nstarts=0, n.cores=1,get.tip.states=FALSE, lewis.asc.bias=FALSE, collapse=FALSE, 
   lower.bound=1e-10, upper.bound=100, opts=NULL, p=NULL, use_RTMB=FALSE, prep=NULL) {
 
-  if (!is.null(rate.mat) && !is_valid_index_mat(rate.mat)) {
-    stop("rate.mat is not a valid rate matrix: it must have at least one free parameter, and no state may be isolated (NA in both its row and its column).", call.=FALSE)
+  if (!is.null(rate.mat)) {
+    rate_reason <- validate_index_mat(rate.mat, rate.cat)
+    if(!is.null(rate_reason)) {
+      stop("rate.mat is not valid: ", rate_reason, call. = FALSE)
+    }
   }
 
   ## --- use precomputed prep if available, otherwise compute it ---
@@ -913,7 +1436,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
   pen.type     <- prep$pen.type
   lewis.asc.bias <- prep$lewis.asc.bias
   levels       <- prep$levels
-  
+
   order.test <- FALSE
   model <- "ARD"
   
@@ -1100,7 +1623,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
       solution  = unlist(restart.set[[best.fit]][, 2:(model.set.final$np + 1)])
     )
     loglik   <- -out$objective
-    est.pars <- out$solution
+    est.pars <- exp(out$solution)
     if (set.fog) {
       fog.est_out <- est.pars[seq_len(n_fog_pars)]
       est.pars    <- est.pars[-seq_len(n_fog_pars)]
@@ -1167,8 +1690,10 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
   solution[solution < lower.bound] <- lower.bound
   
   np_for_aic <- model.set.final$np + n_fog_pars
-  AIC  <- -2 * loglik + 2 * np_for_aic
-  AICc <- -2 * loglik + (2 * np_for_aic * (nb.tip / (nb.tip - np_for_aic - 1)))
+  fit_criteria <- information_criteria(loglik, np_for_aic, nb.tip)
+  AIC <- fit_criteria$AIC
+  AICc <- fit_criteria$AICc
+  BIC <- fit_criteria$BIC
   
   if (is.character(node.states) && node.states %in% c("marginal", "scaled")) {
     colnames(lik.anc$lik.anc.states) <- StateNames_rc
@@ -1198,6 +1723,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
     loglik      = loglik,
     AIC         = AIC,
     AICc        = AICc,
+    BIC         = BIC,
     rate.cat    = rate.cat,
     solution    = solution,
     index.mat   = index.matrix,
@@ -1212,6 +1738,7 @@ corHMMDredgeBase <- function(phy, data, rate.cat, root.p="maddfitz", tip.fog=NUL
     root.p      = root.p,
     pen.type    = pen.type,
     lambda      = lambda,
+    lower.bound = lower.bound,
     use_RTMB    = use_RTMB,
     tip.fog     = tip.fog,
     fog.ip      = fog.ip,
@@ -1430,12 +1957,20 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
   #Obtain an object of all the unique ancestors
-  anc <- unique(phy$edge[,1])
+  edge1 <- phy$edge[,1]
+  edge2 <- phy$edge[,2]
+  edge.length <- phy$edge.length
+  anc <- unique(edge1)
+  #Map every edge to its ancestor in one pass instead of rescanning phy$edge per node
+  desRowsList <- getDesRows(edge1, anc)
   k.rates <- dim(Q)[2] / 2
   if (any(is.nan(p)) || any(is.infinite(p))) return(1000000)
   
   Q[] <- c(p, 0)[rate]
   diag(Q) <- -rowSums(Q)
+  #Q is fixed for the rest of this call, so decompose it once and reuse it for
+  #every branch rather than exponentiating per edge:
+  Pv <- makeExpmFuns(Q)$Pv
   pen_score <- get_penalty_score(Q, p, pen.type, rate, rate.cat)
   # # if the q matrix has columns not estimated, remove them
   # row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
@@ -1471,12 +2006,12 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
     #the ancestral node at row i is called focal
     focal <- anc[i]
     #Get descendant information of focal
-    desRows <- which(phy$edge[,1]==focal)
-    desNodes <- phy$edge[desRows,2]
+    desRows <- desRowsList[[i]]
+    desNodes <- edge2[desRows]
     v <- 1
     #Loops through all descendants of focal (how we deal with polytomies):
-    for (desIndex in sequence(length(desRows))){
-      v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+    for (desIndex in seq_along(desRows)){
+      v <- v*Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
     }
     
     ##Allows for fixed nodes based on user input tree.
@@ -1498,40 +2033,35 @@ dev.corhmm.dredge <- function(p,phy,liks,Q,rate,root.p,rate.cat,order.test,lewis
   #Specifies the root:
   root <- nb.tip + 1L
   #If any of the logs have NAs restart search:
-  if (is.na(sum(log(comp[-TIPS])))){return(1000000)}
-  equil.root <- NULL
-  
-  for(i in 1:ncol(Q)){
-    posrows <- which(Q[,i] >= 0)
-    rowsum <- sum(Q[posrows,i])
-    poscols <- which(Q[i,] >= 0)
-    colsum <- sum(Q[i,poscols])
-    equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-  }
+  node.loglik <- sum(log(comp[-TIPS]))
+  if (is.na(node.loglik)){return(1000000)}
+  liks.root <- liks[root,]
+
   if (is.null(root.p)){
+    equil.root <- getEquilRoot(Q)
     flat.root = equil.root
     k.rates <- 1/length(which(!is.na(equil.root)))
     flat.root[!is.na(flat.root)] = k.rates
     flat.root[is.na(flat.root)] = 0
-    loglik<- -(sum(log(comp[-TIPS])) + log(sum(flat.root * liks[root,])))
+    loglik<- -(node.loglik + log(sum(flat.root * liks.root)))
   }
   if(is.character(root.p)){
     # root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10)
     if(root.p == "yang"){
-      root.p <- Null(Q)
-      root.p <- c(root.p/sum(root.p))
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+      #root.test was already computed above from the same Q
+      root.p <- c(root.test/sum(root.test))
+      loglik <- -(node.loglik + log(sum(root.p * liks.root)))
       if(is.infinite(loglik)){
         return(1000000)
       }
     }else{
       # root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-      root.p = liks[root,] / sum(liks[root,])
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+      root.p = liks.root / sum(liks.root)
+      loglik <- -(node.loglik + log(sum(exp(log(root.p)+log(liks.root)))))
     }
   }else{
     if(is.numeric(root.p[1])){
-      loglik <- -(sum(log(comp[-TIPS])) + log(sum(exp(log(root.p)+log(liks[root,])))))
+      loglik <- -(node.loglik + log(sum(exp(log(root.p)+log(liks.root)))))
       if(is.infinite(loglik)){
         return(1000000)
       }
@@ -1836,10 +2366,13 @@ getCVTable <- function(x){
 #' @method print corhmm.dredge
 print.corhmm.dredge <- function(x, ...) {
   sa_fits <- attr(x, "dredge_history")
+  criterion <- attr(x, "criterion")
+  if(is.null(criterion)) criterion <- if(!is.null(sa_fits[[1]]$criterion))
+    sa_fits[[1]]$criterion else "AIC"
   
   # Header
   n_rc <- length(sa_fits)
-  rate_cats <- sapply(sa_fits, function(s) s$best_fit$rate.cat)
+  rate_cats <- sapply(sa_fits, "[[", "rate_category")
   cat("corhmm.dredge object\n")
   cat("  Models retained :", length(x), "\n")
   cat("  Rate categories :", paste(rate_cats, collapse = ", "), "\n")
@@ -1848,26 +2381,49 @@ print.corhmm.dredge <- function(x, ...) {
   if (!is.null(sa_fits)) {
     for (i in seq_along(sa_fits)) {
       s <- sa_fits[[i]]
-      cat(sprintf("  [Rate cat %d] Iterations: %d | Acceptance rate: %.1f%% | Restarts: %d | Best %s: %.3f\n",
+      cat(sprintf("  [Rate cat %d] Iterations: %d | Acceptance rate: %.1f%% | Restarts: %d | Polish: %d | Best %s: %.3f\n",
         rate_cats[i],
         s$iterations,
         s$acceptance_rate * 100,
         s$restart_count,
-        names(s$best_fit)[grep("AIC", names(s$best_fit))][1],
+        if(is.null(s$polish_runs)) 0L else s$polish_runs,
+        if(is.null(s$criterion)) criterion else s$criterion,
         s$best_score))
+      cat(sprintf("               Fits: %d | Stopped: %s\n",
+        s$unique_structures, s$stop_reason))
     }
   }
   
   cat("\n")
   
   # Model table
-  tbl <- getModelTable(x)
+  tbl <- getModelTable(x, type = criterion)
   print(tbl)
   
-  # Best model
-  best_idx <- which.min(tbl$dAIC)
+  # Why proposals died
+  rej <- unlist(lapply(sa_fits, "[[", "rejections"))
+  if (length(rej) > 0) {
+    cat("\nRejected proposals:\n")
+    print(sort(tapply(rej, names(rej), sum), decreasing = TRUE))
+  }
+  
+  # Flat directions
+  flat <- attr(x, "flat_directions")
+  if (!is.null(flat)) {
+    cat("\nFlat directions (same lnLik, different np):\n")
+    print(flat)
+  }
+  
+  best_idx <- which.min(tbl[[paste0("d", criterion)]])
+  best <- x[[best_idx]]
+  floor_bound <- if (!is.null(best$lower.bound)) best$lower.bound else NA_real_
+  floored <- !is.na(best$solution) & !is.na(floor_bound) &
+    best$solution <= floor_bound
   cat("\n--- Best model ---\n")
-  print(x[[best_idx]])
+  print(best)
+  if (any(floored)) {
+    cat(sum(floored), "free rate(s) are at the optimizer lower bound; they are not structural zeros\n")
+  }
   
   # Footer hint
   cat("\nAccess SA trace: attr(x, 'dredge_history')\n")
@@ -1881,7 +2437,8 @@ plotDredgeTrace <- function(dredge_fits,
     "merge" = "#2E86AB",
     "free" = "#F18F01",
     "restart" = "#7209B7",
-    "eigen_merge" = "#C73E1D",
+    "lump" = "#C73E1D",
+    "collapse" = "#3B7A57",
     "none" = "grey60"),
   legend = TRUE,
   legend.pos = "topright",
@@ -2041,4 +2598,3 @@ plotDredgeTrace <- function(dredge_fits,
   
   return(invisible(NULL))
 }
-

@@ -36,7 +36,8 @@ tipHomology <- function(corhmm_obj, type="strict", node=NULL, return.likelihoods
   Q <- corhmm_obj$solution
   Q[is.na(Q)] <- 0
   diag(Q) <- -rowSums(Q)
-  p_mat_by_edge <- vapply(corhmm_obj$phy$edge.length, function(x) expm(Q * x, method = "Ward77"), 
+  Pfun <- makeExpmFuns(Q)$P
+  p_mat_by_edge <- vapply(corhmm_obj$phy$edge.length, Pfun,
     FUN.VALUE = matrix(0, nrow(Q), ncol(Q)))
   corData <- corProcessData(data, collapse = corhmm_obj$collapse)
   model.set.final <- rate.cat.set.corHMM.JDB(

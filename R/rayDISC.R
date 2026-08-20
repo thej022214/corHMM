@@ -399,16 +399,23 @@ dev.raydisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
 		Q[] <- c(p.new, 0)[rate]
 		diag(Q) <- -rowSums(Q)
 	}
-    
+
+    #Q is fixed across all branches, so decompose it once instead of calling
+    #expm() per edge, and resolve the descendants of every node in one pass:
+    Pv <- makeExpmFuns(Q)$Pv
+    edge2 <- phy$edge[,2]
+    edge.length <- phy$edge.length
+    desRowsList <- getDesRows(phy$edge[,1], anc)
+
     for (i  in seq(from = 1, length.out = nb.node)) {
         #the ancestral node at row i is called focal
         focal <- anc[i]
         #Get descendant information of focal
-        desRows<-which(phy$edge[,1]==focal)
-        desNodes<-phy$edge[desRows,2]
+        desRows<-desRowsList[[i]]
+        desNodes<-edge2[desRows]
         v <- 1
-        for (desIndex in sequence(length(desRows))){
-            v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+        for (desIndex in seq_along(desRows)){
+            v <- v * Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
         }
         comp[focal] <- sum(v)
         liks[focal, ] <- v/comp[focal]
@@ -495,15 +502,19 @@ CalculateLewisLikelihood <- function(p, phy, liks, Q, rate, root.p, state.num=1)
     liks.dummy[TIPS,] = 0
     liks.dummy[TIPS,state.num] = 1
     comp.dummy <- comp
+    Pv <- makeExpmFuns(Q)$Pv
+    edge2 <- phy$edge[,2]
+    edge.length <- phy$edge.length
+    desRowsList <- getDesRows(phy$edge[,1], anc)
     for (i  in seq(from = 1, length.out = nb.node)) {
         #the ancestral node at row i is called focal
         focal <- anc[i]
         #Get descendant information of focal
-        desRows <- which(phy$edge[,1]==focal)
-        desNodes <- phy$edge[desRows,2]
+        desRows <- desRowsList[[i]]
+        desNodes <- edge2[desRows]
         v.dummy <- 1
-        for(desIndex in sequence(length(desRows))){
-            v.dummy <- v.dummy * expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks.dummy[desNodes[desIndex],]
+        for(desIndex in seq_along(desRows)){
+            v.dummy <- v.dummy * Pv(edge.length[desRows[desIndex]], liks.dummy[desNodes[desIndex],])
         }
         comp.dummy[focal] <- sum(v.dummy)
         liks.dummy[focal, ] <- v.dummy/comp.dummy[focal]
@@ -607,48 +618,33 @@ match.tree.data <- function(phy, data){
 	matchobj$message.data <- NULL
 	matchobj$message.tree <- NULL
 	# First look at data matrix to see if each taxon in matrix is also in tree
-	missing.fromtree <- NULL
-	for(datarow in 1:length(data[,1])){
-		if(is.na(match(data[datarow,1],phy$tip.label))){
-			missing.fromtree <- c(missing.fromtree,datarow)
-		}
-	}
+	# (one vectorized match rather than a match() call per row)
+	missing.fromtree <- which(is.na(match(data[,1], phy$tip.label)))
 	if(length(missing.fromtree) > 0){ # At least one taxa is listed in the matrix, but is not in the tree
 		# Make message so user knows taxa have been removed
-		matchobj$message.data <- "The following taxa in the data matrix were not in the tree and were excluded from analysis: "
-		first <- TRUE
-		for(toRemove in 1:length(missing.fromtree)){
-			if(first){
-				matchobj$message.data <- paste(matchobj$message.data,as.character(data[missing.fromtree[toRemove],1]),sep="")
-				first <- FALSE
-			} else { #not the first one, so add leading comma
-				matchobj$message.data <- paste(matchobj$message.data,", ",as.character(data[missing.fromtree[toRemove],1]),sep="")
-			}
-		}
+		matchobj$message.data <- paste("The following taxa in the data matrix were not in the tree and were excluded from analysis: ",
+			paste(as.character(data[missing.fromtree,1]), collapse=", "), sep="")
 		matchobj$data <- data[-missing.fromtree,] # omits those data rows which have no match in the tree
 		for(datacol in 2:length(matchobj$data[1,])){
 			matchobj$data[,datacol] <- factor(matchobj$data[,datacol]) # have to use factor to remove any factors not present in the final dataset
 		}
 	}
 
+	# Tips with no data row: build every replacement row at once instead of
+	# rbind-ing them on one at a time, which recopies the whole frame each time.
+	missing.tips <- which(is.na(match(phy$tip.label, matchobj$data[,1])))
+	missing.tips <- missing.tips[!duplicated(phy$tip.label[missing.tips])]
 	missing.taxa <- NULL
-	for(tip in 1:length(phy$tip.label)){
-		if(is.na(match(phy$tip.label[tip],matchobj$data[,1]))){
-			if(is.null(matchobj$message.tree)){ # The first missing taxon
-				missing.taxa <- as.character(phy$tip.label[tip])
-				matchobj$message.tree <- "The following taxa were in the tree but did not have corresponding data in the data matrix.  They are coded as missing data for subsequent analyses: "
-			} else { # not the first missing taxon, add with leading comma
-				missing.taxa <- paste(missing.taxa,", ",as.character(phy$tip.label[tip]),sep="")
-			}
-			# missing taxa will be coded as having missing data "?"
-			addtaxon <- as.character(phy$tip.label[tip])
-			numcols <- length(matchobj$data[1,])
-			newrow <- matrix(as.character("\x3F"),1,numcols) # absurd, but it works
-			newrow[1,1] <- addtaxon
-			newrowdf <- data.frame(newrow)
-			colnames(newrowdf) <- colnames(matchobj$data)
-			matchobj$data <- rbind(matchobj$data,newrowdf)
-		}
+	if(length(missing.tips) > 0){
+		missing.taxa <- paste(as.character(phy$tip.label[missing.tips]), collapse=", ")
+		matchobj$message.tree <- "The following taxa were in the tree but did not have corresponding data in the data matrix.  They are coded as missing data for subsequent analyses: "
+		# missing taxa will be coded as having missing data "?"
+		numcols <- length(matchobj$data[1,])
+		newrows <- matrix(as.character("\x3F"),length(missing.tips),numcols) # absurd, but it works
+		newrows[,1] <- as.character(phy$tip.label[missing.tips])
+		newrowdf <- data.frame(newrows)
+		colnames(newrowdf) <- colnames(matchobj$data)
+		matchobj$data <- rbind(matchobj$data,newrowdf)
 	}
 	rownames(matchobj$data) <- matchobj$data[,1] # Use first column (taxon names) as row names
 	matchobj$data <- matchobj$data[matchobj$phy$tip.label,] # Sort by order in tree

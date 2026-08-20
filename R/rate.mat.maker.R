@@ -423,9 +423,13 @@ get_transition_key <- function(state1, state2) {
   return(type)
 }
 
-getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALSE){
+getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALSE, CorData = NULL){
 
-  CorData <- corProcessData(data, collapse)
+  # corProcessData is not cheap on large datasets; let callers that already have
+  # the processed data hand it in rather than recomputing it.
+  if(is.null(CorData)){
+    CorData <- corProcessData(data, collapse)
+  }
   data.legend <- CorData$ObservedTraits
   nObs <- length(data.legend)
   poss_states <- do.call(rbind, strsplit(CorData$PossibleTraits, "_"))

@@ -7,13 +7,14 @@ This function visualizes the search history of a \code{\link{corHMMDredge}} run.
 \usage{
 plotDredgeTrace(dredge_fits, break_size = 5, 
                 palette = c(drop = "#A23B72", merge = "#2E86AB", free = "#F18F01", 
-                restart = "#7209B7", eigen_merge = "#C73E1D", none = "grey60"), 
+                restart = "#7209B7", lump = "#C73E1D",
+                collapse = "#3B7A57", none = "grey60"), 
                 legend = TRUE, legend.pos = "topright", ...)
 }
 \arguments{
   \item{dredge_fits}{An object of class \code{corhmm.dredge} returned by \code{\link{corHMMDredge}} with the argument \code{return.all=TRUE}.}
   \item{break_size}{An integer specifying the size of the empty gap in the plot between the traces of different rate categories.}
-  \item{palette}{A named vector of colors for the different move types ("drop", "merge", "free", "restart", "none"). The function will add default colors for any unpecified move types found in the data.}
+  \item{palette}{A named vector of colors for the different move types ("drop", "merge", "free", "lump", "collapse", "restart", "none"). The function will add default colors for any unpecified move types found in the data.}
   \item{legend}{Logical. If TRUE, a legend is added to the plot.}
   \item{legend.pos}{A character string specifying the position of the legend (e.g., "topright", "bottomleft").}
   \item{...}{Additional arguments to be passed to the main \code{plot} function, such as \code{main}, \code{xlab}, \code{ylab}, etc.}

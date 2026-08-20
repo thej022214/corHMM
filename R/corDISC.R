@@ -261,16 +261,23 @@ dev.cordisc <- function(p, phy, liks, Q, rate, root.p, lewis.asc.bias){
     if (any(is.nan(p.new)) || any(is.infinite(p.new))) return(1000000)
     Q[] <- c(p.new, 0)[rate]
     diag(Q) <- -rowSums(Q)
-    
+
+    #Q is fixed across all branches, so decompose it once instead of calling
+    #expm() per edge, and resolve the descendants of every node in one pass:
+    Pv <- makeExpmFuns(Q)$Pv
+    edge2 <- phy$edge[,2]
+    edge.length <- phy$edge.length
+    desRowsList <- getDesRows(phy$edge[,1], anc)
+
     for (i  in seq(from = 1, length.out = nb.node)) {
         #the ancestral node at row i is called focal
         focal <- anc[i]
         #Get descendant information of focal
-        desRows<-which(phy$edge[,1]==focal)
-        desNodes<-phy$edge[desRows,2]
+        desRows<-desRowsList[[i]]
+        desNodes<-edge2[desRows]
         v <- 1
-        for (desIndex in sequence(length(desRows))){
-            v<-v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+        for (desIndex in seq_along(desRows)){
+            v<-v*Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
         }
         comp[focal] <- sum(v)
         liks[focal, ] <- v/comp[focal]

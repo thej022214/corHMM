@@ -21,12 +21,33 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
   if (lewis.asc.bias) stop("can't do lewis.asc.bias yet; recursive call to likelihood function ...")
   if (order.test) stop("can't do order.test (non-differentiable ...)")
   if (set.fog) warning("set.fog is untested in RTMB implementation")
+
+  ## dev.corhmm rejects a Q whose null space is more than one dimensional when
+  ## root.p is "yang", because the stationary distribution is then not unique.
+  ## The traced function cannot branch on values, but this only depends on which
+  ## transitions the model allows -- a static property of `rate` -- so check it
+  ## once here with every free rate set to 1.
+  if (is.character(root.p) && root.p == "yang") {
+    Q.struct <- Q
+    Q.struct[] <- c(rep(1, max(rate) - 1), 0)[rate]
+    diag(Q.struct) <- -rowSums(Q.struct)
+    if (ncol(Null(Q.struct)) > 1) {
+      stop("This rate matrix describes more than one set of communicating states, so root.p = \"yang\" has no unique stationary distribution. Use root.p = \"maddfitz\", a fixed vector of root probabilities, or NULL.", call. = FALSE)
+    }
+  }
   
   nb.node <- Nnode(phy)
   nb.tip <- Ntip(phy)
   TIPS <- seq.int(nb.tip)
   anc <- unique(phy$edge[,1])
   k.rates <- dim(Q)[2] / 2
+
+  ## The tree topology is fixed, so resolve every node's descendants and their
+  ## branch lengths once here rather than rescanning phy$edge inside the traced
+  ## function (which made tape construction quadratic in the number of tips).
+  desRowsList <- getDesRows(phy$edge[,1], anc)
+  desNodesList <- lapply(desRowsList, function(r) phy$edge[r, 2])
+  desLengthList <- lapply(desRowsList, function(r) phy$edge.length[r])
   
   ## Pre-compute static penalty indices outside prune_fun (no AD tracing needed)
   ## These depend only on rate/rate.cat structure, not on p
@@ -56,7 +77,8 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     NULL
   }
   
-  tmb_data <- namedList(nb.node, nb.tip, TIPS, anc, k.rates, nq, fog_idx)
+  tmb_data <- namedList(nb.node, nb.tip, TIPS, anc, k.rates, nq, fog_idx,
+                        desNodesList, desLengthList)
   
   prune_fun <- function(pars) {
     "[<-" <- RTMB::ADoverload("[<-")
@@ -127,10 +149,14 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
           ## Extract the off-diagonal sub-block for this rate class
           ## Q[idx, idx] has diagonal already set; we want only off-diagonal entries
           ## off-diag mask was computed outside (static structure)
-          rc_offdiag <- numeric(0)
+          rc_offdiag <- numeric(length(idx) * (length(idx) - 1))
+          off_k <- 0
           for (r in idx) {
             for (cc in idx) {
-              if (r != cc) rc_offdiag <- c(rc_offdiag, Q[r, cc])
+              if (r != cc) {
+                off_k <- off_k + 1
+                rc_offdiag[off_k] <- Q[r, cc]
+              }
             }
           }
           if (pen.type == "l1") {
@@ -151,11 +177,11 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     
     for (i in seq(from = 1, length.out = nb.node)) {
       focal <- anc[i]
-      desRows <- which(phy$edge[,1] == focal)
-      desNodes <- phy$edge[desRows, 2]
+      desNodes <- desNodesList[[i]]
+      desLengths <- desLengthList[[i]]
       v <- 1
-      for (desIndex in seq_along(desRows)) {
-        v <- drop(as.matrix(v * Matrix::expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]))
+      for (desIndex in seq_along(desNodes)) {
+        v <- drop(as.matrix(v * Matrix::expm(Q * desLengths[desIndex]) %*% liks[desNodes[desIndex],]))
       }
       
       if (!is.null(phy$node.label)) {
@@ -173,16 +199,17 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     
     root <- nb.tip + 1L
     
-    equil.root <- numeric(ncol(Q))
-    QQ <- Q
-    diag(QQ) <- NA
-    for (i in 1:ncol(Q)) {
-      rowsum <- sum(Q[, i], na.rm = TRUE)
-      colsum <- sum(Q[i, ], na.rm = TRUE)
-      equil.root[i] <- rowsum / (rowsum + colsum)
-    }
-    
     if (is.null(root.p)) {
+      ## only needed for the flat/equilibrium root; skip the AD work otherwise.
+      ## dev.corhmm sums only the non-negative entries of the row/column, which
+      ## for a rate matrix means everything except the (negative) diagonal --
+      ## summing Q whole makes colsum identically 0 and the result degenerate.
+      equil.root <- numeric(ncol(Q))
+      for (i in 1:ncol(Q)) {
+        rowsum <- sum(Q[, i]) - Q[i, i]
+        colsum <- sum(Q[i, ]) - Q[i, i]
+        equil.root[i] <- rowsum / (rowsum + colsum)
+      }
       flat.root <- equil.root
       k.rates <- 1 / length(which(!is.na(equil.root)))
       flat.root[!is.na(flat.root)] <- k.rates
@@ -192,7 +219,19 @@ mkdev.corhmm_rtmb <- function(p, phy, liks, Q, rate, root.p, rate.cat, order.tes
     
     if (is.character(root.p)) {
       if (root.p == "yang") {
-        root.p <- Matrix::expm(10000 * Q)[1,]
+        ## The stationary distribution solves pi %*% Q = 0 with sum(pi) == 1.
+        ## Solving that directly is both cheaper and better conditioned than
+        ## exponentiating Q out to t = 10000 and reading off a row.
+        ## b must be an advector too: solve() with a mixed AD/numeric pair falls
+        ## through to base R, which reads the advector's complex storage and
+        ## silently returns a complex vector.
+        A <- t(Q)
+        A[nrow(A), ] <- 1
+        ## Both operands must be AD, and solve() has to be RTMB's S4 generic:
+        ## inside this namespace a bare solve() is base::solve, which reads the
+        ## advector's underlying complex storage and silently returns complex.
+        b <- RTMB::advector(c(rep(0, nrow(A) - 1), 1))
+        root.p <- RTMB::solve(A, b)
         loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
       } else {
         root.p <- liks[root,] / sum(liks[root,])

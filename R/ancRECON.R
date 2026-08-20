@@ -152,20 +152,29 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		lik.states<-numeric(nb.tip + nb.node)
 		pupko.L <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
 		pupko.C <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
+		#Precompute the edge lookups and the Q decomposition once for the whole pass:
+		edge1 <- phy$edge[,1]
+		edge2 <- phy$edge[,2]
+		edge.length <- phy$edge.length
+		desRowsList <- getDesRows(edge1, anc)
+		rowOfChild <- getRowOfChild(edge2, nb.tip + nb.node)
+		is.internal <- logical(nb.tip + nb.node)
+		is.internal[anc] <- TRUE
+		P <- makeExpmFuns(Q)$P
 		for (i  in seq(from = 1, length.out = nb.node)) {
 			#The ancestral node at row i is called focal:
 			focal <- anc[i]
 			#Get descendant information of focal:
-			desRows<-which(phy$edge[,1]==focal)
+			desRows<-desRowsList[[i]]
 			#Get node information for each descendant:
-			desNodes<-phy$edge[desRows,2]
+			desNodes<-edge2[desRows]
 			
 			#Initiates a loop to check if any nodes are tips:
-			for (desIndex in sequence(length(desRows))){
+			for (desIndex in seq_along(desRows)){
 				#If a tip calculate C_y(i) for the tips and stores in liks matrix:
-				if(any(desNodes[desIndex]==phy$edge[,1])==FALSE){
+				if(!is.internal[desNodes[desIndex]]){
 					v <- c(rep(1, k*rate.cat))
-					Pij <- expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+					Pij <- P(edge.length[desRows[desIndex]])
 					#Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
 					v <- v * liks[desNodes[desIndex],]
 					L <- Pij %*% v
@@ -180,7 +189,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 				}
 			}
 			#Collects t_z, or the branch subtending focal:
-			tz <- phy$edge.length[which(phy$edge[,2] == focal)]
+			tz <- edge.length[rowOfChild[focal]]
 			if(length(tz)==0){
 				#The focal node is the root, calculate P_k:
 				root.state=1
@@ -189,15 +198,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 					root.state <- root.state * pupko.L[desNodes[desIndex],]
 				}
 				if(is.na(known.state.vector[focal])){
-					equil.root <- NULL
-					for(i in 1:ncol(Q)){
-						posrows <- which(Q[,i] >= 0)
-						rowsum <- sum(Q[posrows,i])
-						poscols <- which(Q[i,] >= 0)
-						colsum <- sum(Q[i,poscols])
-						equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-					}
 					if (is.null(root.p)){
+						equil.root <- getEquilRoot(Q)
 						if(is.na(known.state.vector[focal])){
 							flat.root = equil.root
 							k.rates <- 1/length(which(!is.na(equil.root)))
@@ -240,17 +242,16 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			#All other internal nodes, except the root:
 			else{
 				#Calculates P_ij(t_z):
-				Pij <- expm(Q * tz, method=c("Ward77"))
+				Pij <- P(tz)
 				#Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
 				#Calculates L_z(i):
 				v <- c(rep(1, k*rate.cat))
 				if(is.na(known.state.vector[focal])){
-					for (desIndex in sequence(length(desRows))){
+					for (desIndex in seq_along(desRows)){
 						v <- v * pupko.L[desNodes[desIndex],]
 					}
-					focalRow <- which(phy$edge[,2]==focal)
-					motherRow <- which(phy$edge[,1]==phy$edge[focalRow,1])
-					motherNode <- phy$edge[focalRow,1]
+					focalRow <- rowOfChild[focal]
+					motherNode <- edge1[focalRow]
 					if(is.na(known.state.vector[motherNode])){
 						for(row.index in 1:dim(Pij)[1]){
 							L <- Pij[row.index,] * v
@@ -263,12 +264,11 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 						pupko.C[focal,] <- which.is.max(L)
 					}
 				}else{
-					for (desIndex in sequence(length(desRows))){
+					for (desIndex in seq_along(desRows)){
 						v <- v * pupko.L[desNodes[desIndex],]
 					}
-					focalRow <- which(phy$edge[,2] == focal)
-					motherRow <- which(phy$edge[,1] == phy$edge[focalRow,1])
-					motherNode <- phy$edge[focalRow,1]
+					focalRow <- rowOfChild[focal]
+					motherNode <- edge1[focalRow]
 					if(is.na(known.state.vector[motherNode])){
 						for(row.index in 1:dim(Pij)[1]){
 							L <- Pij[row.index,] * v
@@ -518,16 +518,29 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		#A transpose of Q for assessing probability of j to i, rather than i to j:
 		tranQ <- t(Q)
 		comp <- matrix(0,nb.tip + nb.node,ncol(liks))
+		#Q and tranQ are fixed across all three passes, so decompose each once and
+		#reuse it for every branch instead of exponentiating per edge:
+		Pv <- makeExpmFuns(Q)$Pv
+		tranPv <- makeExpmFuns(tranQ)$Pv
+		#Precompute the edge lookups the passes below would otherwise rescan phy$edge for:
+		edge1 <- phy$edge[,1]
+		edge2 <- phy$edge[,2]
+		edge.length <- phy$edge.length
+		desRowsList <- getDesRows(edge1, anc)
+		rowOfChild <- getRowOfChild(edge2, nb.tip + nb.node)
+		#Node number -> position in anc, so the up-pass can find a node's descendants in O(1):
+		ancIndex <- integer(nb.tip + nb.node)
+		ancIndex[anc] <- seq_along(anc)
 		#The first down-pass: The same algorithm as in the main function to calculate the conditional likelihood at each node:
 		for (i in seq(from = 1, length.out = nb.node)) {
 			#the ancestral node at row i is called focal
 			focal <- anc[i]
 			#Get descendant information of focal
-			desRows<-which(phy$edge[,1]==focal)
-			desNodes<-phy$edge[desRows,2]
+			desRows<-desRowsList[[i]]
+			desNodes<-edge2[desRows]
 			v <- 1
-			for (desIndex in sequence(length(desRows))){
-				v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks.down[desNodes[desIndex],]
+			for (desIndex in seq_along(desRows)){
+				v <- v*Pv(edge.length[desRows[desIndex]], liks.down[desNodes[desIndex],])
 			}
 			
 			##Allows for fixed nodes based on user input tree.
@@ -545,15 +558,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		}
 		root <- nb.tip + 1L
 		#Enter the root defined root probabilities if they are supplied by the user:
-		equil.root <- NULL
-		for(i in 1:ncol(Q)){
-			posrows <- which(Q[,i] >= 0)
-			rowsum <- sum(Q[posrows,i])
-			poscols <- which(Q[i,] >= 0)
-			colsum <- sum(Q[i,poscols])
-			equil.root <- c(equil.root,rowsum/(rowsum+colsum))
-		}
 		if (is.null(root.p)){
+			equil.root <- getEquilRoot(Q)
 			flat.root = equil.root
 			k.rates <- 1/length(which(!is.na(equil.root)))
 			flat.root[!is.na(flat.root)] = k.rates
@@ -592,16 +598,16 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			focal <- anc[i]
 			if(!focal==root){
 				#Gets mother and sister information of focal:
-				focalRow <- which(phy$edge[,2]==focal)
-				motherRow <- which(phy$edge[,1]==phy$edge[focalRow,1])
-				motherNode <- phy$edge[focalRow,1]
-				desNodes <- phy$edge[motherRow,2]
+				focalRow <- rowOfChild[focal]
+				motherNode <- edge1[focalRow]
+				motherRow <- desRowsList[[ancIndex[motherNode]]]
+				desNodes <- edge2[motherRow]
 				sisterNodes <- desNodes[(which(!desNodes==focal))]
-				sisterRows <- which(phy$edge[,2]%in%sisterNodes==TRUE)
+				sisterRows <- rowOfChild[sisterNodes]
 				#If the mother is not the root then you are calculating the probability of being in either state.
 				#But note we are assessing the reverse transition, j to i, rather than i to j, so we transpose Q to carry out this calculation:
 				if(motherNode != root){
-					v <- expm(tranQ * phy$edge.length[which(phy$edge[,2]==motherNode)], method=c("Ward77")) %*% liks.up[motherNode,]
+					v <- tranPv(edge.length[rowOfChild[motherNode]], liks.up[motherNode,])
 					#Allows for fixed nodes based on user input tree.
 					if(!is.null(phy$node.label)){
 						if(!is.na(phy$node.label[motherNode - nb.tip])){
@@ -618,8 +624,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 				}
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
-				for (sisterIndex in sequence(length(sisterRows))){
-					v <- v * expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
+				for (sisterIndex in seq_along(sisterRows)){
+					v <- v * Pv(edge.length[sisterRows[sisterIndex]], liks.down[sisterNodes[sisterIndex],])
 				}
 				
 				comp[focal] <- sum(v)
@@ -633,10 +639,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		for (i in seq(from = 1, length.out = nb.node-1)) {
 			#the ancestral node at row i is called focal
 			focal <- anc[i]
-			focalRows <- which(phy$edge[,2]==focal)
+			focalRows <- rowOfChild[focal]
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
-			v <- liks.down[focal,] * (expm(tranQ * phy$edge.length[focalRows], method=c("Ward77")) %*% liks.up[focal,])
+			v <- liks.down[focal,] * tranPv(edge.length[focalRows], liks.up[focal,])
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
@@ -674,16 +680,21 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	if(method=="scaled"){
 		comp<-matrix(0,nb.tip + nb.node,ncol(liks))
 		root <- nb.tip + 1L
+		#Decompose Q once and resolve descendants in one pass, as in the other methods:
+		Pv <- makeExpmFuns(Q)$Pv
+		edge2 <- phy$edge[,2]
+		edge.length <- phy$edge.length
+		desRowsList <- getDesRows(phy$edge[,1], anc)
 		#The same algorithm as in the main function. See comments in either corHMM.R, corDISC.R, or rayDISC.R for details:
 		for (i  in seq(from = 1, length.out = nb.node)) {
 			#the ancestral node at row i is called focal
 			focal <- anc[i]
 			#Get descendant information of focal
-			desRows<-which(phy$edge[,1]==focal)
-			desNodes<-phy$edge[desRows,2]
+			desRows<-desRowsList[[i]]
+			desNodes<-edge2[desRows]
 			v <- 1
-			for (desIndex in sequence(length(desRows))){
-				v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
+			for (desIndex in seq_along(desRows)){
+				v <- v*Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
 			}
 			comp[focal] <- sum(v)
 			liks[focal, ] <- v/comp[focal]

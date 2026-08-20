@@ -27,7 +27,7 @@ A data frame with the following columns:
   \item \code{lnLik}: The log-likelihood of the model.
   \item \code{AIC} (or the value of \code{type}): The model selection criterion value.
   \item \code{dAIC}: The difference in the criterion between the model and the best model (i.e., the model with the minimum criterion value).
-  \item \code{AICwt}: The Akaike weights, representing the relative likelihood of the model given the data.
+  \item \code{AICwt} (or the corresponding criterion-weight column): Relative model weights calculated from criterion differences.
 }
 }
 \examples{
