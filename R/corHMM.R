@@ -871,7 +871,7 @@ print.corhmm <- function(x,...){
 		cat("\n")
 	}
 
-	UserStates <- gsub("_", "|", corHMM:::corProcessData(x$data)$PossibleTraits)
+	UserStates <- gsub("_", "|", corProcessData(x$data)$PossibleTraits)
 	ColNames <- paste0(colnames(x$data)[-1], collapse = "|")
 
 	cat("Legend\n")

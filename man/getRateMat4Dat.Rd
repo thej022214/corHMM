@@ -3,7 +3,8 @@
 \title{Produce an index matrix and legend from a dataset}
 \description{Takes a dataset to produce an index matrix that corresponds to a single state-dependent process (i.e. a single rate category) and a legend which matches input data to the rows and columns of the index matrix and corHMM solution.}
 \usage{
-getStateMat4Dat(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALSE)
+getStateMat4Dat(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALSE,
+CorData = NULL)
 }       
 \arguments{
 \item{data}{A data matrix containing species information in the same format as the main \code{corHMM} function: column[,1] is species names, column[,2:n] are the discrete states.}
@@ -11,6 +12,7 @@ getStateMat4Dat(data, model = "ARD", dual = FALSE, collapse = TRUE, indep = FALS
 \item{dual}{A boolean indicating whether or not to include dual transitions.}
 \item{collapse}{a boolean indicating whether to collapse multiple character combinations into only the observed states. For example, if true a two character dataset contained (0,0), (1,0), and (1,1), this would be collapsed into 1,2,3. However, if set to false it would 1,2,4. In combination with a custom rate matrix this allows for the estimation of transitions between the unobserved character combination. The default is \code{TRUE}}.
 \item{indep}{A boolean indicating whether or not to return an independent or correlated model.}
+\item{CorData}{An optional pre-processed data object as returned by \code{corProcessData}. Supplying it skips the internal call to \code{corProcessData}, which is useful when building several rate matrices from the same dataset. The default, \code{NULL}, processes \code{data} internally.}
 }
 \details{
 This function will generate an index matrix based on user provided data. It provides a useful starting point for further modifications using \code{dropStateMatPars}, \code{equateStateMatPars}, and \code{getFullMat}. If more than a single column of data is given double transitions between characters are disallowed. For example, if character 1 is the presence or absence of limbs, and character 2 is the presence or absence of fingers, then the transition from absence of limbs and fingers to presence of limbs and fingers is automatically disallowed. This is consistent with Pagel's (1994) model of correlated character evolution. 

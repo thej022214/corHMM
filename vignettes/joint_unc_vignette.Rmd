@@ -1,0 +1,381 @@
+---
+title: "Uncertainty in joint ancestral state reconstruction"
+author: "James D. Boyko"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    df_print: kable
+vignette: |
+  %\VignetteEngine{knitr::rmarkdown} %\VignetteIndexEntry{Joint ASR uncertainty} \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include = FALSE}
+have_suggests <- all(vapply(c("Rtsne", "dbscan", "proxy"), requireNamespace,
+                            logical(1), quietly = TRUE))
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 8, fig.height = 5, fig.align = "center",
+  eval = have_suggests
+)
+```
+
+## What this vignette is for
+
+A marginal reconstruction asks, node by node, *what state was this ancestor in?* A joint
+reconstruction asks a different question: *what sequence of states across the whole tree best
+explains the data?* If your biology is about trajectories, such as when a trait arose, how many
+times it was lost, or whether two clades acquired it independently, then the joint reconstruction is
+the estimate you want. Stringing together the best marginal state at each node can produce a history
+that is improbable as a path.
+
+The problem is that classical joint algorithms return one history and no uncertainty. This vignette
+walks through the fix described in Boyko et al. (2025): sample the joint posterior, cluster the
+samples into a handful of distinct narratives ("reconstruction axes"), and read off where on the
+tree those narratives actually disagree.
+
+Everything here runs in under a minute on the example data. You will need `Rtsne`, `dbscan` and
+`proxy` alongside `corHMM`.
+
+```{r libs}
+library(corHMM)
+library(ape)
+
+state_cols <- c("#F2F2F2", "#7EA6E0", "#B85450")  # one colour per character state
+```
+
+## 1. Fit a model and get the best joint reconstruction
+
+We use the `primates` data shipped with corHMM: two binary traits, which `corHMM` collapses to the
+three observed combinations `0|0`, `0|1` and `1|1`.
+
+```{r fit}
+data(primates)
+phy <- ladderize(multi2di(primates[[1]]))
+cor_dat <- primates[[2]]
+
+focal <- corHMM(phy, cor_dat,
+                rate.cat = 1,
+                model = "ER",
+                node.states = "joint",
+                root.p = "maddfitz")
+phy <- ladderize(focal$phy)   # the tree corHMM actually used
+```
+
+`focal$states` holds the single best joint history. Plotting it gives the estimate most papers stop
+at.
+
+```{r best-plot, fig.height = 6}
+plot(phy, cex = 0.35, label.offset = 1, no.margin = TRUE)
+tiplabels(pch = 21, bg = state_cols[focal$tip.states], cex = 0.6)
+nodelabels(pch = 21, bg = state_cols[focal$states], cex = 0.6)
+legend("topleft", legend = c("0|0", "0|1", "1|1"), pch = 21,
+       pt.bg = state_cols, bty = "n", title = "State")
+```
+
+## 2. Sample the joint posterior
+
+`compute_joint_ci()` samples complete histories in proportion to their joint posterior probability,
+using the two-pass conditional sampling of stochastic character mapping. It keeps sampling in
+batches until `max_samples` is reached, discards duplicates, and drops likelihood outliers.
+
+```{r sample}
+set.seed(0104)
+joint_ci <- compute_joint_ci(focal, batch_size = 100, max_samples = 1000)
+
+state_df <- joint_ci$state_df   # rows = reconstructions, columns = internal nodes
+n_recon <- nrow(state_df)
+n_recon
+```
+
+That is `r n_recon` distinct histories that are all consistent with the same fitted model. Their
+likelihoods span a narrow band, which is the point: many of them are nearly as good as the best.
+
+```{r lnlik-hist, fig.height = 3.5}
+par(mar = c(4, 4, 2, 1))
+hist(joint_ci$lnliks, breaks = 40, col = "grey80", border = "white",
+     main = "", xlab = "log-likelihood of sampled history", ylab = "count")
+abline(v = joint_ci$best_lnlik, lty = 2, lwd = 2, col = "#B85450")
+text(joint_ci$best_lnlik, par("usr")[4] * 0.9, "best joint  ", adj = 1, col = "#B85450")
+```
+
+Before any clustering, it is worth looking at the raw sample. `plot_raw_recon()` draws one row per
+reconstruction and one column per internal node.
+
+```{r raw-unclustered, fig.height = 5}
+plot_raw_recon(as.matrix(state_df),
+               state_colors = state_cols,
+               state_labels = c("0|0", "0|1", "1|1"))
+```
+
+Most nodes are the same colour in every row, and those are settled. A handful of columns are
+mottled, and those are where the histories genuinely diverge. There is visible vertical structure, but rows
+arrive in sampling order, so we need to sort them.
+
+## 3. A distance between reconstructions
+
+Two histories that differ at five scattered nodes are not really telling different stories; two that
+differ at five adjacent nodes are. `phylo_aware_dist_local()` encodes exactly that: it sums
+`exp(1 / d)` over all pairs of disagreeing nodes, where `d` is the node distance on a
+cladogram, so clustered disagreements are penalised much more heavily than isolated ones.
+
+Register it with `proxy` and build the full distance matrix.
+
+```{r distance}
+cladogram <- phy
+cladogram$edge.length <- rep(1, nrow(cladogram$edge))
+phylo_dist <- ape::dist.nodes(cladogram)[-(1:Ntip(phy)), -(1:Ntip(phy))]
+
+try(proxy::pr_DB$set_entry(FUN = phylo_aware_dist_local, names = "PhyloSpreadDistLocal"),
+    silent = TRUE)
+
+D <- proxy::dist(as.matrix(state_df),
+                 method = "PhyloSpreadDistLocal",
+                 phylo_dist = phylo_dist)
+```
+
+This is the step that dominates runtime, because it visits every pair of reconstructions. A second
+or two here, but it grows with the square of the sample: several thousand reconstructions take
+minutes.
+
+### If you want it faster
+
+corHMM ships no compiled code, so `phylo_aware_dist_local()` is plain R. A C++ version of the same
+calculation is included with the package but is not built at install time. Compile it yourself in
+three steps. You need `Rcpp` and a working C++ toolchain (Rtools on Windows, Xcode command line
+tools on macOS).
+
+```{r fast, eval = FALSE}
+# 1. compile (a few seconds, once per session)
+fast_dist <- phylo_aware_dist_fast()
+
+# 2. register it under its own name
+proxy::pr_DB$set_entry(FUN = fast_dist, names = "PhyloSpreadDistFast")
+
+# 3. use that name instead
+D <- proxy::dist(as.matrix(state_df),
+                 method = "PhyloSpreadDistFast",
+                 phylo_dist = phylo_dist)
+```
+
+Results are identical to the pure R version; it is about three times faster. The compiled function
+lives in the session that built it, so call `phylo_aware_dist_fast()` again in each new session
+rather than saving the returned function to an `.rds`. The source is readable at
+`system.file("cpp", "phylo_aware_dist_local.cpp", package = "corHMM")` if you want to adapt it.
+
+## 4. Consensus clustering
+
+A single t-SNE plus DBSCAN run is quick but seed-dependent, and it is easy to over-read a clustering
+that would not survive a different seed. The published approach repeats the embedding over many
+seeds, records how often each pair of reconstructions lands in the same cluster, and clusters *that*
+co-association matrix.
+
+Two parameters to set. `minPts` is the smallest group you are willing to call a cluster; here we use
+5% of the sample, though for the several-thousand-reconstruction datasets in the paper 0.5% is more
+appropriate. `eps` is the neighbourhood radius, read off the knee of a k-nearest-neighbour distance
+plot.
+
+```{r eps, fig.height = 4}
+min_pts <- round(0.05 * n_recon)
+eps <- 3
+
+set.seed(1)
+Y1 <- Rtsne::Rtsne(D)$Y
+dbscan::kNNdistplot(Y1, k = min_pts - 1, minPts = min_pts)
+abline(h = eps, lty = 2, col = "#B85450")
+```
+
+Where the curve has a sharp bend, take `eps` there. This one rises smoothly, which is itself
+informative: the reconstructions do not fall into cleanly separated dense islands. We take a value on
+the lower shoulder, because anything above about 4 swallows the whole sample into a single cluster.
+
+```{r eps-check}
+table(dbscan::dbscan(Y1, eps = eps, minPts = min_pts)$cluster)   # 0 = noise
+```
+
+This is exactly the fragility the consensus step exists to absorb. Repeat across seeds and let
+agreement, rather than one lucky embedding, decide the grouping. Twenty-five seeds is enough here;
+the paper used 1,000.
+
+```{r consensus}
+n_seeds <- 25
+co <- matrix(0, n_recon, n_recon)
+
+for (s in seq_len(n_seeds)) {
+  set.seed(s)
+  Y <- Rtsne::Rtsne(D)$Y
+  g <- dbscan::dbscan(Y, eps = eps, minPts = min_pts)$cluster
+  co <- co + (outer(g, g, "==") & outer(g != 0, g != 0, "&"))
+}
+co <- co / n_seeds   # probability that a pair clusters together
+
+hc <- hclust(as.dist(1 - co), method = "ward.D2")
+```
+
+Choosing the number of clusters is a judgement call, made by looking at where the dendrogram has
+room to cut and whether the co-association matrix shows clean blocks.
+
+```{r pick-k, fig.height = 4.2, fig.width = 10}
+k <- 4
+clusters <- cutree(hc, k = k)
+clust_cols <- hcl.colors(k, "Dark 3")
+
+par(mfrow = c(1, 2), mar = c(2, 4, 3, 1))
+plot(hc, labels = FALSE, hang = -1, main = "Consensus dendrogram",
+     xlab = "", sub = "", ylab = "Ward.D2 height")
+# rect.hclust draws left to right, which is not cluster order
+rect.hclust(hc, k = k, border = clust_cols[unique(clusters[hc$order])])
+
+ord <- order(clusters)
+par(mar = c(3, 3, 3, 1))
+image(co[ord, ord], col = hcl.colors(64, "Blues 3", rev = TRUE), axes = FALSE,
+      main = "Co-association, ordered by cluster")
+box(col = "grey60")
+```
+
+Dark blocks on the diagonal are sets of reconstructions that cluster together no matter the seed.
+Here `r k` blocks are clearly separated, so we cut there. If your matrix looks like one smear, that
+is a real result: your reconstructions form a continuum rather than distinct narratives, and a
+single summary is honest.
+
+## 5. What the axes look like
+
+Re-draw the raw sample, now sorted by cluster.
+
+```{r raw-clustered, fig.height = 5}
+plot_raw_recon(as.matrix(state_df), clusters, clust_cols,
+               state_colors = state_cols,
+               state_labels = c("0|0", "0|1", "1|1"))
+```
+
+The mottled columns from before have resolved into blocks: each axis commits to a particular state
+over a particular stretch of the tree. Section 6 pins down which nodes carry those commitments.
+
+Crucially, these are not ranked alternatives. Their likelihood distributions overlap almost
+completely, so the data cannot distinguish between them.
+
+```{r densities, fig.height = 4}
+par(mar = c(4, 5, 3, 1))
+plot_stacked_densities(joint_ci$lnliks, clusters, cols = clust_cols,
+                       cluster_labels = paste("axis", seq_len(k)),
+                       best_lnlik = joint_ci$best_lnlik,
+                       main = "Log-likelihood by reconstruction axis")
+```
+
+## 6. Where on the tree do they disagree?
+
+`node_importance_by_cluster()` scores every node for every cluster. A node scores high when the
+cluster is internally consistent about it *and* differs from everything outside the cluster, so high
+scorers are the nodes that define an axis.
+
+```{r importance}
+node_imp <- node_importance_by_cluster(state_df, clusters)
+
+top_n <- 2
+important_nodes <- lapply(seq_len(k), function(i) {
+  cl_nodes <- node_imp[node_imp$cluster == i, ]
+  cl_nodes[order(-cl_nodes$importance)[seq_len(top_n)], ]
+})
+
+do.call(rbind, important_nodes)[, c("cluster", "node", "modal_state", "importance")]
+```
+
+Taking the top `r top_n` nodes per cluster keeps the figure legible and always returns something.
+A fixed threshold (`importance > 0.5`, as in the paper) is the alternative, but it can leave a
+diffuse cluster with no nodes at all, which will break the plot below. Read the scores as well as the
+ranks: an axis whose best node scores near 0.2 is not pinned to any particular ancestor, and should
+be described as diffuse rather than as a specific competing history.
+
+Note that `important_nodes[[i]]` must be cluster `i`'s nodes, so build the list by looping over
+`seq_len(k)`, not over `unique(clusters)`, which returns clusters in order of first appearance.
+
+```{r clustered-phylo, fig.height = 6, fig.width = 10}
+par(mar = c(1, 1, 1, 1))
+plot_clustered_phylo(
+  phy = phy,
+  state_df = state_df,
+  cluster_assignments = clusters,
+  node_states = focal$states,
+  important_nodes = important_nodes,
+  cluster_colors = clust_cols,
+  state_colors = state_cols,
+  state_labels = c("0|0", "0|1", "1|1"),
+  legend_title = "State",
+  phylogram_params = list(edge.color = "grey60"),
+  point_params = list(cex = 0.8),
+  segment_params = list(lty = 2, lwd = 1.4),
+  outer_cex = 3.2, inner_rad = 1.0, node_offset = 2.6
+)
+legend("topleft", inset = c(0.01, 0.17), legend = paste("axis", seq_len(k)),
+       pch = 21, pt.bg = clust_cols, pt.cex = 1.6, bty = "n")
+```
+
+Small points are the best joint reconstruction. Each large ringed pie is a diagnostic node for one
+axis, coloured by that axis and offset from its position on the tree so overlapping claims stay
+readable; the pie shows the states that axis assigns there. Because clustering has already separated
+the sample into distinct narratives, these pies show variation *within* an axis, not an average over
+everything. An average over everything is exactly what a marginal reconstruction gives you instead.
+
+## 7. Turning axes into numbers
+
+Reconstruction axes are only useful if they change downstream quantities. Counting transitions along
+edges is the simplest check.
+
+```{r events}
+tips <- focal$tip.states   # already in tree order
+
+count_events <- function(node_states) {
+  st <- c(tips, node_states)
+  anc <- st[phy$edge[, 1]]
+  dec <- st[phy$edge[, 2]]
+  c(gains = sum(dec > anc), losses = sum(dec < anc))
+}
+
+events <- t(apply(as.matrix(state_df), 1, count_events))
+
+fmt <- function(x) sprintf("%.0f (%.0f-%.0f)", median(x), min(x), max(x))
+do.call(rbind, lapply(seq_len(k), function(i) {
+  z <- events[clusters == i, , drop = FALSE]
+  data.frame(axis = i,
+             n = sum(clusters == i),
+             gains = fmt(z[, "gains"]),
+             losses = fmt(z[, "losses"]),
+             median_lnlik = round(median(joint_ci$lnliks[clusters == i]), 2))
+}))
+```
+
+The axes imply genuinely different histories: some favour more gains than losses, others the
+reverse, at essentially the same likelihood. A single point estimate would have reported one of these
+and hidden the rest. Each axis is a concrete, path-consistent hypothesis you can carry into whatever
+comes next.
+
+## Adapting this to your data
+
+- **Sampling effort.** Raise `max_samples` until the number of unique reconstructions plateaus. With
+  a large tree or many states, expect thousands.
+- **`minPts`.** Roughly the smallest cluster you would take seriously. 5% works for a few hundred
+  reconstructions; drop toward 0.5% for several thousand.
+- **`eps`.** Always read it off `kNNdistplot()` for your own data. Too small and everything is noise;
+  too large and everything is one cluster.
+- **Seeds.** More is better and the cost is linear. Twenty-five is a floor, not a target.
+- **`k`.** Driven by the dendrogram and the co-association blocks, not by an information criterion.
+  No block structure means no distinct axes.
+- **Plotting.** On large trees raise `node_offset` and lower `outer_cex` and `inner_rad`, or restrict
+  `important_nodes` to a single clade.
+
+## Function reference
+
+| Function | Purpose |
+|---|---|
+| `compute_joint_ci()` | Sample joint histories from their posterior |
+| `phylo_aware_dist_local()` | Phylogenetically weighted distance between two histories |
+| `phylo_aware_dist_fast()` | Compile the C++ version of that distance on demand |
+| `plot_raw_recon()` | Raster of the sample, optionally sorted by cluster |
+| `node_importance_by_cluster()` | Score nodes by how well they diagnose a cluster |
+| `plot_stacked_densities()` | Likelihood distributions per cluster |
+| `plot_clustered_phylo()` | Competing histories drawn on the tree |
+
+## Reference
+
+Boyko, J.D., Gontjes, K.J., Snitkin, E.S., and Smith, S.A. (2025). Resolving competing evolutionary
+histories in joint ancestral state reconstruction.

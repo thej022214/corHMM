@@ -172,27 +172,37 @@ compute_joint_results <- function(sim_result) {
 }
 
 ############################################ phylo distance matrix
-Rcpp::cppFunction('
-double phylo_aware_dist_local_cpp(LogicalVector mismatch, NumericMatrix phylo_dist) {
-  int n = mismatch.size();
-  std::vector<int> indices;
-  for(int i = 0; i < n; i++) {
-    if(mismatch[i]) indices.push_back(i);
-  }
-  int m = indices.size();
-  if(m <= 1) return 0.0;
-  double sum = 0.0;
-  for(int i = 0; i < m-1; i++) {
-    for(int j = i+1; j < m; j++) {
-      sum += exp(1.0 / phylo_dist(indices[i], indices[j]));
-    }
-  }
-  return sum;
-}')
-
 phylo_aware_dist_local <- function(graph_labels_x, graph_labels_y, phylo_dist) {
-  mismatch <- graph_labels_x != graph_labels_y
-  return(phylo_aware_dist_local_cpp(mismatch, phylo_dist))
+  # nodes at which the two reconstructions disagree
+  idx <- which(graph_labels_x != graph_labels_y)
+  if (length(idx) <= 1L) {
+    return(0)
+  }
+  # sum exp(1 / patristic distance) over all unique pairs of differing nodes;
+  # zeroing the diagonal drops the self-pairs, so half the block sum is the total
+  w <- exp(1 / phylo_dist[idx, idx, drop = FALSE])
+  diag(w) <- 0
+  sum(w) / 2
+}
+
+phylo_aware_dist_fast <- function(verbose = FALSE) {
+  if (!requireNamespace("Rcpp", quietly = TRUE)) {
+    stop("phylo_aware_dist_fast() needs the Rcpp package. ",
+      "Run install.packages(\"Rcpp\"), or use phylo_aware_dist_local() instead.",
+      call. = FALSE)
+  }
+  src <- system.file("cpp", "phylo_aware_dist_local.cpp", package = "corHMM")
+  if (!nzchar(src)) {
+    stop("could not locate the C++ source shipped with corHMM", call. = FALSE)
+  }
+  env <- new.env(parent = baseenv())
+  Rcpp::sourceCpp(src, env = env, verbose = verbose)
+  cpp_fun <- get("phylo_aware_dist_local_cpp", envir = env)
+  # keep the compiled function alive in the closure; it is valid for this
+  # session only, so never save the result to an .rds or .RData file
+  function(graph_labels_x, graph_labels_y, phylo_dist) {
+    cpp_fun(graph_labels_x != graph_labels_y, phylo_dist)
+  }
 }
 
 ############################################ analysis
@@ -236,22 +246,32 @@ node_importance_by_cluster <- function(state_df, clusters) {
 }
 
 ############################################ viz
-plot_stacked_densities <- function(lnliks, clusters, cols, ...) {
+plot_stacked_densities <- function(lnliks, clusters, cols,
+  cluster_labels = NULL, best_lnlik = NULL, xlab = "log-likelihood", ...) {
   lnliks <- lnliks[clusters != 0]
   clusters <- clusters[clusters != 0]
   
-  x_range <- range(lnliks)
+  x_range <- range(c(lnliks, best_lnlik))
   n_clusters <- length(unique(clusters))
   if(n_clusters == 1){
     print("Only one cluster.")
     return(NULL)
   }
   clusters <- factor(clusters, levels = 1:n_clusters)
+  if(is.null(cluster_labels)) {
+    cluster_labels <- levels(clusters)
+  }
   
-  plot(NULL, xlim = x_range, ylim = c(0, n_clusters), 
-    axes = FALSE, ...)
+  plot(x = NA, y = NA, xlim = x_range, ylim = c(0, n_clusters), 
+    axes = FALSE, xlab = xlab, ylab = "", ...)
   
-  axis(1, cex.axis = 0.5)
+  axis(1, cex.axis = 0.8, tcl = -0.3, mgp = c(2, 0.5, 0))
+  axis(2, at = rev(seq_along(levels(clusters))) - 0.5, labels = cluster_labels,
+    las = 1, tick = FALSE, cex.axis = 0.8, mgp = c(2, 0.2, 0))
+  
+  if(!is.null(best_lnlik)) {
+    abline(v = best_lnlik, lty = 2, col = "grey40")
+  }
   
   for(i in seq_along(levels(clusters))) {
     cluster_data <- lnliks[clusters == levels(clusters)[i]]
@@ -979,4 +999,94 @@ plot_clustered_phylo <- function(
     point_list = point_list,
     pie_dat = pie_dat
   ))
+}
+
+plot_raw_recon <- function(state_matrix, cluster_assignments = NULL,
+  cluster_colors = NULL, state_colors = NULL, state_labels = NULL,
+  show_legend = TRUE, xlab = "Node", ylab = "Reconstruction", main = NULL, ...) {
+  
+  mat <- as.matrix(state_matrix)
+  storage.mode(mat) <- "integer"
+  n_recon <- nrow(mat)
+  n_node <- ncol(mat)
+  n_state <- max(mat, na.rm = TRUE)
+  
+  if (is.null(state_colors)) {
+    state_colors <- grDevices::hcl.colors(n_state, "Zissou 1")
+  }
+  state_colors <- rep(state_colors, length.out = n_state)
+  if (is.null(state_labels)) {
+    state_labels <- as.character(seq_len(n_state))
+  }
+  
+  # order reconstructions by cluster, with unassigned (0) reconstructions last
+  if (is.null(cluster_assignments)) {
+    cluster_assignments <- rep(1L, n_recon)
+  }
+  cl <- as.integer(as.character(cluster_assignments))
+  if (length(cl) != n_recon) {
+    stop("cluster_assignments must have one entry per row of state_matrix")
+  }
+  sort_key <- ifelse(cl == 0, Inf, cl)
+  ord <- order(sort_key)
+  # image() draws the first row at the bottom; flip so reconstruction 1 is on top
+  ord_plot <- rev(ord)
+  mat <- mat[ord_plot, , drop = FALSE]
+  cl <- cl[ord_plot]
+  
+  used <- sort(unique(cl[cl != 0]))
+  draw_bar <- length(used) > 1
+  if (draw_bar) {
+    if (is.null(cluster_colors)) {
+      cluster_colors <- grDevices::hcl.colors(length(used), "Dark 3")
+    }
+    cluster_colors <- rep(cluster_colors, length.out = max(used))
+    bar_cols <- ifelse(cl == 0, "grey85", cluster_colors[cl])
+  }
+  
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par), add = TRUE)
+  if (draw_bar) {
+    layout(matrix(1:2, nrow = 1), widths = c(1, 12))
+    par(mar = c(4.1, 1.1, 3.1, 0.2))
+    image(x = 1, y = seq_len(n_recon), z = matrix(seq_len(n_recon), nrow = 1),
+      col = bar_cols, axes = FALSE, xlab = "", ylab = "")
+    mtext(ylab, side = 2, line = 0.1, cex = par("cex.lab"))
+    box(col = "grey60")
+    par(mar = c(4.1, 0.6, 3.1, 1.1))
+  } else {
+    par(mar = c(4.1, 4.1, 3.1, 1.1))
+  }
+  
+  image(x = seq_len(n_node), y = seq_len(n_recon), z = t(mat),
+    col = state_colors, zlim = c(0.5, n_state + 0.5),
+    axes = FALSE, xlab = xlab, ylab = if (draw_bar) "" else ylab, main = main, ...)
+  # label the x axis with node numbers rather than column positions
+  node_labels <- colnames(mat)
+  if (is.null(node_labels)) node_labels <- as.character(seq_len(n_node))
+  at <- pretty(seq_len(n_node))
+  at <- at[at >= 1 & at <= n_node]
+  axis(1, at = at, labels = node_labels[at],
+    cex.axis = 0.7, tcl = -0.3, mgp = c(2, 0.4, 0))
+  if (!draw_bar) {
+    # rows are drawn top-down, so the axis has to count the same way
+    at_y <- pretty(seq_len(n_recon))
+    at_y <- at_y[at_y >= 1 & at_y <= n_recon]
+    axis(2, at = n_recon - at_y + 1, labels = at_y,
+      cex.axis = 0.7, tcl = -0.3, mgp = c(2, 0.4, 0), las = 1)
+  }
+  box(col = "grey60")
+  
+  # separate clusters with horizontal rules
+  if (draw_bar) {
+    breaks <- which(diff(cl) != 0) + 0.5
+    abline(h = breaks, col = "white", lwd = 1.5)
+  }
+  if (show_legend) {
+    legend(x = mean(par("usr")[1:2]), y = par("usr")[4], xjust = 0.5, yjust = -0.15,
+      legend = state_labels, fill = state_colors, border = "grey60",
+      bty = "n", cex = 0.75, horiz = TRUE, xpd = NA)
+  }
+  
+  invisible(list(order = ord, cluster = cluster_assignments[ord]))
 }

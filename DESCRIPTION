@@ -11,7 +11,7 @@ Authors@R: c(person("Jeremy", "Beaulieu", role=c("aut", "cre"),
              person("Ben", "Bolker", role=c("ctb")))
 Maintainer: Jeremy Beaulieu <jmbeauli@uark.edu>
 Depends: ape, nloptr, GenSA
-Suggests: testthat, knitr, rmarkdown, dentist
+Suggests: testthat, knitr, rmarkdown, dentist, Rtsne, dbscan, proxy, Rcpp, formatR
 Imports: expm, numDeriv, corpcor, MASS, nnet, phangorn, parallel, viridis, Rmpfr, igraph, phytools, lhs, RTMB, Matrix
 Description: Fits hidden Markov models of discrete character evolution which allow different transition rate classes on different portions of a phylogeny. Beaulieu et al (2013) <doi:10.1093/sysbio/syt034>.
 License: GPL (>= 2)

@@ -126,6 +126,13 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		liks[,drop.states] <- 0
 	}
 	
+	n.par <- max(rate, na.rm = TRUE) - 1
+	if (length(p) != n.par) {
+	  stop(sprintf(
+	    "p has %d values, but rate defines %d parameters. Supply one value per rate index.",
+	    length(p), n.par))
+	}
+	
 	p[p==0] = exp(-21)
 	Q[] <- c(p, 0)[rate]
 	diag(Q) <- -rowSums(Q)
@@ -1658,7 +1665,7 @@ ancRECON_slice <- function(corhmm.obj, time_slice, edge=NULL, collapse=TRUE, nco
   p <- sapply(1:max(corhmm.obj$index.mat, na.rm = TRUE), function(x) na.omit(c(corhmm.obj$solution))[na.omit(c(corhmm.obj$index.mat) == x)][1])
 ##### Check #####
   ntraits <- max(as.numeric(corhmm.obj$data.legend$d))
-  all_recon <- mclapply(all_trees, function(x) corHMM:::GetEdgeMarginal(p=p, phy=x, data=new.data, rate.mat=corhmm.obj$index.mat, rate.cat=corhmm.obj$rate.cat, ntraits=ntraits, root.p=corhmm.obj$root.p, model = "ARD", collapse = collapse), mc.cores = ncores)
+  all_recon <- mclapply(all_trees, function(x) GetEdgeMarginal(p=p, phy=x, data=new.data, rate.mat=corhmm.obj$index.mat, rate.cat=corhmm.obj$rate.cat, ntraits=ntraits, root.p=corhmm.obj$root.p, model = "ARD", collapse = collapse), mc.cores = ncores)
   all_recon <-  do.call(rbind, all_recon)
   colnames(all_recon) <- colnames(corhmm.obj$solution)
   out <- cbind(to_recon, all_recon)
@@ -1673,10 +1680,12 @@ plot_slice_recon <- function(phy, slice_df, col=NULL){
   XX <- lastPP$xx[node]
   YY <- lastPP$yy[node]
   for(i in 1:nrow(slice_df)){
-	focal <- slice_df[i,]
-	xx <- lastPP$xx[focal[2]] - focal[3]
-	yy <- lastPP$yy[focal[2]]
-	pp <- focal[-c(1:3)]
+	# slice_df is a data.frame, so a row stays a data.frame: pull scalars out
+	focal_node <- as.numeric(slice_df[[2]][i])
+	focal_position <- as.numeric(slice_df[[3]][i])
+	xx <- lastPP$xx[focal_node] - focal_position
+	yy <- lastPP$yy[focal_node]
+	pp <- as.numeric(slice_df[i, -c(1:3)])
 	floating.pie.asp(xx, yy, pp, radius = 0.5, col = col)
   }
 }

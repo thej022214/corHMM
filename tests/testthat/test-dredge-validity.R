@@ -122,8 +122,15 @@ test_that("a user mask can permit a simultaneous transition", {
     allowed_mat = allowed))
   fit <- list(index.mat = candidate)
   fit$index.mat[3, 2] <- NA
-  proposal <- corHMM:::propose_stochastic_free(fit, allowed)
-  expect_false(is.na(proposal[3, 2]))
+  # getFullMat reuses indices for shared rates, so the dropped cell competes with
+  # duplicated cells for a stochastically chosen subset. The masked transition has
+  # to be reachable, not freed on every single draw.
+  set.seed(1)
+  freed <- replicate(100, {
+    proposal <- corHMM:::propose_stochastic_free(fit, allowed)
+    !is.null(proposal) && !is.na(proposal[3, 2])
+  })
+  expect_true(any(freed))
 })
 
 test_that("free moves preserve the legal transition mask", {
@@ -219,10 +226,15 @@ test_that("an unproductive restart interval triggers polishing", {
 })
 
 test_that("polishing follows improving neighbors to a local optimum", {
-  initial <- list(AIC = 10, state = 0)
+  # polish_neighborhood breaks score ties on model complexity, so every stub
+  # needs an index.mat for dredge_fit_complexity to measure
+  stub <- function(AIC, state) {
+    list(AIC = AIC, state = state, index.mat = matrix(c(NA, 1, 1, NA), 2, 2))
+  }
+  initial <- stub(10, 0)
   neighbors <- function(fit) {
-    if (fit$state == 0) return(list(list(AIC = 9, state = 1), list(AIC = 11, state = 3)))
-    if (fit$state == 1) return(list(list(AIC = 8, state = 2), list(AIC = 9.5, state = 4)))
+    if (fit$state == 0) return(list(stub(9, 1), stub(11, 3)))
+    if (fit$state == 1) return(list(stub(8, 2), stub(9.5, 4)))
     list()
   }
   result <- corHMM:::polish_neighborhood(initial, neighbors, identity, "AIC")
