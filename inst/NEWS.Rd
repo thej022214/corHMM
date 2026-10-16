@@ -2,6 +2,21 @@
 \title{corHMM News}
 \encoding{UTF-8}
 
+\section{CHANGES IN DEVELOPMENT VERSION}{
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Fixed mislabeled \code{mapped.edge} columns in \code{makeSimmap}.
+    }
+  }
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{makeSimmap(model = fit)} accepts \code{corhmm} fits,
+  preserving state coding across versions, including 2.8.
+      \item Added optional \code{method = "uniformization"} sampling to \code{makeSimmap}.
+    }
+  }
+}
+
 \section{CHANGES IN VERSION 2.10.5}{
   \subsection{BUG FIXES}{
     \itemize{

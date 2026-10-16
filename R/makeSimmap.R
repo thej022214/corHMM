@@ -1,4 +1,22 @@
-makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 100000, collapse=TRUE){
+makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 100000, collapse=TRUE, method=c("rejection", "uniformization")){
+	method <- match.arg(method)
+	if(inherits(model, "corhmm")){
+		fit <- model
+		if(!missing(data)){
+			stop("When model is a corhmm fit, omit data; tip states are taken from the fit's data.legend.", call. = FALSE)
+		}
+		data <- getSimmapFitData(fit)
+		if(!missing(rate.cat) && !isTRUE(rate.cat == fit$rate.cat)){
+			stop("rate.cat must match the number of rate categories in the fit.", call. = FALSE)
+		}
+		if(missing(tree)) tree <- fit$phy
+		if(missing(root.p)) root.p <- fit$root.p
+		rate.cat <- fit$rate.cat
+		model <- fit$solution
+		# The saved legend already indexes this matrix. Retain every fitted state,
+		# including combinations absent from the tips, rather than recoding it.
+		collapse <- FALSE
+	}
 	model_colnames <- colnames(model)
   if(any(tree$edge.length<=.Machine$double.eps)){
     warning(paste0("Branch lengths of 0 detected. Adding ", sqrt(.Machine$double.eps)), immediate. = TRUE)
@@ -31,7 +49,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
       }
     }
   }
-  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores, max.attempt)
+  maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores, max.attempt, method=method)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
   CorData <- corProcessData(data, collapse = collapse)
@@ -54,7 +72,7 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     tree.simmap$maps <- lapply(maps[[i]], function(x) correctMapName(x, StateNames))
     if(dim(mapped.edge[[i]])[2] == length(StateNames)){
       tree.simmap$mapped.edge <- mapped.edge[[i]]
-      colnames(tree.simmap$mapped.edge) <- StateNames
+      colnames(tree.simmap$mapped.edge) <- StateNames[as.numeric(colnames(tree.simmap$mapped.edge))]
     }else{ # some states are missing from the simulation
       missing_states <- which(!(1:length(StateNames) %in% as.numeric(colnames(mapped.edge[[i]]))))
       mapped.edge[[i]] <- cbind(mapped.edge[[i]], matrix(0, dim(mapped.edge[[i]])[1], length(missing_states), dimnames = list(rownames(mapped.edge[[i]]), missing_states)))
@@ -73,6 +91,33 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
     class(obj) <- c("multiSimmap", "multiPhylo")
   }
   return(obj)
+}
+
+getSimmapFitData <- function(fit){
+  rate.cat <- fit$rate.cat
+  model <- fit$solution
+  if(!is.numeric(rate.cat) || length(rate.cat) != 1L || is.na(rate.cat) ||
+     !is.finite(rate.cat) || rate.cat < 1 || rate.cat != floor(rate.cat) ||
+     !is.matrix(model) || !is.numeric(model) || nrow(model) == 0L ||
+     nrow(model) != ncol(model) || nrow(model) %% rate.cat != 0){
+    stop("The fit must contain a square numeric solution matrix and a compatible rate.cat.", call. = FALSE)
+  }
+  data <- fit$data.legend
+  if(!is.data.frame(data) || ncol(data) != 2L || nrow(data) == 0L){
+    stop("The fit must contain its original two-column data.legend to identify tip states.", call. = FALSE)
+  }
+  n.states <- nrow(model) / rate.cat
+  states <- as.character(seq_len(n.states))
+  codes <- as.character(data[[2]])
+  indices <- unlist(strsplit(codes[codes != "?" & !is.na(codes)], "&", fixed = TRUE),
+                    use.names = FALSE)
+  if(anyNA(codes) || any(!nzchar(codes)) || any(!indices %in% states)){
+    stop("The fit's data.legend contains state indices outside its solution matrix.", call. = FALSE)
+  }
+  # Explicit levels preserve numeric order above nine and states not represented
+  # at the tips. Extra levels retain ambiguous codes such as '2&3' and '?'.
+  data[[2]] <- factor(codes, levels = unique(c(states, codes)))
+  return(data)
 }
 
 correctMapName <- function(map_element, state_names){
@@ -185,7 +230,7 @@ simBranchSubstHistory <- function(init, final, total.bl, model, d.rates, max.att
   return(current.bl)
 }
 
-simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model, max.attempt = 1000){
+simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model, max.attempt = 1000, uni=NULL){
   SubstHistory <- vector("list", length(cladewise.index))
   d.rates <- -diag(model)
   for(i in cladewise.index){
@@ -195,13 +240,18 @@ simSingleSubstHistory <- function(cladewise.index, CharHistory, phy, model, max.
     init <- CharHistory[anc.index]
     final <- CharHistory[dec.index]
     total.bl <- phy$edge.length[i]
-    SubstHistory[[i]] <- simBranchSubstHistory(init, final, total.bl, model, d.rates, max.attempt = max.attempt)
+    if(is.null(uni)){
+      SubstHistory[[i]] <- simBranchSubstHistory(init, final, total.bl, model, d.rates, max.attempt = max.attempt)
+    }else{
+      SubstHistory[[i]] <- sampleBranchBridge(init, final, total.bl, uni)
+    }
   }
   return(SubstHistory)
 }
 
 # simulate a substitution history given the simulations of ancestral states
-simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.attempt = 1000, vector.form=FALSE, return.char = FALSE){
+simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.attempt = 1000, vector.form=FALSE, return.char = FALSE, method=c("rejection", "uniformization")){
+  method <- match.arg(method)
   # set-up
   cladewise.index <- reorder.phylo(phy, "cladewise", index.only = TRUE)
   # a potential speedup is to calculate all Pij (bollback eq.3) for all branches first
@@ -225,7 +275,12 @@ simSubstHistory <- function(phy, tip.states, states, model, nSim, nCores, max.at
   if(return.char){
     return(CharHistories)
   }
-  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model, max.attempt), mc.cores = nCores)
+  uni <- NULL
+  if(method == "uniformization"){
+    min.prob <- min(Pij[Pij > 0])
+    uni <- makeUniformizationTable(model, max(phy$edge.length), min.prob)
+  }
+  obj <- mclapply(CharHistories, function(x) simSingleSubstHistory(cladewise.index, x, phy, model, max.attempt, uni=uni), mc.cores = nCores)
   return(obj)
 }
 
