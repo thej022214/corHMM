@@ -139,6 +139,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	phy <- reorder(phy, "pruningwise")
 	TIPS <- 1:nb.tip
 	anc <- unique(phy$edge[,1])
+	phy$node.label <- fixedObservedLabels(phy, ncol(Q)/rate.cat)
+	evidence <- nodeStateEvidence(phy, ncol(Q), rate.cat, phy$node.label)
 	
 	# # if the q matrix has columns not estimated, remove them
 	# row2rm <- apply(rate, 1, function(x) all(x == max(rate)))
@@ -146,181 +148,64 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 	# Q.root <- Q[!row2rm | !col2rm, !row2rm | !col2rm]
 	
 	if(method=="joint"){
-		if(!is.null(phy$node.label)){
-			tip.state.vector <- rep(NA, Ntip(phy))
-			#We remove the first, because the root state probability comes in through root.p:
-			known.state.vector <- phy$node.label
-			known.state.vector <- c(tip.state.vector, known.state.vector)
-		}else{
-			tip.state.vector <- rep(NA, Ntip(phy))
-			known.state.vector <- rep(NA, Nnode(phy))
-			known.state.vector <- c(tip.state.vector, known.state.vector)
-		}
-		lik.states<-numeric(nb.tip + nb.node)
-		pupko.L <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
-		pupko.C <- matrix(NA,nrow=nb.tip + nb.node,ncol(liks))
-		#Precompute the edge lookups and the Q decomposition once for the whole pass:
-		edge1 <- phy$edge[,1]
-		edge2 <- phy$edge[,2]
-		edge.length <- phy$edge.length
-		desRowsList <- getDesRows(edge1, anc)
-		rowOfChild <- getRowOfChild(edge2, nb.tip + nb.node)
-		is.internal <- logical(nb.tip + nb.node)
-		is.internal[anc] <- TRUE
+		states <- seq_len(ncol(Q))
+		# best[node, s] is the log likelihood of the best internal assignment
+		# below node given s. Sum over unobserved tip states, as in fitting.
+		best <- matrix(0, nb.tip + nb.node, length(states))
+		trace <- matrix(NA_integer_, nrow(best), ncol(best))
 		P <- makeExpmFuns(Q)$P
-		for (i  in seq(from = 1, length.out = nb.node)) {
-			#The ancestral node at row i is called focal:
-			focal <- anc[i]
-			#Get descendant information of focal:
-			desRows<-desRowsList[[i]]
-			#Get node information for each descendant:
-			desNodes<-edge2[desRows]
-			
-			#Initiates a loop to check if any nodes are tips:
-			for (desIndex in seq_along(desRows)){
-				#If a tip calculate C_y(i) for the tips and stores in liks matrix:
-				if(!is.internal[desNodes[desIndex]]){
-					v <- c(rep(1, k*rate.cat))
-					Pij <- P(edge.length[desRows[desIndex]])
-					#Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
-					v <- v * liks[desNodes[desIndex],]
-					L <- Pij %*% v
-					#liks: rows are taxa + internal nodes, cols are # states
-					if(is.na(known.state.vector[focal])){
-						pupko.L[desNodes[desIndex],] <- L
-						pupko.C[desNodes[desIndex],] <- which.is.max(L==max(L))
-					}else{
-						pupko.L[desNodes[desIndex],] <- L[known.state.vector[focal],]
-						pupko.C[desNodes[desIndex],] <- known.state.vector[focal]
-					}
-				}
-			}
-			#Collects t_z, or the branch subtending focal:
-			tz <- edge.length[rowOfChild[focal]]
-			if(length(tz)==0){
-				#The focal node is the root, calculate P_k:
-				root.state=1
-				for (desIndex in sequence(length(desRows))){
-					#This is the basic marginal calculation:
-					root.state <- root.state * pupko.L[desNodes[desIndex],]
-				}
-				if(is.na(known.state.vector[focal])){
-					if (is.null(root.p)){
-						equil.root <- getEquilRoot(Q)
-						if(is.na(known.state.vector[focal])){
-							flat.root = equil.root
-							k.rates <- 1/length(which(!is.na(equil.root)))
-							flat.root[!is.na(flat.root)] = k.rates
-							flat.root[is.na(flat.root)] = 0
-							#root.p <- c(.6,.4)
-							root.p <- flat.root
-							pupko.L[focal, ] <- root.state
-						}else{
-							root.p <- rep(0, dim(Q)[2])
-							root.p[known.state.vector[focal]] <- 1
-							pupko.L[focal, ] <- root.state
-						}
-					}
-					else{
-						if(is.character(root.p)){
-							# root.p==yang will fix root probabilities based on the inferred rates: q10/(q01+q10), q01/(q01+q10), etc.
-							if(root.p == "yang"){
-								root.p <- Null(Q)
-								root.p <- c(root.p/sum(root.p))
-								pupko.L[focal, ] <- root.state
-							}else{
-								# root.p==maddfitz will fix root probabilities according to FitzJohn et al 2009 Eq. 10:
-								root.p <- (root.state / sum(root.state))[ ]
-								pupko.L[focal,] <- root.state
-							}
-						}
-						# root.p!==NULL will fix root probabilities based on user supplied vector:
-						else{
-							root.p <- root.p
-							pupko.L[focal, ] <- root.state
-						}
-					}
+		children <- getDesRows(phy$edge[,1], anc)
+		use.root.lik <- identical(root.p, "maddfitz")
+		if(use.root.lik) down <- liks
+		for(i in seq_along(anc)){
+			node <- anc[i]
+			score <- numeric(length(states))
+			if(use.root.lik) marginal <- rep(1, length(states))
+			for(edge in children[[i]]){
+				child <- phy$edge[edge,2]
+				trans <- pmax(P(phy$edge.length[edge]), 0)
+				if(child <= nb.tip){
+					weights <- sweep(trans, 2, liks[child,], "*")
+					trace[child,] <- max.col(weights, ties.method="first")
+					score <- score + log(rowSums(weights))
 				}else{
-					root.p = rep(0, dim(Q)[1])
-					root.p[known.state.vector[focal]] <- 1
-					pupko.L[focal, ] <- root.state
+					weights <- sweep(log(trans), 2, best[child,], "+")
+					choice <- max.col(weights, ties.method="first")
+					trace[child,] <- choice
+					score <- score + weights[cbind(states, choice)]
 				}
+				if(use.root.lik) marginal <- marginal * drop(trans %*% down[child,])
 			}
-			#All other internal nodes, except the root:
-			else{
-				#Calculates P_ij(t_z):
-				Pij <- P(tz)
-				#Pij <- matrix(c(0.7, 0.45, 0.3, 0.55), 2, 2)
-				#Calculates L_z(i):
-				v <- c(rep(1, k*rate.cat))
-				if(is.na(known.state.vector[focal])){
-					for (desIndex in seq_along(desRows)){
-						v <- v * pupko.L[desNodes[desIndex],]
-					}
-					focalRow <- rowOfChild[focal]
-					motherNode <- edge1[focalRow]
-					if(is.na(known.state.vector[motherNode])){
-						for(row.index in 1:dim(Pij)[1]){
-							L <- Pij[row.index,] * v
-							pupko.L[focal, row.index] <- max(L)
-							pupko.C[focal, row.index] <- which.is.max(L)
-						}
-					}else{
-						L <- Pij[known.state.vector[motherNode],] * v
-						pupko.L[focal,] <- L
-						pupko.C[focal,] <- which.is.max(L)
-					}
-				}else{
-					for (desIndex in seq_along(desRows)){
-						v <- v * pupko.L[desNodes[desIndex],]
-					}
-					focalRow <- rowOfChild[focal]
-					motherNode <- edge1[focalRow]
-					if(is.na(known.state.vector[motherNode])){
-						for(row.index in 1:dim(Pij)[1]){
-							L <- Pij[row.index,] * v
-							pupko.L[focal, row.index] <- L[known.state.vector[focal]]
-							pupko.C[focal, row.index] <- known.state.vector[focal]
-						}
-					}else{
-						L <- Pij[known.state.vector[motherNode],] * v
-						pupko.L[focal,] <- L[known.state.vector[focal]]
-						pupko.C[focal,] <- known.state.vector[focal]
-					}
-				}
-				if(sum(pupko.L[focal,])<1e-200){
-					cat("Kicking in arbitrary precision package Rmpfr due to very low probabilities.\n")
-					#Kicks in arbitrary precision calculations:
-					pupko.L <- mpfr(pupko.L, 15)
-				}
+			if(!is.null(evidence)) score[evidence[node,] == 0] <- -Inf
+			best[node,] <- score
+			if(use.root.lik){
+				if(!is.null(evidence)) marginal <- marginal * evidence[node,]
+				checkNodeMass(marginal)
+				down[node,] <- marginal / sum(marginal)
 			}
 		}
 		root <- nb.tip + 1L
-		if(get.likelihood == TRUE){
-			loglik <- log(sum(exp(log(root.p)+log(pupko.L[root, ]))))
-			return(as.numeric(loglik))
-		}else{
-			root <- nb.tip + 1L
-			if(is.na(known.state.vector[root])){
-				pupko.L[root, ] <- log(root.p)+log(pupko.L[root, ])
-				lik.states[root] <- which(pupko.L[root,] == max(pupko.L[root,]))[1]
-			}else{
-				lik.states[root] <- known.state.vector[root]
-			}
-			N <- dim(phy$edge)[1]
-			for(i in N:1){
-				anc <- phy$edge[i,1]
-				des <- phy$edge[i,2]
-				lik.states[des] <- pupko.C[des,lik.states[anc]]
-			}
-			#Outputs likeliest tip states
-			obj$lik.tip.states <- lik.states[TIPS]
-			#Outputs likeliest node states
-			obj$lik.anc.states <- lik.states[-TIPS]
-			#Outputs the information gained (in bits) per node
-			obj$info.anc.states <- NULL
-			return(obj)
+		if(is.null(root.p)){
+			root.p <- as.numeric(!is.na(getEquilRoot(Q)))
+			root.p <- root.p / sum(root.p)
+		}else if(identical(root.p, "yang")){
+			root.p <- as.numeric(Null(Q))
+			root.p <- root.p / sum(root.p)
+		}else if(use.root.lik){
+			root.p <- down[root,]
 		}
+		score <- log(root.p) + best[root,]
+		peak <- max(score)
+		if(!is.finite(peak)) stop("Node constraints, tip data or root probabilities are incompatible.", call.=FALSE)
+		if(get.likelihood) return(peak + log(sum(exp(score - peak))))
+		assignment <- integer(nb.tip + nb.node)
+		assignment[root] <- which.max(score)
+		for(edge in rev(seq_len(nrow(phy$edge)))){
+			child <- phy$edge[edge,2]
+			assignment[child] <- trace[child, assignment[phy$edge[edge,1]]]
+		}
+		return(list(lik.tip.states=assignment[TIPS], lik.anc.states=assignment[-TIPS],
+		            info.anc.states=NULL))
 	}
 	
 	if(method=="joint_unc"){
@@ -538,6 +423,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		#Node number -> position in anc, so the up-pass can find a node's descendants in O(1):
 		ancIndex <- integer(nb.tip + nb.node)
 		ancIndex[anc] <- seq_along(anc)
+		log.scale <- 0
 		#The first down-pass: The same algorithm as in the main function to calculate the conditional likelihood at each node:
 		for (i in seq(from = 1, length.out = nb.node)) {
 			#the ancestral node at row i is called focal
@@ -550,20 +436,17 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 				v <- v*Pv(edge.length[desRows[desIndex]], liks.down[desNodes[desIndex],])
 			}
 			
-			##Allows for fixed nodes based on user input tree.
-			if(!is.null(phy$node.label)){
-				if(!is.na(phy$node.label[focal - nb.tip])){
-					fixer.tmp = numeric(dim(Q)[2]/rate.cat)
-					fixer.tmp[phy$node.label[focal - nb.tip]] = 1
-					fixer = rep(fixer.tmp, rate.cat)
-					v <- v * fixer
-				}
+			if(!is.null(evidence)){
+				v <- v * evidence[focal,]
+				checkNodeMass(v)
 			}
 			
 			comp[focal] <- sum(v)
 			liks.down[focal, ] <- v/comp[focal]
+			if(get.likelihood) log.scale <- log.scale + log(comp[focal])
 		}
 		root <- nb.tip + 1L
+		root.lik <- liks.down[root,]
 		#Enter the root defined root probabilities if they are supplied by the user:
 		if (is.null(root.p)){
 			equil.root <- getEquilRoot(Q)
@@ -594,6 +477,8 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			}
 		}
 		#The up-pass
+		if(!is.null(evidence)) checkNodeMass(root.lik * root.p)
+		if(get.likelihood) return(log.scale + log(sum(root.lik * root.p)))
 		obsRoot <- root.p
 		root.p <- vector("numeric", dim(liks)[2])
 		root.p[ ] <- obsRoot
@@ -601,8 +486,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		states<-apply(liks,1,which.max)
 		N <- dim(phy$edge)[1]
 		comp <- numeric(nb.tip + nb.node)
-		for(i in length(anc):1){
-			focal <- anc[i]
+		# For constrained tips use the same outside evidence and effective root
+		# prior as at internal nodes, without refitting the prior for each tip.
+		with.tips <- get.tip.states && !is.null(evidence)
+		for(focal in c(rev(anc), if(with.tips) TIPS)){
 			if(!focal==root){
 				#Gets mother and sister information of focal:
 				focalRow <- rowOfChild[focal]
@@ -615,20 +502,12 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 				#But note we are assessing the reverse transition, j to i, rather than i to j, so we transpose Q to carry out this calculation:
 				if(motherNode != root){
 					v <- tranPv(edge.length[rowOfChild[motherNode]], liks.up[motherNode,])
-					#Allows for fixed nodes based on user input tree.
-					if(!is.null(phy$node.label)){
-						if(!is.na(phy$node.label[motherNode - nb.tip])){
-							fixer.tmp <- numeric(dim(Q)[2]/rate.cat)
-							fixer.tmp[phy$node.label[motherNode - nb.tip]] <- 1
-							fixer <- rep(fixer.tmp, rate.cat)
-							v <- v * fixer
-						}
-					}
 				}else{
 					#If the mother is the root then just use the marginal. This can also be the prior, which I think is the equilibrium frequency.
 					#But for now we are just going to use the marginal at the root -- it is unclear what Mesquite does.
 					v <- root.p
 				}
+				if(!is.null(evidence)) v <- v * evidence[motherNode,]
 				#Now calculate the probability that each sister is in either state. Sister can be more than 1 when the node is a polytomy.
 				#This is essentially calculating the product of the mothers probability and the sisters probability:
 				for (sisterIndex in seq_along(sisterRows)){
@@ -643,9 +522,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		liks.final <- liks
 		comp <- numeric(nb.tip + nb.node)
 		#In this final pass, root is never encountered. But its OK, because root likelihoods are set after the loop:
-		for (i in seq(from = 1, length.out = nb.node-1)) {
-			#the ancestral node at row i is called focal
-			focal <- anc[i]
+		for (focal in c(anc[anc!=root], if(with.tips) TIPS)) {
 			focalRows <- rowOfChild[focal]
 			#Now you are assessing the change along the branch subtending the focal by multiplying the probability of
 			#everything at and above focal by the probability of the mother and all the sisters given time t:
@@ -653,10 +530,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			comp[focal] <- sum(v)
 			liks.final[focal, ] <- v/comp[focal]
 		}
-		if(get.tip.states == TRUE){
+		if(get.tip.states && !with.tips){
 			#Now get the states for the tips (will do, not available for general use):
 			liks.final[TIPS,] <- GetTipStateBruteForce(p=p, phy=phy, data=input.data, rate.mat=rate.mat, rate.cat=rate.cat, ntraits=ntraits, model=model, root.p=root.p_input, collapse = collapse, tip.fog = tip.fog)
-		}else{
+		}else if(!with.tips){
 			liks.final[TIPS,] <- liks.down[TIPS,]
 		}
 		#Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
@@ -665,23 +542,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 		#comproot <- sum(root.final)
 		#liks.final[root,] <- root.final/comproot
 		
-		if(get.likelihood == TRUE){
-			#NEED TO FIGURE OUT LOG COMPENSATION ISSUE --- see line 397.
-			loglik <- as.numeric(log(liks[root,lik.states[root]]))
-			return(loglik)
-		}else{
-			#Outputs likeliest tip states
-			obj$lik.tip.states <- liks.final[TIPS,]
-			#Outputs likeliest node states
-			obj$lik.anc.states <- liks.final[-TIPS,]
-			#Outputs the information gained (in bits) per node
-			if(get.info){
-			  obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
-			}else{
-			  obj$info.anc.states <- NULL
-			}
-			return(obj)
-		}
+		obj$lik.tip.states <- liks.final[TIPS,]
+		obj$lik.anc.states <- liks.final[-TIPS,]
+		if(get.info) obj$info.anc.states <- getInfoPerNode(obj$lik.anc.states, Q)
+		return(obj)
 	}
 	
 	if(method=="scaled"){
@@ -702,6 +566,10 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			v <- 1
 			for (desIndex in seq_along(desRows)){
 				v <- v*Pv(edge.length[desRows[desIndex]], liks[desNodes[desIndex],])
+			}
+			if(!is.null(evidence)){
+				v <- v * evidence[focal,]
+				checkNodeMass(v)
 			}
 			comp[focal] <- sum(v)
 			liks[focal, ] <- v/comp[focal]
@@ -743,6 +611,7 @@ ancRECON <- function(phy, data, p, method=c("joint", "marginal", "scaled"), rate
 			}
 		}
 		#Reports the probabilities for all internal nodes as well as tips:
+		if(!is.null(evidence)) checkNodeMass(liks[root,])
 		obj$lik.tip.states <- liks[TIPS,]
 		#Outputs likeliest node states
 		obj$lik.anc.states <- liks[-TIPS,]
