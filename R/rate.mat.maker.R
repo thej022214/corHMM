@@ -512,6 +512,10 @@ getStateMat4Dat <- function(data, model = "ARD", dual = FALSE, collapse = TRUE, 
     rate.mat <- getStateMat(nObs)
   }
 
+  if(indep && collapse && !dual){
+    used <- rate.mat > 0
+    rate.mat[used] <- match(rate.mat[used], sort(unique(rate.mat[used])))
+  }
   if(!indep){
     if(model == "ER"){
       rate.mat[rate.mat > 0] <- 1

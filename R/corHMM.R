@@ -424,18 +424,17 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
 	
     # StateNames <- paste("(", rep(1:(dim(model.set.final$index.matrix)[1]/rate.cat), rate.cat), ",", rep(paste("R", 1:rate.cat, sep = ""), each = nObs), ")", sep = "")
     try({rownames(solution) <- colnames(solution) <- StateNames})
+	# Parameter vector slots can include placeholders for sparse user indices.
+	npar.ic <- nCorHMMParameters(model.set.final$index.matrix, model.set.final$fog.vec)
 	if(set.fog == TRUE){
 		tip.fog.probs <- numeric(length(model.set.final$fog.vec))
 		tip.fog.probs[] <- c(fog.est, 0)[model.set.final$fog.vec]
 		names(tip.fog.probs) <- StateNames
-		model.set.final$np <- model.set.final$np + length(unique(model.set.final$fog.vec))
-		AIC <- -2*loglik+2*model.set.final$np
-		AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
 	}else{
 		tip.fog.probs <- NULL
-		AIC <- -2*loglik+2*model.set.final$np
-		AICc <- -2*loglik+(2*model.set.final$np*(nb.tip/(nb.tip-model.set.final$np-1)))
 	}
+	AIC <- -2*loglik + 2*npar.ic
+	AICc <- -2*loglik + 2*npar.ic*(nb.tip/(nb.tip-npar.ic-1))
     if (is.character(node.states)) {
         if (node.states == "marginal" || node.states == "scaled"){
             try({colnames(lik.anc$lik.anc.states) <- StateNames})
