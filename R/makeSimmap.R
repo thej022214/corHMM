@@ -1,5 +1,6 @@
 makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCores=1, fix.node=NULL, fix.state=NULL, parsimony = FALSE, max.attempt = 100000, collapse=TRUE, method=c("rejection", "uniformization")){
 	method <- match.arg(method)
+	observed <- NULL
 	if(inherits(model, "corhmm")){
 		fit <- model
 		if(!missing(data)){
@@ -10,6 +11,17 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
 			stop("rate.cat must match the number of rate categories in the fit.", call. = FALSE)
 		}
 		if(missing(tree)) tree <- fit$phy
+		# fit$phy$node.label can contain reconstructed states, not observations.
+		original <- fit$args.list$phy
+		if(!is.null(original)) {
+			observed <- fixedObservedLabels(original, nrow(fit$solution)/fit$rate.cat)
+			numbered.edges <- function(x) x$edge[order(x$edge[,2]),,drop=FALSE]
+			if(!is.null(observed) && (!identical(tree$tip.label,original$tip.label) ||
+			    !identical(numbered.edges(tree),numbered.edges(original))))
+				stop("The tree must retain the fitted node numbering for fixed observations.", call.=FALSE)
+		} else if(isTRUE(fit$call$fixed.nodes)) {
+			stop("The saved fit does not retain its original fixed node observations.", call.=FALSE)
+		}
 		if(missing(root.p)) root.p <- fit$root.p
 		rate.cat <- fit$rate.cat
 		model <- fit$solution
@@ -25,30 +37,9 @@ makeSimmap <- function(tree, data, model, rate.cat, root.p="yang", nSim=1, nCore
   model[is.na(model)] <- 0
   diag(model) <- 0
   diag(model) <- -rowSums(model)
-  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p, parsimony = parsimony, collapse=collapse)
-  if(length(fix.node) != length(fix.state)){
-    stop("The number of nodes supplied to be fixed does not match the number of states provided.",.call=FALSE)
-  }
-  if(!is.null(fix.state)){
-    if(max(fix.state) > dim(model)[1]){
-      stop("One of the states being fixed does not exist in this model.")
-    }
-  }
-  if(!is.null(fix.node) & !is.null(fix.state)){
-    # test if we are fixing an external or internal node
-    for(i in 1:length(fix.node)){
-      focal.fix.node <- fix.node[i]
-      focal.fix.state <- fix.state[i]
-      if(focal.fix.node <= length(tree$tip.label)){
-        conditional.lik$tip.states[focal.fix.node,] <- 0
-        conditional.lik$tip.states[focal.fix.node, focal.fix.state] <- 1
-      }else{
-        fix.internal <- focal.fix.node - length(tree$tip.label)
-        conditional.lik$node.states[fix.internal,] <- 0
-        conditional.lik$node.states[fix.internal, focal.fix.state] <- 1
-      }
-    }
-  }
+  evidence <- nodeStateEvidence(tree, nrow(model), rate.cat, observed, fix.node, fix.state)
+  conditional.lik <- getConditionalNodeLik(tree, data, model, rate.cat, root.p,
+      parsimony=parsimony, collapse=collapse, evidence=evidence)
   maps <- simSubstHistory(tree, conditional.lik$tip.states, conditional.lik$node.states, model, nSim, nCores, max.attempt, method=method)
   mapped.edge <- lapply(maps, function(x) convertSubHistoryToEdge(tree, x))
   obj <- vector("list", nSim)
@@ -295,7 +286,7 @@ convertSubHistoryToEdge <- function(phy, map){
 }
 
 # get the conditional likelihoods of particular nodes
-getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE, collapse=TRUE, model.set.final=NULL){
+getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony=FALSE, collapse=TRUE, model.set.final=NULL, evidence=NULL){
   phy <- reorder(tree, "pruningwise")
   nb.node <- phy$Nnode
   nb.tip <- length(phy$tip.label)
@@ -311,6 +302,12 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony
     model <- model/1000
   }
   liks <- model.set.final$liks
+  if(!is.null(evidence)) {
+    tips <- seq_len(nb.tip)
+    liks[tips,] <- liks[tips,,drop=FALSE] * evidence[tips,,drop=FALSE]
+    if(any(rowSums(liks[tips,,drop=FALSE]) <= 0))
+      stop("Fixed tip states are incompatible with observed data.", call.=FALSE)
+  }
   anc <- unique(phy$edge[,1])
   for (i in seq(from = 1, length.out = nb.node)) {
     #the ancestral node at row i is called focal
@@ -324,6 +321,10 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony
       v <- v*expm(model * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
     }
     #Divide each likelihood by the sum to obtain probabilities:
+    if(!is.null(evidence)) {
+      v <- v * evidence[focal,]
+      checkNodeMass(v)
+    }
     liks[focal, ] <- v/sum(v)
   }
   input.root.p <- root.p
@@ -346,6 +347,7 @@ getConditionalNodeLik <- function(tree, data, model, rate.cat, root.p, parsimony
     root.p <- rep(1/dim(model)[1], dim(model))
   }
   liks[focal, ] <-  liks[focal, ] * root.p
+  if(!is.null(evidence)) checkNodeMass(liks[focal,])
   return(list(tip.states = liks[1:nb.tip,],
               node.states = liks[(nb.tip+1):(nb.node+nb.tip),]))
 }

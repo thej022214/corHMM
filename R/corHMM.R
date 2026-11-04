@@ -127,6 +127,7 @@ corHMM <- function(phy, data, rate.cat, rate.mat=NULL, model = "ARD", node.state
     
     model.set.final <- rate.cat.set.corHMM.JDB(phy=phy, data=input.data, rate.cat=rate.cat, ntraits=nObs, model=model, rate.mat=rate.mat, collapse=collapse, CorData=CorData, matching=matching)
     phy <- reorder(phy, "pruningwise")
+    phy$node.label <- fixedObservedLabels(phy, ncol(model.set.final$liks)/rate.cat)
 
     # this allows for custom rate matricies!
     if(!is.null(rate.mat)){

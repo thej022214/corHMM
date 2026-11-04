@@ -29,6 +29,10 @@ For mapping an existing fit, use \code{makeSimmap(model = fit, nSim = 100)}.
 The fit must retain its original \code{solution}, \code{rate.cat}, and
 \code{data.legend}. Numeric root priors and \code{fix.state} continue to refer to
 positions in the fitted matrix. Matrix state names are retained in the maps.
+When a fit retains fixed ancestral observations, maps condition on those
+observations as well as on the tips. Reconstructed node labels are not treated
+as observations. Additional \code{fix.node}/\code{fix.state} constraints
+specify individual joint states and must agree with the observed data.
 
 When passing a matrix instead, its rows and columns must be in the same state
 order as the supplied data are assigned by the installed version of corHMM.
