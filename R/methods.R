@@ -4,10 +4,15 @@ coef.corhmm <- function(object, log = TRUE, ...) {
   if (log) p else exp(p)
 }
 
+nCorHMMParameters <- function(indices, fog) {
+  length(unique(indices[!is.na(indices) & indices > 0])) + length(unique(fog))
+}
+
 #' @export
 logLik.corhmm <- function(object, ...) {
   L <- object$loglik
-  attr(L, "df") <- length(coef(object))
+  attr(L, "df") <- if (is.null(object$index.mat)) length(coef(object)) else
+    nCorHMMParameters(object$index.mat, object$fog.vec)
   ## nobs doesn't necessarily make sense - could use number of tips but ...
   class(L) <- "logLik"
   L
